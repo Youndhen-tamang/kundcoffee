@@ -1,185 +1,339 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Table, TableType, spaceType } from "@/lib/types";
-import { getTables, getTableTypes } from "@/fetch/table";
-import { getSpaces } from "@/fetch/space";
+import {
+  getTables,
+  getTableTypes,
+  addTable,
+  addTableType,
+} from "@/fetch/table";
+import { getSpaces, addSpace } from "@/fetch/space";
+import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
+import { MetricCard } from "@/components/ui/MetricCard";
+import { Button } from "@/components/ui/Button";
+import { CustomDropdown } from "@/components/ui/CustomDropdown";
+import { Modal } from "@/components/ui/Modal";
+import { useRouter } from "next/navigation";
 
 export default function TablesPage() {
+  const router = useRouter();
   const [tables, setTables] = useState<Table[]>([]);
   const [tableTypes, setTableTypes] = useState<TableType[]>([]);
   const [spaces, setSpaces] = useState<spaceType[]>([]);
+  const [filteredTables, setFilteredTables] = useState<Table[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const [name, setName] = useState<string>("");
-  const [capacity, setCapacity] = useState<number>();
-  
-  const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
-  const [newTypeName, setNewTypeName] = useState<string>("");
+  // UI States
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSpaceModalOpen, setIsSpaceModalOpen] = useState(false);
+  const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
 
-  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
-  const [newSpaceName, setNewSpaceName] = useState<string>("");
-  const [spaceDescription,setSpaceDescription] = useState<string>("")
+  // Form States
+  const [newTableName, setNewTableName] = useState("");
+  const [newTableCapacity, setNewTableCapacity] = useState("");
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | undefined>(
+    undefined,
+  );
+  const [selectedTypeId, setSelectedTypeId] = useState<string | undefined>(
+    undefined,
+  );
+
+  // Nested Form States
+  const [newSpaceName, setNewSpaceName] = useState("");
+  const [newSpaceDesc, setNewSpaceDesc] = useState("");
+  const [newTypeName, setNewTypeName] = useState("");
+
   useEffect(() => {
     const fetchData = async () => {
-      const tablesData = await getTables();
-      const typesData = await getTableTypes();
-      const spacesData = await getSpaces();
-      setTables(tablesData);
-      
-      setTableTypes(typesData);
-      setSpaces(spacesData);
-      console.log(spaces)
+      const [tData, typeData, sData] = await Promise.all([
+        getTables(),
+        getTableTypes(),
+        getSpaces(),
+      ]);
+      setTables(tData);
+      setFilteredTables(tData);
+      setTableTypes(typeData);
+      setSpaces(sData);
     };
     fetchData();
   }, []);
 
-  const createTable = async () => {
-    if (
-      !name ||
-      !capacity ||
-      (!selectedTypeId && !newTypeName) ||
-      (!selectedSpaceId && !newSpaceName)
-    ) {
-      alert("Please fill all fields");
-      return;
-    }
+  useEffect(() => {
+    const lowerQuery = searchQuery.toLowerCase();
+    const filtered = tables.filter(
+      (t) =>
+        t.name.toLowerCase().includes(lowerQuery) ||
+        t.space?.name.toLowerCase().includes(lowerQuery) ||
+        t.tableType?.name.toLowerCase().includes(lowerQuery),
+    );
+    setFilteredTables(filtered);
+  }, [searchQuery, tables]);
 
-    const body = {
-      name,
-      capacity,
-      tableTypeId: selectedTypeId || undefined,
-      tableTypeName: newTypeName || undefined,
-      spaceId: selectedSpaceId || undefined,
-      spaceName: newSpaceName || undefined,
-      spaceDescription
-    };
+  // Actions
+  const handleExport = () => {
+    const headers = ["Name", "Type", "Space", "Capacity", "Status"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredTables.map((t) =>
+        [
+          t.name,
+          t.tableType?.name || "",
+          t.space?.name || "",
+          t.capacity,
+          t.status,
+        ].join(","),
+      ),
+    ].join("\n");
 
-    const res = await fetch("/api/tables", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "tables_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-    const data = await res.json();
-    if (data.success) {
-      alert("Table created!");
-      setTables((prev) => [...prev, data.data]);
-      setName("");
-      setCapacity(undefined);
-      setSelectedTypeId(null);
-      setNewTypeName("");
-      setSelectedSpaceId(null);
+  const handleCreateSpace = async () => {
+    if (!newSpaceName) return;
+    const res = await addSpace(newSpaceName, newSpaceDesc);
+    if (res) {
+      setSpaces([...spaces, res]);
+      setSelectedSpaceId(res.id);
+      setIsSpaceModalOpen(false);
       setNewSpaceName("");
-    } else {
-      alert(data.message || data.error);
+      setNewSpaceDesc("");
+      // No need to reopen AddModal, it should still be open underneath if we handle z-index right
+      // But if we closed it, we need to ensuring it's "visible".
+      // With the current Modal implementation using portals, they stack.
     }
   };
 
+  const handleCreateType = async () => {
+    if (!newTypeName) return;
+    const res = await addTableType(newTypeName);
+    if (res) {
+      setTableTypes([...tableTypes, res]);
+      setSelectedTypeId(res.id);
+      setIsTypeModalOpen(false);
+      setNewTypeName("");
+    }
+  };
+
+  const handleCreateTable = async () => {
+    if (
+      !newTableName ||
+      !newTableCapacity ||
+      !selectedSpaceId ||
+      !selectedTypeId
+    )
+      return;
+    const res = await addTable(
+      newTableName,
+      parseInt(newTableCapacity),
+      selectedSpaceId,
+      selectedTypeId,
+    );
+    if (res) {
+      const updatedTables = await getTables();
+      setTables(updatedTables);
+      setIsAddModalOpen(false);
+      setNewTableName("");
+      setNewTableCapacity("");
+      setSelectedSpaceId(undefined);
+      setSelectedTypeId(undefined);
+      router.refresh();
+    }
+  };
+
+  // Metrics Logic (Client-side)
+  const totalTables = tables.length;
+  const activeTables = tables.filter((t) => t.status === "ACTIVE").length;
+  const occupiedTables = tables.filter((t) => t.status === "OCCUPIED").length;
+  const mostUsedTable = "N/A";
+
   return (
-    <>
-      <h1 className="text-2xl font-bold mb-6">Tables</h1>
+    <div>
+      <PageHeaderAction
+        title="Tables"
+        description="Manage all your restaurant tables"
+        onSearch={setSearchQuery}
+        onExport={handleExport}
+        actionButton={
+          <Button onClick={() => setIsAddModalOpen(true)}>Add Table</Button>
+        }
+      />
 
-      <div className="bg-white p-4 rounded shadow mb-6 flex flex-col gap-2">
-
-        {/* Table Name */}
-        <input
-          placeholder="Table name"
-          className="border p-2"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-
-        {/* Capacity */}
-        <input
-          placeholder="Capacity"
-          type="number"
-          className="border p-2"
-          value={capacity || ""}
-          onChange={(e) => setCapacity(parseInt(e.target.value))}
-        />
-
-        {/* Table Type Selection / Create */}
-        <div className="flex gap-2">
-          <select
-            className="border p-2 flex-1"
-            value={selectedTypeId || ""}
-            onChange={(e) => setSelectedTypeId(e.target.value)}
-          >
-            <option value="">-- Select existing table type --</option>
-            {tableTypes.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-          <input
-            placeholder="Or create new table type"
-            className="border p-2 flex-1"
-            value={newTypeName}
-            onChange={(e) => setNewTypeName(e.target.value)}
-          />
-        </div>
-
-        {/* Space Selection / Create */}
-        <div className="flex gap-2">
-          <select
-            className="border p-2 flex-1"
-            value={selectedSpaceId || ""}
-            onChange={(e) => setSelectedSpaceId(e.target.value)}
-          >
-            <option value="">-- Select existing space --</option>
-            {spaces.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-         <div className=" flex gap-2 flex-3">
-         <input
-            placeholder="Or create new space"
-            className="border p-2 flex-1"
-            value={newSpaceName}
-            onChange={(e) => setNewSpaceName(e.target.value)}
-          />
-                    <input
-            placeholder="Description"
-            className="border p-2 flex-2"
-            value={spaceDescription}
-            onChange={(e) => setSpaceDescription(e.target.value)}
-          />
-         </div>
-        </div>
-
-        <button
-          onClick={createTable}
-          className="bg-black text-white px-4 py-2 mt-2"
-        >
-          Add Table
-        </button>
+      <div className="grid grid-cols-4 gap-6 mb-8">
+        <MetricCard title="Total Tables" value={totalTables} />
+        <MetricCard title="Active Tables" value={activeTables} />
+        <MetricCard title="Occupied Tables" value={occupiedTables} />
+        <MetricCard title="Most Used Table" value={mostUsedTable} />
       </div>
 
-      {/* Table List */}
-      <table className="w-full bg-white rounded shadow text-black">
-        <thead>
-          <tr className="border-b text-left">
-            <th className="p-3">Name</th>
-            <th>Type</th>
-            <th>Space</th>
-            <th>Capacity</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tables.filter(Boolean).map((t: Table) => (
-            <tr key={t.id} className="border-b">
-              <td className="p-3">{t.name}</td>
-              <td>{t.tableType?.name || "—"}</td>
-              <td>{t.space?.name || "—"}</td>
-              <td>{t.capacity}</td>
-              <td>{t.status}</td>
+      <div className="bg-white rounded-xl shadow-sm border border-zinc-100 overflow-hidden">
+        <table className="w-full text-left text-sm text-gray-600">
+          <thead className="bg-zinc-50 border-b border-zinc-100">
+            <tr>
+              <th className="px-6 py-4 font-semibold text-gray-900">Name</th>
+              <th className="px-6 py-4 font-semibold text-gray-900">Type</th>
+              <th className="px-6 py-4 font-semibold text-gray-900">Space</th>
+              <th className="px-6 py-4 font-semibold text-gray-900">
+                Capacity
+              </th>
+              <th className="px-6 py-4 font-semibold text-gray-900">Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
+          </thead>
+          <tbody className="divide-y divide-zinc-100">
+            {filteredTables.map((table) => (
+              <tr key={table.id} className="hover:bg-zinc-50 transition-colors">
+                <td className="px-6 py-4 font-medium text-gray-900">
+                  {table.name}
+                </td>
+                <td className="px-6 py-4 font-medium text-gray-900">
+                  {table.tableType?.name || "-"}
+                </td>
+                <td className="px-6 py-4">{table.space?.name || "-"}</td>
+                <td className="px-6 py-4">{table.capacity}</td>
+                <td className="px-6 py-4">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      table.status === "ACTIVE"
+                        ? "bg-green-100 text-green-800"
+                        : table.status === "OCCUPIED"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {table.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+            {filteredTables.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  No tables found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Main Add Table Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Add New Table"
+      >
+        <div className="flex flex-col gap-5">
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Table Name
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. T-01"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+              value={newTableName}
+              onChange={(e) => setNewTableName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Capacity
+            </label>
+            <input
+              type="number"
+              placeholder="e.g. 4"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+              value={newTableCapacity}
+              onChange={(e) => setNewTableCapacity(e.target.value)}
+            />
+          </div>
+          <div>
+            <CustomDropdown
+              label="Space"
+              options={spaces.map((s) => ({ id: s.id, name: s.name }))}
+              value={selectedSpaceId}
+              onChange={setSelectedSpaceId}
+              placeholder="Select Space"
+              onAddNew={() => setIsSpaceModalOpen(true)}
+              addNewLabel="Add New Space"
+            />
+          </div>
+          <div>
+            <CustomDropdown
+              label="Table Type"
+              options={tableTypes.map((t) => ({ id: t.id, name: t.name }))}
+              value={selectedTypeId}
+              onChange={setSelectedTypeId}
+              placeholder="Select Type"
+              onAddNew={() => setIsTypeModalOpen(true)}
+              addNewLabel="Add New Type"
+            />
+          </div>
+          <Button onClick={handleCreateTable} className="w-full mt-2">
+            Create Table
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Nested Modals */}
+      <Modal
+        isOpen={isSpaceModalOpen}
+        onClose={() => setIsSpaceModalOpen(false)}
+        title="Create New Space"
+      >
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Space Name
+            </label>
+            <input
+              placeholder="e.g. Rooftop"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              value={newSpaceName}
+              onChange={(e) => setNewSpaceName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Description
+            </label>
+            <textarea
+              placeholder="Space description..."
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              value={newSpaceDesc}
+              onChange={(e) => setNewSpaceDesc(e.target.value)}
+            />
+          </div>
+          <Button onClick={handleCreateSpace}>Save Space</Button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isTypeModalOpen}
+        onClose={() => setIsTypeModalOpen(false)}
+        title="Create Table Type"
+      >
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Type Name
+            </label>
+            <input
+              placeholder="e.g. VIP"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              value={newTypeName}
+              onChange={(e) => setNewTypeName(e.target.value)}
+            />
+          </div>
+          <Button onClick={handleCreateType}>Save Type</Button>
+        </div>
+      </Modal>
+    </div>
   );
 }
