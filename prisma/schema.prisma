@@ -1,0 +1,69 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+
+model Space {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  tables      Table[]
+  createdAt   DateTime @default(now())
+}
+
+model TableSession {
+  id        String   @id @default(uuid())
+  tableId   String
+  table     Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+
+  total     Float    @default(0)
+  serviceCharge Float @default(0)
+  tax       Float    @default(0)
+  grandTotal Float   @default(0)
+
+  isActive  Boolean  @default(true)
+}
+
+model TableType{
+  id          String      @id @default(uuid())
+  name        String      @unique
+  tables      Table[]
+}
+
+model Table {
+  id          String      @id @default(uuid())
+  name        String
+  tableTypeId String?
+  tableType   TableType? @relation(fields: [tableTypeId], references: [id])  
+  capacity    Int
+  status      TableStatus @default(ACTIVE)
+  spaceId     String?
+  space       Space?      @relation(fields: [spaceId], references: [id])
+  qrCode      QRCode?
+  sessions    TableSession[]  
+  createdAt   DateTime    @default(now())
+}
+
+model QRCode {
+  id        String @id @default(uuid())
+  tableId   String @unique
+  table     Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  value     String
+  assigned  Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+enum TableStatus {
+  ACTIVE
+  OCCUPIED
+  INACTIVE
+}
