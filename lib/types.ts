@@ -32,3 +32,9 @@ export type QRCode = {
   assigned: boolean;
   createdAt: Date;
 };
+
+export interface Params{
+  id: string
+}
+
+

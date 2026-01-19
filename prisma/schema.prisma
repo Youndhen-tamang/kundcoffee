@@ -7,8 +7,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
-
 model Space {
   id          String   @id @default(uuid())
   name        String
@@ -18,47 +16,47 @@ model Space {
 }
 
 model TableSession {
-  id        String   @id @default(uuid())
-  tableId   String
-  table     Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid())
+  tableId String
+  table   Table  @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
-  startedAt DateTime @default(now())
+  startedAt DateTime  @default(now())
   endedAt   DateTime?
 
-  total     Float    @default(0)
+  total         Float @default(0)
   serviceCharge Float @default(0)
-  tax       Float    @default(0)
-  grandTotal Float   @default(0)
+  tax           Float @default(0)
+  grandTotal    Float @default(0)
 
-  isActive  Boolean  @default(true)
+  isActive Boolean @default(true)
 }
 
-model TableType{
-  id          String      @id @default(uuid())
-  name        String      @unique
-  tables      Table[]
+model TableType {
+  id     String  @id @default(uuid())
+  name   String  @unique
+  tables Table[]
 }
 
 model Table {
-  id          String      @id @default(uuid())
+  id          String         @id @default(uuid())
   name        String
   tableTypeId String?
-  tableType   TableType? @relation(fields: [tableTypeId], references: [id])  
+  tableType   TableType?     @relation(fields: [tableTypeId], references: [id])
   capacity    Int
-  status      TableStatus @default(ACTIVE)
+  status      TableStatus    @default(ACTIVE)
   spaceId     String?
-  space       Space?      @relation(fields: [spaceId], references: [id])
+  space       Space?         @relation(fields: [spaceId], references: [id])
   qrCode      QRCode?
-  sessions    TableSession[]  
-  createdAt   DateTime    @default(now())
+  sessions    TableSession[]
+  createdAt   DateTime       @default(now())
 }
 
 model QRCode {
-  id        String @id @default(uuid())
-  tableId   String @unique
-  table     Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  tableId   String   @unique
+  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
   value     String
-  assigned  Boolean @default(false)
+  assigned  Boolean  @default(false)
   createdAt DateTime @default(now())
 }
 
@@ -66,4 +64,193 @@ enum TableStatus {
   ACTIVE
   OCCUPIED
   INACTIVE
+}
+
+model Category {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  image       String?
+  description String?
+
+  dishes Dish[]
+  combos ComboOffer[]
+
+  createdAt DateTime @default(now())
+}
+
+model SubMenu {
+  id       String  @id @default(uuid())
+  name     String  @unique
+  image    String?
+  isActive Boolean @default(true)
+
+  dishes  Dish[]
+  combos  ComboOffer[]
+  menuSet MenuSetSubMenu[]
+
+  createdAt DateTime @default(now())
+}
+
+model Price {
+  id            String @id @default(uuid())
+  actualPrice   Float
+  discountPrice Float? @default(0)
+  listedPrice   Float
+  cogs          Float
+  grossProfit   Float
+
+  dishId  String? @unique
+  addOnId String? @unique
+  comboId String? @unique
+
+  dish  Dish?       @relation(fields: [dishId], references: [id])
+  addOn AddOn?      @relation(fields: [addOnId], references: [id])
+  combo ComboOffer? @relation(fields: [comboId], references: [id])
+}
+
+model Stock {
+  id           String             @id @default(uuid())
+  name         String
+  unit         String
+  quantity     Float
+  amount       Float
+  consumptions StockConsumption[]
+}
+
+model StockConsumption {
+  id      String @id @default(uuid())
+  stockId String
+  stock   Stock  @relation(fields: [stockId], references: [id])
+
+  quantity Float
+
+  dishId  String?
+  addOnId String?
+  comboId String?
+
+  dish  Dish?       @relation(fields: [dishId], references: [id])
+  addOn AddOn?      @relation(fields: [addOnId], references: [id])
+  combo ComboOffer? @relation(fields: [comboId], references: [id])
+}
+
+model Dish {
+  id              String  @id @default(uuid())
+  name            String
+  hscode          String?
+  image           String?
+  preparationTime Int
+  description     String?
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  subMenuId String?
+  subMenu   SubMenu? @relation(fields: [subMenuId], references: [id])
+
+  type        DishType
+  kotType     KOTType
+  isAvailable Boolean  @default(true)
+
+  price      Price?
+  stocks     StockConsumption[]
+  addOns     DishAddOn[]
+  comboItems ComboItem[]
+  createdAt  DateTime           @default(now())
+}
+
+enum DishType {
+  VEG
+  NON_VEG
+  SNACK
+  DRINK
+}
+
+enum KOTType {
+  KITCHEN
+  BAR
+}
+
+model AddOn {
+  id          String    @id @default(uuid())
+  name        String
+  image       String?
+  description String?
+  type        AddOnType
+  isAvailable Boolean   @default(true)
+
+  price  Price?
+  stocks StockConsumption[]
+  usedIn DishAddOn[]
+
+  createdAt DateTime @default(now())
+}
+
+enum AddOnType {
+  EXTRA
+  ADDON
+}
+
+model DishAddOn {
+  id      String @id @default(uuid())
+  dishId  String
+  addOnId String
+
+  dish  Dish  @relation(fields: [dishId], references: [id])
+  addOn AddOn @relation(fields: [addOnId], references: [id])
+}
+
+model MenuSet {
+  id       String  @id @default(uuid())
+  name     String
+  service  String
+  isActive Boolean @default(true)
+
+  subMenus MenuSetSubMenu[]
+
+  createdAt DateTime @default(now())
+}
+
+model MenuSetSubMenu {
+  id        String @id @default(uuid())
+  menuSetId String
+  subMenuId String
+
+  menuSet MenuSet @relation(fields: [menuSetId], references: [id])
+  subMenu SubMenu @relation(fields: [subMenuId], references: [id])
+}
+
+model ComboOffer {
+  id              String  @id @default(uuid())
+  name            String
+  image           String?
+  hscode          String?
+  preparationTime Int
+  description     String?
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  subMenuId String?
+  subMenu   SubMenu? @relation(fields: [subMenuId], references: [id])
+
+  kotType     KOTType
+  isAvailable Boolean @default(true)
+
+  price  Price?
+  items  ComboItem[]
+  stocks StockConsumption[]
+
+  createdAt DateTime @default(now())
+}
+
+model ComboItem {
+  id      String @id @default(uuid())
+  comboId String
+  dishId  String
+
+  quantity  Int
+  unitPrice Float
+
+  combo ComboOffer @relation(fields: [comboId], references: [id])
+  dish  Dish       @relation(fields: [dishId], references: [id])
 }
