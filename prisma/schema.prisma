@@ -134,10 +134,10 @@ model StockConsumption {
 }
 
 model Dish {
-  id              String  @id @default(uuid())
+  id              String   @id @default(uuid())
   name            String
   hscode          String?
-  image           String?
+  image           String[]
   preparationTime Int
   description     String?
 
@@ -220,9 +220,9 @@ model MenuSetSubMenu {
 }
 
 model ComboOffer {
-  id              String  @id @default(uuid())
+  id              String   @id @default(uuid())
   name            String
-  image           String?
+  image           String[]
   hscode          String?
   preparationTime Int
   description     String?

@@ -23,3 +23,22 @@ export async function POST(req:Request) {
 
   }
 }
+
+
+export async function GET() {
+  try {
+    const submenu =  await prisma.subMenu.findMany();
+    if(!submenu) return NextResponse.json({
+      success:false ,message:"No Sub-menu found"
+    },{status:400});
+
+    return NextResponse.json({
+      success:false ,data:submenu
+    },{status:200}); 
+   } 
+    catch (error) {
+      console.log(error)
+      return NextResponse.json({success:false,message:"Something went wrong"},{status:400})
+  
+  }
+}
