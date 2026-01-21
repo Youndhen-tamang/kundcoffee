@@ -1,0 +1,143 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma'; 
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { tableId, type, items } = body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'No items in order' }, { status: 400 });
+    }
+
+    let calculatedGrandTotal = 0;
+    const orderItemsData = [];
+
+    for (const item of items) {
+      const { dishId, comboId, quantity, addOnIds } = item;
+      
+      let dbItem;
+      let itemName = "";
+      
+      if (dishId) {
+        dbItem = await prisma.dish.findUnique({
+          where: { id: dishId },
+          include: { price: true },
+        });
+        itemName = dbItem?.name || "Unknown Dish";
+      } else if (comboId) {
+        dbItem = await prisma.comboOffer.findUnique({
+          where: { id: comboId },
+          include: { price: true },
+        });
+        itemName = dbItem?.name || "Unknown Combo";
+      }
+
+      if (!dbItem || !dbItem.price) {
+        return NextResponse.json(
+          { error: `Item not found or price missing: ${itemName}` }, 
+          { status: 404 }
+        );
+      }
+
+
+      const unitPrice = (dbItem.price.discountPrice && dbItem.price.discountPrice > 0)
+        ? dbItem.price.discountPrice
+        : dbItem.price.listedPrice; 
+      let itemTotalPrice = unitPrice * quantity;
+      
+      const addOnsData = [];
+      if (addOnIds && Array.isArray(addOnIds) && addOnIds.length > 0) {
+        const dbAddOns = await prisma.addOn.findMany({
+          where: { id: { in: addOnIds } },
+          include: { price: true }
+        });
+
+        for (const dbAddOn of dbAddOns) {
+            if(dbAddOn.price) {
+                const addOnPrice = dbAddOn.price.listedPrice; 
+                itemTotalPrice += addOnPrice * quantity;
+                
+                addOnsData.push({
+                    addOnId: dbAddOn.id,
+                    unitPrice: addOnPrice,
+                    quantity: 1 
+                });
+            }
+        }
+      }
+
+      calculatedGrandTotal += itemTotalPrice;
+
+      orderItemsData.push({
+        dishId: dishId || null,
+        comboId: comboId || null,
+        quantity: quantity,
+        unitPrice: unitPrice, 
+        totalPrice: itemTotalPrice, 
+        selectedAddOns: {
+            create: addOnsData
+        }
+      });
+    }
+
+   
+    const newOrder = await prisma.order.create({
+      data: {
+        tableId: tableId || null,
+        type: type, 
+        status: 'PENDING',
+        total: calculatedGrandTotal, 
+        items: {
+          create: orderItemsData 
+        }
+      },
+      include: {
+        items: {
+          include: {
+            selectedAddOns: true,
+            dish: true,
+            combo: true
+          }
+        }
+      }
+    });
+
+    return NextResponse.json(newOrder, { status: 201 });
+
+  } catch (error) {
+    console.error("Order Creation Error:", error);
+    return NextResponse.json(
+        { error: 'Internal Server Error', details: error instanceof Error ? error.message : String(error) }, 
+        { status: 500 }
+    );
+  }
+}
+
+
+
+export async function GET() {
+  try {
+    const order =  await prisma.order.findMany({
+      include:{
+        table:true,
+        items:true,
+        payment:true,
+      }
+    })
+
+    if(!order) return NextResponse.json({
+      success:false,message:"No Orders"
+    },{status:409});
+
+    return NextResponse.json({
+      success:true,data:order
+    },{status:200})
+  } catch (error) {
+    console.error("Order Creation Error:", error);
+    return NextResponse.json(
+        { error: 'Internal Server Error', details: error instanceof Error ? error.message : String(error) }, 
+        { status: 500 }
+    );
+  }
+}

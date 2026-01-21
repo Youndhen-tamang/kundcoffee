@@ -172,6 +172,7 @@ export function StockConsumptionForm({
 }
 
 // Simple Rich Text Placeholder
+// Simple Rich Text Placeholder
 export function RichTextEditor({
   label,
   value,
@@ -181,34 +182,83 @@ export function RichTextEditor({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const insertFormat = (prefix: string, suffix: string = "") => {
+    const textarea = document.getElementById(
+      `rte-${label}`,
+    ) as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const before = text.substring(0, start);
+    const selection = text.substring(start, end);
+    const after = text.substring(end);
+
+    const newText = `${before}${prefix}${selection}${suffix}${after}`;
+    onChange(newText);
+
+    // Defer focus restoration
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+    }, 0);
+  };
+
   return (
     <div>
       <label className="text-sm font-medium text-gray-700 block mb-1">
         {label}
       </label>
-      <div className="border border-gray-300 rounded p-1 bg-white">
-        <div className="flex gap-2 border-b border-gray-100 pb-1 mb-1 px-1">
+      <div className="border border-gray-300 rounded-lg p-1 bg-white focus-within:ring-2 focus-within:ring-violet-500/20 focus-within:border-violet-500 transition-all">
+        <div className="flex gap-1 border-b border-gray-100 pb-2 mb-2 px-1">
           <button
             type="button"
-            className="font-bold px-1 hover:bg-gray-100 rounded"
+            onClick={() => insertFormat("**", "**")}
+            className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors"
+            title="Bold"
           >
-            B
+            <span className="font-bold text-xs">B</span>
           </button>
           <button
             type="button"
-            className="italic px-1 hover:bg-gray-100 rounded"
+            onClick={() => insertFormat("*", "*")}
+            className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors"
+            title="Italic"
           >
-            I
+            <span className="italic text-xs">I</span>
           </button>
-          <button type="button" className="px-1 hover:bg-gray-100 rounded">
-            List
+          <button
+            type="button"
+            onClick={() => insertFormat("- ")}
+            className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors"
+            title="List"
+          >
+            <span className="text-xs">List</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => insertFormat("# ")}
+            className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors"
+            title="Heading 1"
+          >
+            <span className="font-bold text-xs">H1</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => insertFormat("## ")}
+            className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors"
+            title="Heading 2"
+          >
+            <span className="font-bold text-xs">H2</span>
           </button>
         </div>
         <textarea
-          className="w-full p-2 text-sm focus:outline-none min-h-[100px]"
+          id={`rte-${label}`}
+          className="w-full p-2 text-sm focus:outline-none min-h-[120px] resize-y rounded-b-lg"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Type description here..."
+          placeholder="Type description here... (Markdown supported)"
         />
       </div>
     </div>

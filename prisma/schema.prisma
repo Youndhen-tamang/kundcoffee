@@ -49,6 +49,7 @@ model Table {
   qrCode      QRCode?
   sessions    TableSession[]
   createdAt   DateTime       @default(now())
+  Order       Order[]
 }
 
 model QRCode {
@@ -110,8 +111,8 @@ model Price {
 
 model Stock {
   id           String             @id @default(uuid())
-  name         String
-  unit         String
+  name         String             @unique
+  unit         MeasuringUnit?
   quantity     Float
   amount       Float
   consumptions StockConsumption[]
@@ -149,13 +150,13 @@ model Dish {
 
   type        DishType
   kotType     KOTType
-  isAvailable Boolean  @default(true)
-
-  price      Price?
-  stocks     StockConsumption[]
-  addOns     DishAddOn[]
-  comboItems ComboItem[]
-  createdAt  DateTime           @default(now())
+  isAvailable Boolean            @default(true)
+  orderItems  OrderItem[]
+  price       Price?
+  stocks      StockConsumption[]
+  addOns      DishAddOn[]
+  comboItems  ComboItem[]
+  createdAt   DateTime           @default(now())
 }
 
 enum DishType {
@@ -170,17 +171,28 @@ enum KOTType {
   BAR
 }
 
-model AddOn {
-  id          String    @id @default(uuid())
-  name        String
-  image       String?
-  description String?
-  type        AddOnType
-  isAvailable Boolean   @default(true)
+enum MeasuringUnit {
+  GRAM
+  KILOGRAM
+  POUND
+  LITRE
+  MILLILITRE
+  OUNCE
+  PIECE
+  PACKET
+}
 
-  price  Price?
-  stocks StockConsumption[]
-  usedIn DishAddOn[]
+model AddOn {
+  id              String             @id @default(uuid())
+  name            String
+  image           String?
+  description     String?
+  type            AddOnType
+  isAvailable     Boolean            @default(true)
+  orderItemAddOns OrderItemAddOn[]
+  price           Price?
+  stocks          StockConsumption[]
+  usedIn          DishAddOn[]
 
   createdAt DateTime @default(now())
 }
@@ -234,11 +246,11 @@ model ComboOffer {
   subMenu   SubMenu? @relation(fields: [subMenuId], references: [id])
 
   kotType     KOTType
-  isAvailable Boolean @default(true)
-
-  price  Price?
-  items  ComboItem[]
-  stocks StockConsumption[]
+  isAvailable Boolean            @default(true)
+  orderItems  OrderItem[]
+  price       Price?
+  items       ComboItem[]
+  stocks      StockConsumption[]
 
   createdAt DateTime @default(now())
 }
@@ -253,4 +265,82 @@ model ComboItem {
 
   combo ComboOffer @relation(fields: [comboId], references: [id])
   dish  Dish       @relation(fields: [dishId], references: [id])
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  tableId   String?
+  type      OrderType
+  table     Table?      @relation(fields: [tableId], references: [id])
+  items     OrderItem[]
+  total     Float
+  payment   Payment?
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+}
+
+model OrderItem {
+  id             String           @id @default(uuid())
+  orderId        String
+  order          Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dishId         String?
+  dish           Dish?            @relation(fields: [dishId], references: [id])
+  comboId        String?
+  combo          ComboOffer?      @relation(fields: [comboId], references: [id])
+  quantity       Int
+  unitPrice      Float
+  totalPrice     Float
+  selectedAddOns OrderItemAddOn[]
+}
+
+model OrderItemAddOn {
+  id          String    @id @default(uuid())
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  addOnId String
+  addOn   AddOn  @relation(fields: [addOnId], references: [id])
+
+  quantity  Int   @default(1)
+  unitPrice Float
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READYTOPICK
+  SERVED
+  COMPLETED
+  CANCELLED
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  orderId   String        @unique
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method    PaymentMethod
+  amount    Float
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+}
+
+enum PaymentMethod {
+  CASH
+  ESEWA
+  QR
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum OrderType {
+  DINE_IN
+  PICKUP
+  DELIVERY
+  RESERVATION
+  QUICK_BILLING
+  TAKE_AWAY
 }

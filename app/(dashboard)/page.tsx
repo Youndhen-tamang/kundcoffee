@@ -1,6 +1,6 @@
 import DashboardClient from "./DashboardClient";
-import { getSpaces } from "@/fetch/space";
-import { getTables, getTableTypes } from "@/fetch/table";
+import { getSpaces } from "@/services/space";
+import { getTables, getTableTypes } from "@/services/table";
 
 // Helper to handle server-side fetch with absolute URL fallback or direct DB?
 // Since we have helper functions, let's try to use them.

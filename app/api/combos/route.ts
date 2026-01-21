@@ -1,19 +1,21 @@
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const data = await prisma.comboOffer.findMany({
+    const combos = await prisma.comboOffer.findMany({
       include: {
         category: true,
         subMenu: true,
+        items: {
+          include: { dish: true },
+        },
         price: true,
-        items: { include: { dish: true } },
-        stocks: { include: { stock: true } },
+        stocks: true,
       },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: combos });
   } catch (error) {
     console.error("Error fetching combos:", error);
     return NextResponse.json(
@@ -28,51 +30,68 @@ export async function POST(req: Request) {
     const body = await req.json();
     const {
       name,
-      hscode,
       image,
+      hscode,
       preparationTime,
       description,
       categoryId,
       subMenuId,
       kotType,
-      price, // { actualPrice... }
-      items, // [{ dishId, quantity, unitPrice }]
+      items, // Array of { dishId, quantity, unitPrice }
+      price,
       stockConsumption,
     } = body;
 
-    const newCombo = await prisma.comboOffer.create({
+    if (!name || !categoryId) {
+      return NextResponse.json(
+        { success: false, message: "Name and Category are required" },
+        { status: 400 },
+      );
+    }
+
+    const combo = await prisma.comboOffer.create({
       data: {
         name,
+        image: image || [],
         hscode,
-        image,
+        preparationTime: preparationTime || 0,
         description,
-        preparationTime: parseInt(preparationTime),
         categoryId,
-        subMenuId,
-        kotType,
-        price: price ? { create: price } : undefined,
-        items: items
-          ? {
-              create: items.map((i: any) => ({
-                dishId: i.dishId,
-                quantity: parseInt(i.quantity),
-                unitPrice: parseFloat(i.unitPrice),
-              })),
-            }
-          : undefined,
-        stocks: stockConsumption
-          ? {
-              create: stockConsumption.map((s: any) => ({
-                stockId: s.stockId,
-                quantity: parseFloat(s.quantity),
-              })),
-            }
-          : undefined,
+        subMenuId: subMenuId || null,
+        kotType: kotType || "KITCHEN",
+        isAvailable: true,
+        price: {
+          create: {
+            actualPrice: parseFloat(price?.actualPrice || 0),
+            discountPrice: parseFloat(price?.discountPrice || 0),
+            listedPrice: parseFloat(price?.listedPrice || 0),
+            cogs: parseFloat(price?.cogs || 0),
+            grossProfit: parseFloat(price?.grossProfit || 0),
+          },
+        },
+        items: {
+          create:
+            items?.map((i: any) => ({
+              dishId: i.dishId,
+              quantity: parseInt(i.quantity) || 1,
+              unitPrice: parseFloat(i.unitPrice) || 0,
+            })) || [],
+        },
+        stocks: {
+          create:
+            stockConsumption?.map((s: any) => ({
+              stockId: s.stockId,
+              quantity: parseFloat(s.quantity),
+            })) || [],
+        },
       },
-      include: { items: true, price: true },
+      include: {
+        items: true,
+        price: true,
+      },
     });
 
-    return NextResponse.json({ success: true, data: newCombo });
+    return NextResponse.json({ success: true, data: combo });
   } catch (error) {
     console.error("Error creating combo:", error);
     return NextResponse.json(
@@ -88,85 +107,135 @@ export async function PUT(req: Request) {
     const {
       id,
       name,
-      hscode,
       image,
+      hscode,
       preparationTime,
       description,
       categoryId,
       subMenuId,
       kotType,
-      price,
       items,
+      price,
       stockConsumption,
     } = body;
 
-    if (!id)
-      return NextResponse.json({ message: "ID is required" }, { status: 400 });
+    if (!id || !name) {
+      return NextResponse.json(
+        { success: false, message: "ID and Name are required" },
+        { status: 400 },
+      );
+    }
 
-    await prisma.comboOffer.update({
-      where: { id },
-      data: {
-        name,
-        hscode,
-        image,
-        description,
-        preparationTime: parseInt(preparationTime),
-        categoryId,
-        subMenuId,
-        kotType,
-      },
-    });
-
-    if (price) {
-      const existingPrice = await prisma.price.findUnique({
-        where: { comboId: id },
+    await prisma.$transaction(async (tx) => {
+      // 1. Update basic info
+      await tx.comboOffer.update({
+        where: { id },
+        data: {
+          name,
+          image,
+          hscode,
+          preparationTime,
+          description,
+          categoryId,
+          subMenuId,
+          kotType,
+        },
       });
-      if (existingPrice) {
-        await prisma.price.update({ where: { comboId: id }, data: price });
-      } else {
-        await prisma.price.create({ data: { ...price, comboId: id } });
+
+      // 2. Update Price
+      if (price) {
+        const existingPrice = await tx.price.findFirst({
+          where: { comboId: id },
+        });
+        if (existingPrice) {
+          await tx.price.update({
+            where: { id: existingPrice.id },
+            data: {
+              actualPrice: parseFloat(price.actualPrice),
+              discountPrice: parseFloat(price.discountPrice),
+              listedPrice: parseFloat(price.listedPrice),
+              cogs: parseFloat(price.cogs),
+              grossProfit: parseFloat(price.grossProfit),
+            },
+          });
+        } else {
+          await tx.price.create({
+            data: {
+              comboId: id,
+              actualPrice: parseFloat(price.actualPrice),
+              discountPrice: parseFloat(price.discountPrice),
+              listedPrice: parseFloat(price.listedPrice),
+              cogs: parseFloat(price.cogs),
+              grossProfit: parseFloat(price.grossProfit),
+            },
+          });
+        }
       }
-    }
 
-    if (items) {
-      await prisma.comboItem.deleteMany({ where: { comboId: id } });
-      await prisma.comboItem.createMany({
-        data: items.map((i: any) => ({
-          comboId: id,
-          dishId: i.dishId,
-          quantity: parseInt(i.quantity),
-          unitPrice: parseFloat(i.unitPrice),
-        })),
-      });
-    }
+      // 3. Update Combo Items: Delete and Recreate
+      if (items) {
+        await tx.comboItem.deleteMany({ where: { comboId: id } });
+        if (items.length > 0) {
+          await tx.comboItem.createMany({
+            data: items.map((i: any) => ({
+              comboId: id,
+              dishId: i.dishId,
+              quantity: parseInt(i.quantity) || 1,
+              unitPrice: parseFloat(i.unitPrice) || 0,
+            })),
+          });
+        }
+      }
 
-    if (stockConsumption) {
-      await prisma.stockConsumption.deleteMany({ where: { comboId: id } });
-      await prisma.stockConsumption.createMany({
-        data: stockConsumption.map((s: any) => ({
-          stockId: s.stockId,
-          quantity: parseFloat(s.quantity),
-          comboId: id,
-        })),
-      });
-    }
-
-    const updated = await prisma.comboOffer.findUnique({
-      where: { id },
-      include: {
-        category: true,
-        subMenu: true,
-        price: true,
-        items: { include: { dish: true } },
-        stocks: { include: { stock: true } },
-      },
+      // 4. Update Stocks
+      if (stockConsumption) {
+        await tx.stockConsumption.deleteMany({ where: { comboId: id } });
+        if (stockConsumption.length > 0) {
+          await tx.stockConsumption.createMany({
+            data: stockConsumption.map((s: any) => ({
+              comboId: id,
+              stockId: s.stockId,
+              quantity: parseFloat(s.quantity),
+            })),
+          });
+        }
+      }
     });
 
-    return NextResponse.json({ success: true, data: updated });
+    return NextResponse.json({
+      success: true,
+      message: "Combo updated successfully",
+    });
   } catch (error) {
     console.error("Error updating combo:", error);
     return NextResponse.json(
       { success: false, message: "Failed to update combo" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "ID Required" },
+        { status: 400 },
+      );
+    }
+
+    await prisma.comboOffer.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: "Combo deleted" });
+  } catch (error) {
+    console.error("Error deleting combo:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to delete combo" },
       { status: 500 },
     );
   }

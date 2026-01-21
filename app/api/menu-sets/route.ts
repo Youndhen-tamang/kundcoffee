@@ -1,9 +1,9 @@
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const data = await prisma.menuSet.findMany({
+    const menuSets = await prisma.menuSet.findMany({
       include: {
         subMenus: {
           include: {
@@ -13,7 +13,7 @@ export async function GET() {
       },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: menuSets });
   } catch (error) {
     console.error("Error fetching menu sets:", error);
     return NextResponse.json(
@@ -25,25 +25,35 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { name, service, subMenuIds } = body; // subMenuIds: string[]
+    const { name, service, isActive, subMenuIds } = await req.json();
 
-    const newMenuSet = await prisma.menuSet.create({
+    if (!name || !service) {
+      return NextResponse.json(
+        { success: false, message: "Name and Service are required" },
+        { status: 400 },
+      );
+    }
+
+    const menuSet = await prisma.menuSet.create({
       data: {
         name,
         service,
-        subMenus: subMenuIds
-          ? {
-              create: subMenuIds.map((id: string) => ({
-                subMenuId: id,
-              })),
-            }
-          : undefined,
+        isActive: isActive ?? true,
+        subMenus: {
+          create:
+            subMenuIds?.map((id: string) => ({
+              subMenuId: id,
+            })) || [],
+        },
       },
-      include: { subMenus: true },
+      include: {
+        subMenus: {
+          include: { subMenu: true },
+        },
+      },
     });
 
-    return NextResponse.json({ success: true, data: newMenuSet });
+    return NextResponse.json({ success: true, data: menuSet });
   } catch (error) {
     console.error("Error creating menu set:", error);
     return NextResponse.json(
@@ -55,39 +65,74 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    const body = await req.json();
-    const { id, name, service, subMenuIds } = body;
+    const { id, name, service, isActive, subMenuIds } = await req.json();
 
-    if (!id)
-      return NextResponse.json({ message: "ID is required" }, { status: 400 });
-
-    await prisma.menuSet.update({
-      where: { id },
-      data: { name, service },
-    });
-
-    if (subMenuIds) {
-      await prisma.menuSetSubMenu.deleteMany({ where: { menuSetId: id } });
-      await prisma.menuSetSubMenu.createMany({
-        data: subMenuIds.map((sid: string) => ({
-          menuSetId: id,
-          subMenuId: sid,
-        })),
-      });
+    if (!id || !name) {
+      return NextResponse.json(
+        { success: false, message: "ID and Name are required" },
+        { status: 400 },
+      );
     }
 
-    const updated = await prisma.menuSet.findUnique({
-      where: { id },
-      include: {
-        subMenus: { include: { subMenu: true } },
-      },
+    await prisma.$transaction(async (tx) => {
+      // 1. Update basic info
+      await tx.menuSet.update({
+        where: { id },
+        data: {
+          name,
+          service,
+          isActive,
+        },
+      });
+
+      // 2. Update SubMenus Relations
+      if (subMenuIds) {
+        await tx.menuSetSubMenu.deleteMany({ where: { menuSetId: id } });
+        if (subMenuIds.length > 0) {
+          await tx.menuSetSubMenu.createMany({
+            data: subMenuIds.map((sid: string) => ({
+              menuSetId: id,
+              subMenuId: sid,
+            })),
+          });
+        }
+      }
     });
 
-    return NextResponse.json({ success: true, data: updated });
+    return NextResponse.json({
+      success: true,
+      message: "Menu Set updated successfully",
+    });
   } catch (error) {
     console.error("Error updating menu set:", error);
     return NextResponse.json(
       { success: false, message: "Failed to update menu set" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "ID Required" },
+        { status: 400 },
+      );
+    }
+
+    await prisma.menuSet.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: "Menu Set deleted" });
+  } catch (error) {
+    console.error("Error deleting menu set:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to delete menu set" },
       { status: 500 },
     );
   }

@@ -21,21 +21,47 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { name, unit, quantity, amount } = body;
 
+    if (!name || quantity === undefined || amount === undefined) {
+      return NextResponse.json(
+        { success: false, message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const existingStock = await prisma.stock.findUnique({
+      where:{name} ,
+    });
+
+    if (existingStock) {
+      return NextResponse.json(
+        { success: false, message: "Stock item already exists" },
+        { status: 409 } 
+      );
+    }
+
     const newStock = await prisma.stock.create({
       data: {
         name,
         unit,
-        quantity: parseFloat(quantity),
-        amount: parseFloat(amount),
+        quantity: Number(quantity),
+        amount: Number(amount),
       },
     });
 
     return NextResponse.json({ success: true, data: newStock });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        { success: false, message: "Stock item already exists" },
+        { status: 409 }
+      );
+    }
+
     console.error("Error creating stock:", error);
     return NextResponse.json(
       { success: false, message: "Failed to create stock" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
+

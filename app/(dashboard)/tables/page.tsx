@@ -6,13 +6,15 @@ import {
   getTableTypes,
   addTable,
   addTableType,
-} from "@/fetch/table";
-import { getSpaces, addSpace } from "@/fetch/space";
+} from "@/services/table";
+import { getSpaces, addSpace } from "@/services/space";
 import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import { Modal } from "@/components/ui/Modal";
+import { SidePanel } from "@/components/ui/SidePanel";
+import { TableOrderCart } from "@/components/tables/TableOrderCart";
 import { useRouter } from "next/navigation";
 
 export default function TablesPage() {
@@ -22,6 +24,8 @@ export default function TablesPage() {
   const [spaces, setSpaces] = useState<spaceType[]>([]);
   const [filteredTables, setFilteredTables] = useState<Table[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
 
   // UI States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -161,7 +165,12 @@ export default function TablesPage() {
         onSearch={setSearchQuery}
         onExport={handleExport}
         actionButton={
-          <Button onClick={() => setIsAddModalOpen(true)}>Add Table</Button>
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+          >
+            <span className="flex items-center gap-2">Add Table</span>
+          </Button>
         }
       />
 
@@ -172,22 +181,26 @@ export default function TablesPage() {
         <MetricCard title="Most Used Table" value={mostUsedTable} />
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-zinc-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full text-left text-sm text-gray-600">
-          <thead className="bg-zinc-50 border-b border-zinc-100">
+          <thead className="bg-slate-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-4 font-semibold text-gray-900">Name</th>
-              <th className="px-6 py-4 font-semibold text-gray-900">Type</th>
-              <th className="px-6 py-4 font-semibold text-gray-900">Space</th>
-              <th className="px-6 py-4 font-semibold text-gray-900">
+              <th className="px-6 py-4 font-semibold text-gray-700">Name</th>
+              <th className="px-6 py-4 font-semibold text-gray-700">Type</th>
+              <th className="px-6 py-4 font-semibold text-gray-700">Space</th>
+              <th className="px-6 py-4 font-semibold text-gray-700">
                 Capacity
               </th>
-              <th className="px-6 py-4 font-semibold text-gray-900">Status</th>
+              <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100">
+          <tbody className="divide-y divide-gray-100">
             {filteredTables.map((table) => (
-              <tr key={table.id} className="hover:bg-zinc-50 transition-colors">
+              <tr
+                key={table.id}
+                className="hover:bg-violet-50/50 transition-colors cursor-pointer group"
+                onClick={() => setSelectedTable(table)}
+              >
                 <td className="px-6 py-4 font-medium text-gray-900">
                   {table.name}
                 </td>
@@ -200,10 +213,10 @@ export default function TablesPage() {
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       table.status === "ACTIVE"
-                        ? "bg-green-100 text-green-800"
+                        ? "bg-green-50 text-green-700"
                         : table.status === "OCCUPIED"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-gray-100 text-gray-800"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-gray-100 text-gray-500"
                     }`}
                   >
                     {table.status}
@@ -236,7 +249,7 @@ export default function TablesPage() {
             <input
               type="text"
               placeholder="e.g. T-01"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
               value={newTableName}
               onChange={(e) => setNewTableName(e.target.value)}
             />
@@ -248,7 +261,7 @@ export default function TablesPage() {
             <input
               type="number"
               placeholder="e.g. 4"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
               value={newTableCapacity}
               onChange={(e) => setNewTableCapacity(e.target.value)}
             />
@@ -275,7 +288,10 @@ export default function TablesPage() {
               addNewLabel="Add New Type"
             />
           </div>
-          <Button onClick={handleCreateTable} className="w-full mt-2">
+          <Button
+            onClick={handleCreateTable}
+            className="w-full mt-2 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+          >
             Create Table
           </Button>
         </div>
@@ -294,7 +310,7 @@ export default function TablesPage() {
             </label>
             <input
               placeholder="e.g. Rooftop"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
               value={newSpaceName}
               onChange={(e) => setNewSpaceName(e.target.value)}
             />
@@ -305,12 +321,17 @@ export default function TablesPage() {
             </label>
             <textarea
               placeholder="Space description..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
               value={newSpaceDesc}
               onChange={(e) => setNewSpaceDesc(e.target.value)}
             />
           </div>
-          <Button onClick={handleCreateSpace}>Save Space</Button>
+          <Button
+            onClick={handleCreateSpace}
+            className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+          >
+            Save Space
+          </Button>
         </div>
       </Modal>
 
@@ -326,14 +347,33 @@ export default function TablesPage() {
             </label>
             <input
               placeholder="e.g. VIP"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
               value={newTypeName}
               onChange={(e) => setNewTypeName(e.target.value)}
             />
           </div>
-          <Button onClick={handleCreateType}>Save Type</Button>
+          <Button
+            onClick={handleCreateType}
+            className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+          >
+            Save Type
+          </Button>
         </div>
       </Modal>
+
+      {/* Table Order Side Panel */}
+      <SidePanel
+        isOpen={!!selectedTable}
+        onClose={() => setSelectedTable(null)}
+        title={selectedTable ? `Table: ${selectedTable.name}` : "Order Details"}
+      >
+        {selectedTable && (
+          <TableOrderCart
+            table={selectedTable}
+            onClose={() => setSelectedTable(null)}
+          />
+        )}
+      </SidePanel>
     </div>
   );
 }

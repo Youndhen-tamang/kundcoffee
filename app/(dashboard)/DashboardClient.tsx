@@ -7,8 +7,8 @@ import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import { Modal } from "@/components/ui/Modal";
 import OverviewCard from "@/components/OverViewCard";
 import { spaceType, Table, TableType } from "@/lib/types";
-import { addSpace } from "@/fetch/space";
-import { addTable, addTableType } from "@/fetch/table";
+import { addSpace } from "@/services/space";
+import { addTable, addTableType } from "@/services/table";
 import { useRouter } from "next/navigation";
 
 interface DashboardClientProps {
