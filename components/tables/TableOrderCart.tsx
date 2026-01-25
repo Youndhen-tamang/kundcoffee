@@ -18,31 +18,31 @@ const generateMockOrder = (tableId: string): Order => {
     items: [
       {
         id: "1",
-        name: "Cappuccino",
+        orderId: "m-1",
+        dishId: "d1",
+        dish: { name: "Cappuccino", price: { listedPrice: 4.5 } } as any,
         quantity: 2,
-        price: 4.5,
+        unitPrice: 4.5,
+        totalPrice: 9.0,
         status: "SERVED",
       },
       {
         id: "2",
-        name: "Grilled Chicken Sandwich",
+        orderId: "m-1",
+        dishId: "d2",
+        dish: {
+          name: "Grilled Chicken Sandwich",
+          price: { listedPrice: 12.0 },
+        } as any,
         quantity: 1,
-        price: 12.0,
-        status: "COOKING",
-      },
-      {
-        id: "3",
-        name: "Fries",
-        quantity: 1,
-        price: 3.5,
-        status: "PENDING",
+        unitPrice: 12.0,
+        totalPrice: 12.0,
+        status: "PREPARING",
       },
     ],
-    subtotal: 24.5,
-    tax: 2.45,
-    discount: 0,
+    type: "DINE_IN",
     total: 26.95,
-    status: "OPEN",
+    status: "PENDING",
     createdAt: new Date(),
   };
 };
@@ -51,37 +51,43 @@ export function TableOrderCart({ table, onClose }: TableOrderCartProps) {
   const [order, setOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    // In a real app, populate this from an API call using table.id
-    // fetchOrder(table.id).then(setOrder)
     setOrder(generateMockOrder(table.id));
   }, [table]);
 
-  if (!order) return <div className="p-4">Loading order...</div>;
+  if (!order)
+    return (
+      <div className="p-4 text-zinc-500 font-medium uppercase text-[10px] tracking-widest">
+        Loading order...
+      </div>
+    );
+
+  const subtotal = order.total / 1.1;
+  const tax = order.total - subtotal;
 
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Header Info (Mock) */}
-      <div className="p-4 border-b border-gray-100 bg-gray-50">
+      <div className="p-4 border-b border-zinc-100 bg-zinc-50/50">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs font-semibold px-2 py-1 bg-violet-100 text-violet-700 rounded uppercase tracking-wider">
+          <span className="text-[10px] font-medium px-2.5 py-1 bg-red-50 text-red-600 rounded-md border border-red-50 uppercase tracking-widest">
             Order #{order.id.substr(-6)}
           </span>
-          <span className="text-xs text-gray-500">
+          <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-widest">
             {order.createdAt.toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             })}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <span className="font-medium">Status:</span>
+        <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-medium uppercase tracking-widest">
+          <span>Status:</span>
           <span
             className={`font-semibold ${
-              order.status === "OPEN"
-                ? "text-blue-600"
-                : order.status === "PAID"
-                  ? "text-green-600"
-                  : "text-gray-600"
+              order.status === "PENDING"
+                ? "text-red-600"
+                : order.status === "COMPLETED"
+                  ? "text-emerald-600"
+                  : "text-zinc-600"
             }`}
           >
             {order.status}
@@ -90,52 +96,54 @@ export function TableOrderCart({ table, onClose }: TableOrderCartProps) {
       </div>
 
       {/* Items List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-white">
         {order.items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
-            <Coffee size={32} className="opacity-20" />
-            <p className="text-sm">No items in order yet.</p>
+          <div className="flex flex-col items-center justify-center h-full text-zinc-300 gap-2 opacity-30">
+            <Coffee size={32} />
+            <p className="text-[10px] font-medium uppercase tracking-widest">
+              No items yet
+            </p>
           </div>
         ) : (
           order.items.map((item) => (
             <div
               key={item.id}
-              className="flex items-start justify-between p-3 rounded-lg border border-gray-100 bg-white shadow-sm"
+              className="flex items-start justify-between p-4 rounded-xl border border-zinc-200 bg-white shadow-sm hover:border-red-400 transition-all"
             >
               <div className="flex-1">
-                <h4 className="font-medium text-gray-900 text-sm">
-                  {item.name}
+                <h4 className="font-medium text-zinc-900 text-[13px] uppercase tracking-tight">
+                  {item.dish?.name || item.combo?.name || "Item"}
                 </h4>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1.5">
                   <span
-                    className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                    className={`text-[9px] uppercase font-medium px-1.5 py-0.5 rounded border tracking-widest ${
                       item.status === "SERVED"
-                        ? "bg-green-100 text-green-700"
-                        : item.status === "COOKING"
-                          ? "bg-orange-100 text-orange-700"
-                          : "bg-gray-100 text-gray-600"
+                        ? "bg-zinc-50 text-zinc-500 border-zinc-100"
+                        : item.status === "PREPARING"
+                          ? "bg-red-50 text-red-600 border-red-100"
+                          : "bg-zinc-100 text-zinc-600 border-zinc-200"
                     }`}
                   >
                     {item.status}
                   </span>
-                  <span className="text-xs text-gray-500">
-                    ${item.price.toFixed(2)} ea
+                  <span className="text-[10px] text-zinc-500 font-medium tracking-tight">
+                    ${item.unitPrice.toFixed(2)} ea
                   </span>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2">
-                <span className="font-semibold text-gray-900 text-sm">
-                  ${(item.price * item.quantity).toFixed(2)}
+                <span className="font-medium text-zinc-900 text-sm tracking-tight">
+                  ${item.totalPrice.toFixed(2)}
                 </span>
-                <div className="flex items-center gap-2 bg-gray-50 rounded p-1">
-                  <button className="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-violet-600 bg-white rounded shadow-sm">
-                    <Minus size={12} />
+                <div className="flex items-center gap-3 bg-zinc-50 rounded-lg p-1 border border-zinc-100">
+                  <button className="p-1 text-zinc-500 hover:text-red-600 transition-colors">
+                    <Minus size={12} strokeWidth={2} />
                   </button>
-                  <span className="text-xs font-semibold w-4 text-center">
+                  <span className="text-[10px] font-medium w-4 text-center text-zinc-900">
                     {item.quantity}
                   </span>
-                  <button className="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-violet-600 bg-white rounded shadow-sm">
-                    <Plus size={12} />
+                  <button className="p-1 text-zinc-500 hover:text-red-600 transition-colors">
+                    <Plus size={12} strokeWidth={2} />
                   </button>
                 </div>
               </div>
@@ -145,25 +153,33 @@ export function TableOrderCart({ table, onClose }: TableOrderCartProps) {
       </div>
 
       {/* Summary Footer */}
-      <div className="border-t border-gray-100 p-6 bg-gray-50 space-y-3">
-        <div className="flex justify-between text-sm text-gray-600">
+      <div className="border-t border-zinc-100 p-6 bg-zinc-50/50 space-y-4">
+        <div className="flex justify-between text-[10px] font-medium text-zinc-500 uppercase tracking-widest px-1">
           <span>Subtotal</span>
-          <span>${order.subtotal.toFixed(2)}</span>
+          <span className="text-zinc-900">${subtotal.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between text-sm text-gray-600">
+        <div className="flex justify-between text-[10px] font-medium text-zinc-500 uppercase tracking-widest px-1">
           <span>Tax (10%)</span>
-          <span>${order.tax.toFixed(2)}</span>
+          <span className="text-zinc-700">${tax.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between items-center text-lg font-bold text-gray-900 pt-2 border-t border-gray-200">
-          <span>Total</span>
-          <span>${order.total.toFixed(2)}</span>
+        <div className="flex justify-between items-end text-zinc-900 pt-4 border-t border-zinc-200 px-1">
+          <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-[0.2em] leading-none mb-1">
+            Total
+          </span>
+          <span className="text-3xl font-medium leading-none tracking-tight">
+            ${order.total.toFixed(2)}
+          </span>
         </div>
         <div className="pt-4 grid grid-cols-2 gap-3">
-          <Button variant="secondary" onClick={onClose}>
+          <Button
+            variant="secondary"
+            onClick={onClose}
+            className="h-12 border-zinc-200 text-zinc-700 font-medium uppercase tracking-widest text-[10px] bg-white"
+          >
             Close
           </Button>
-          <Button className="bg-violet-600 hover:bg-violet-700 text-white">
-            Checkout / Pay
+          <Button className="h-12 bg-zinc-900 hover:bg-zinc-800 text-white font-medium uppercase tracking-widest text-[10px] border-none shadow-sm">
+            Checkout
           </Button>
         </div>
       </div>

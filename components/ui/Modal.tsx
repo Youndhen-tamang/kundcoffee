@@ -7,9 +7,26 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  size?:
+    | "sm"
+    | "md"
+    | "lg"
+    | "xl"
+    | "2xl"
+    | "3xl"
+    | "4xl"
+    | "5xl"
+    | "6xl"
+    | "full";
 }
 
-export const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+export const Modal: FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  size = "md",
+}) => {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -19,6 +36,19 @@ export const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
+
+  const sizeClasses = {
+    sm: "sm:max-w-sm",
+    md: "sm:max-w-md",
+    lg: "sm:max-w-lg",
+    xl: "sm:max-w-xl",
+    "2xl": "sm:max-w-2xl",
+    "3xl": "sm:max-w-3xl",
+    "4xl": "sm:max-w-4xl",
+    "5xl": "sm:max-w-5xl",
+    "6xl": "sm:max-w-6xl",
+    full: "sm:max-w-[95vw]",
+  };
 
   return createPortal(
     <div
@@ -33,7 +63,9 @@ export const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-out"
         onClick={onClose}
       />
-      <div className="relative transform rounded-2xl bg-white p-6 text-left shadow-2xl transition-all duration-300 ease-out sm:w-full sm:max-w-lg sm:scale-100 opacity-100 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 overflow-visible">
+      <div
+        className={`relative transform rounded-2xl bg-white p-6 text-left shadow-2xl transition-all duration-300 ease-out sm:w-full ${sizeClasses[size]} sm:scale-100 opacity-100 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 overflow-visible`}
+      >
         <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
           <h3 className="text-xl font-bold leading-6 text-gray-900 tracking-tight">
             {title}

@@ -14,35 +14,39 @@ async function getData() {
   const baseUrl = "http://localhost:3000";
 
   try {
-    const [spacesRes, tablesRes, typesRes] = await Promise.all([
+    const [spacesRes, tablesRes, typesRes, customersRes] = await Promise.all([
       fetch(`${baseUrl}/api/spaces`, { cache: "no-store" }),
       fetch(`${baseUrl}/api/tables`, { cache: "no-store" }),
       fetch(`${baseUrl}/api/tables/type`, { cache: "no-store" }),
+      fetch(`${baseUrl}/api/customer/summary`, { cache: "no-store" }),
     ]);
 
     const spaces = await spacesRes.json();
     const tables = await tablesRes.json();
     const types = await typesRes.json();
+    const customers = await customersRes.json();
 
     return {
       spaces: spaces.success ? spaces.data : [],
       tables: tables.data || [],
       tableTypes: types.tableType || [],
+      customers: customers.success ? customers.data : [],
     };
   } catch (error) {
     console.error("Failed to fetch dashboard data", error);
-    return { spaces: [], tables: [], tableTypes: [] };
+    return { spaces: [], tables: [], tableTypes: [], customers: [] };
   }
 }
 
 export default async function DashboardPage() {
-  const { spaces, tables, tableTypes } = await getData();
+  const { spaces, tables, tableTypes, customers } = await getData();
 
   return (
     <DashboardClient
       initialSpaces={spaces}
       initialTables={tables}
       initialTableTypes={tableTypes}
+      initialCustomers={customers}
     />
   );
 }

@@ -44,12 +44,12 @@ export const Popover: FC<PopoverProps> = ({
   }, [isOpen, setIsOpen]);
 
   return (
-    <div className="relative inline-block text-left" ref={popoverRef}>
+    <div className="relative inline-block text-left " ref={popoverRef}>
       <div onClick={toggle}>{trigger}</div>
 
       {isOpen && (
         <div
-          className={`absolute z-40 mt-2 w-72 origin-top-right rounded-xl bg-white p-4 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none ${align === "right" ? "right-0" : "left-0"}`}
+          className={`absolute z-40  mt-2 w-78 origin-top-right rounded-xl bg-white p-4 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none ${align === "right" ? "right-0" : "left-0"}`}
         >
           {content}
         </div>

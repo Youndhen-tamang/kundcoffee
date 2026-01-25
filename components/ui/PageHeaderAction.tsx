@@ -27,15 +27,15 @@ export const PageHeaderAction: FC<PageHeaderActionProps> = ({
 
       <div className="flex items-center gap-3">
         {onSearch && (
-          <div className="relative">
+          <div className="relative group">
             <input
               type="text"
               placeholder="Search..."
-              className="w-64 rounded-lg border border-gray-300 px-4 py-2 pl-10 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+              className="w-full sm:w-64 rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10 transition-all placeholder:text-gray-400"
               onChange={(e) => onSearch(e.target.value)}
             />
             <svg
-              className="absolute left-3 top-2.5 h-4 w-4 text-gray-400"
+              className="absolute left-3.5 top-3 h-4 w-4 text-gray-400 group-focus-within:text-violet-500 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

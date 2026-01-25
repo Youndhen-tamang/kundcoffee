@@ -167,7 +167,7 @@ export default function TablesPage() {
         actionButton={
           <Button
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="bg-red-600 hover:bg-red-700 text-white shadow-sm"
           >
             <span className="flex items-center gap-2">Add Table</span>
           </Button>
@@ -181,42 +181,54 @@ export default function TablesPage() {
         <MetricCard title="Most Used Table" value={mostUsedTable} />
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full text-left text-sm text-gray-600">
-          <thead className="bg-slate-50 border-b border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
+        <table className="w-full text-left text-sm text-zinc-600">
+          <thead className="bg-zinc-50 border-b border-zinc-200">
             <tr>
-              <th className="px-6 py-4 font-semibold text-gray-700">Name</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Type</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Space</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">
+              <th className="px-6 py-4 font-semibold text-zinc-700 uppercase text-[10px] tracking-widest">
+                Name
+              </th>
+              <th className="px-6 py-4 font-semibold text-zinc-700 uppercase text-[10px] tracking-widest">
+                Type
+              </th>
+              <th className="px-6 py-4 font-semibold text-zinc-700 uppercase text-[10px] tracking-widest">
+                Space
+              </th>
+              <th className="px-6 py-4 font-semibold text-zinc-700 uppercase text-[10px] tracking-widest">
                 Capacity
               </th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
+              <th className="px-6 py-4 font-semibold text-zinc-700 uppercase text-[10px] tracking-widest">
+                Status
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-zinc-100">
             {filteredTables.map((table) => (
               <tr
                 key={table.id}
-                className="hover:bg-violet-50/50 transition-colors cursor-pointer group"
+                className="hover:bg-zinc-50 transition-colors cursor-pointer group"
                 onClick={() => setSelectedTable(table)}
               >
-                <td className="px-6 py-4 font-medium text-gray-900">
+                <td className="px-6 py-4 font-medium text-zinc-900">
                   {table.name}
                 </td>
-                <td className="px-6 py-4 font-medium text-gray-900">
+                <td className="px-6 py-4 font-medium text-zinc-700 uppercase text-[10px]">
                   {table.tableType?.name || "-"}
                 </td>
-                <td className="px-6 py-4">{table.space?.name || "-"}</td>
-                <td className="px-6 py-4">{table.capacity}</td>
+                <td className="px-6 py-4 text-zinc-500">
+                  {table.space?.name || "-"}
+                </td>
+                <td className="px-6 py-4 text-zinc-700 font-medium">
+                  {table.capacity}
+                </td>
                 <td className="px-6 py-4">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[9px] font-medium uppercase tracking-widest border ${
                       table.status === "ACTIVE"
-                        ? "bg-green-50 text-green-700"
+                        ? "bg-zinc-50 text-zinc-500 border-zinc-100"
                         : table.status === "OCCUPIED"
-                          ? "bg-amber-50 text-amber-700"
-                          : "bg-gray-100 text-gray-500"
+                          ? "bg-red-50 text-red-600 border-red-100"
+                          : "bg-amber-50 text-amber-600 border-amber-100"
                     }`}
                   >
                     {table.status}
@@ -226,7 +238,7 @@ export default function TablesPage() {
             ))}
             {filteredTables.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={5} className="px-6 py-8 text-center text-zinc-400">
                   No tables found.
                 </td>
               </tr>
@@ -241,27 +253,27 @@ export default function TablesPage() {
         onClose={() => setIsAddModalOpen(false)}
         title="Add New Table"
       >
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 p-2">
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
+            <label className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest block mb-1.5 ml-1">
               Table Name
             </label>
             <input
               type="text"
               placeholder="e.g. T-01"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all placeholder:text-zinc-300"
               value={newTableName}
               onChange={(e) => setNewTableName(e.target.value)}
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
+            <label className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest block mb-1.5 ml-1">
               Capacity
             </label>
             <input
               type="number"
               placeholder="e.g. 4"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all placeholder:text-zinc-300"
               value={newTableCapacity}
               onChange={(e) => setNewTableCapacity(e.target.value)}
             />
@@ -290,7 +302,7 @@ export default function TablesPage() {
           </div>
           <Button
             onClick={handleCreateTable}
-            className="w-full mt-2 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="w-full mt-4 h-12 bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm border-none uppercase tracking-widest text-[10px] font-medium"
           >
             Create Table
           </Button>
@@ -303,32 +315,32 @@ export default function TablesPage() {
         onClose={() => setIsSpaceModalOpen(false)}
         title="Create New Space"
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 p-2">
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
+            <label className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest block mb-1.5 ml-1">
               Space Name
             </label>
             <input
               placeholder="e.g. Rooftop"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all placeholder:text-zinc-300"
               value={newSpaceName}
               onChange={(e) => setNewSpaceName(e.target.value)}
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
+            <label className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest block mb-1.5 ml-1">
               Description
             </label>
             <textarea
               placeholder="Space description..."
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all min-h-[100px] placeholder:text-zinc-300"
               value={newSpaceDesc}
               onChange={(e) => setNewSpaceDesc(e.target.value)}
             />
           </div>
           <Button
             onClick={handleCreateSpace}
-            className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="w-full mt-2 h-12 bg-zinc-900 hover:bg-zinc-800 text-white border-none uppercase tracking-widest text-[10px] font-medium"
           >
             Save Space
           </Button>
@@ -340,21 +352,21 @@ export default function TablesPage() {
         onClose={() => setIsTypeModalOpen(false)}
         title="Create Table Type"
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 p-2">
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
+            <label className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest block mb-1.5 ml-1">
               Type Name
             </label>
             <input
               placeholder="e.g. VIP"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all placeholder:text-zinc-300"
               value={newTypeName}
               onChange={(e) => setNewTypeName(e.target.value)}
             />
           </div>
           <Button
             onClick={handleCreateType}
-            className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="w-full mt-2 h-12 bg-zinc-900 hover:bg-zinc-800 text-white border-none uppercase tracking-widest text-[10px] font-medium"
           >
             Save Type
           </Button>

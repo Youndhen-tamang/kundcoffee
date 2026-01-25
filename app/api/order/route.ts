@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { tableId, type, items } = body;
+    const { tableId, type, items,customerId,customer } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'No items in order' }, { status: 400 });
@@ -90,16 +90,20 @@ export async function POST(req: Request) {
         total: calculatedGrandTotal, 
         items: {
           create: orderItemsData 
-        }
+        },
+        customerId,
+        
+        
       },
       include: {
         items: {
           include: {
             selectedAddOns: true,
             dish: true,
-            combo: true
+            combo: true, 
           }
-        }
+        },
+        customer:true
       }
     });
 

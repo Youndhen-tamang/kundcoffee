@@ -143,25 +143,96 @@ export type ComboOffer = {
   createdAt: Date;
 };
 
-// --- Order Module Types (Mock/Frontend) ---
+export type KOTType = "KITCHEN" | "BAR";
+
+// --- Order Module Types ---
+
+export type OrderStatus =
+  | "PENDING"
+  | "PREPARING"
+  | "READYTOPICK"
+  | "SERVED"
+  | "COMPLETED"
+  | "CANCELLED";
+export type OrderType =
+  | "DINE_IN"
+  | "PICKUP"
+  | "DELIVERY"
+  | "RESERVATION"
+  | "QUICK_BILLING"
+  | "TAKE_AWAY";
 
 export type OrderItem = {
   id: string;
-  name: string;
+  orderId: string;
+  dishId?: string | null;
+  dish?: Dish | null;
+  comboId?: string | null;
+  combo?: ComboOffer | null;
   quantity: number;
-  price: number;
-  notes?: string;
-  status: "PENDING" | "COOKING" | "SERVED" | "CANCELLED";
+  unitPrice: number;
+  totalPrice: number;
+  selectedAddOns?: OrderItemAddOn[];
+  status?: OrderStatus; // Added for per-item status tracking if needed
+  remarks?: string;
+};
+
+export type OrderItemAddOn = {
+  id: string;
+  orderItemId: string;
+  addOnId: string;
+  addOn: AddOn;
+  quantity: number;
+  unitPrice: number;
 };
 
 export type Order = {
   id: string;
-  tableId: string;
+  tableId?: string | null;
+  table?: Table | null;
+  customerId?: string | null;
+  customer?: Customer | null;
   items: OrderItem[];
-  subtotal: number;
-  tax: number;
-  discount: number;
+  type: OrderType;
   total: number;
-  status: "OPEN" | "CLOSED" | "PAID";
+  status: OrderStatus;
   createdAt: Date;
+};
+
+export type Customer = {
+  id: string;
+  fullName: string;
+  phone?: string;
+  email?: string;
+  dob?: string;
+  loyaltyId?: string;
+  openingBalance: number;
+  creditLimit?: number;
+  creditTermDays?: number;
+  loyaltyPoints: number;
+  loyaltyDiscount: number;
+  legalName?: string;
+  taxNumber?: string;
+  address?: string;
+  notes?: string;
+  createdAt: string;
+  dueAmount?: number;
+};
+
+export type CustomerLedger = {
+  id: string;
+  customerId: string;
+  txnNo: string;
+  type:
+    | "SALE"
+    | "PAYMENT_IN"
+    | "PAYMENT_OUT"
+    | "RETURN"
+    | "ADJUSTMENT"
+    | "OPENING_BALANCE";
+  amount: number;
+  closingBalance: number;
+  referenceId?: string;
+  remarks?: string;
+  createdAt: string;
 };

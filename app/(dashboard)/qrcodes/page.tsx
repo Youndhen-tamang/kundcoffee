@@ -78,17 +78,23 @@ export default function QRCodesPage() {
   };
 
   return (
-    <div>
+    <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       <PageHeaderAction
         title="QR Codes"
+        description="Manage your restaurant's digital menus"
         onSearch={setSearchQuery}
         onExport={handleExport}
         actionButton={
-          <Button onClick={() => setIsModalOpen(true)}>Add QR</Button>
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+          >
+            <span className="flex items-center gap-2">Add QR</span>
+          </Button>
         }
       />
 
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Total QRs" value={qrs.length} />
         <MetricCard
           title="Assigned"
@@ -100,20 +106,31 @@ export default function QRCodesPage() {
         />
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-zinc-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm sticky top-0">
+          <input
+            placeholder="Search QR codes..."
+            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 w-full max-w-sm transition-all"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
         <table className="w-full text-left text-sm text-gray-600">
-          <thead className="bg-zinc-50 border-b border-zinc-100">
+          <thead className="bg-slate-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-4 font-semibold text-gray-900">QR Code</th>
-              <th className="px-6 py-4 font-semibold text-gray-900">Table</th>
-              <th className="px-6 py-4 font-semibold text-gray-900">Status</th>
+              <th className="px-6 py-4 font-semibold text-gray-700">QR Code</th>
+              <th className="px-6 py-4 font-semibold text-gray-700">Table</th>
+              <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100">
+          <tbody className="divide-y divide-gray-100">
             {filteredQrs.map((item) => (
-              <tr key={item.id} className="hover:bg-zinc-50 transition-colors">
+              <tr
+                key={item.id}
+                className="hover:bg-violet-50/50 transition-colors cursor-pointer group"
+              >
                 <td className="px-6 py-4">
-                  <div className="w-16 h-16">
+                  <div className="w-16 h-16 rounded-lg bg-gray-50 border border-gray-100 p-1">
                     <QrCodeCell value={item.value} />
                   </div>
                 </td>
@@ -124,8 +141,8 @@ export default function QRCodesPage() {
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       item.assigned
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
+                        ? "bg-green-50 text-green-700"
+                        : "bg-gray-100 text-gray-500"
                     }`}
                   >
                     {item.assigned ? "Assigned" : "Unassigned"}
@@ -135,8 +152,8 @@ export default function QRCodesPage() {
             ))}
             {filteredQrs.length === 0 && (
               <tr>
-                <td colSpan={3} className="text-center py-8">
-                  No QR codes found.
+                <td colSpan={3} className="text-center py-12 text-gray-400">
+                  <p>No QR codes found.</p>
                 </td>
               </tr>
             )}
@@ -149,12 +166,17 @@ export default function QRCodesPage() {
         onClose={() => setIsModalOpen(false)}
         title="Generate QR Code"
       >
-        <div className="flex flex-col gap-4 text-center py-4">
-          <p className="text-gray-500">
-            Select a table to generate a unique QR code.
+        <div className="flex flex-col gap-6 py-4">
+          <p className="text-gray-500 text-sm">
+            Select a table to generate a unique QR code for digital ordering.
           </p>
           {/* Placeholder for generation action */}
-          <Button onClick={handleGenerate}>Generate Now</Button>
+          <Button
+            onClick={handleGenerate}
+            className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+          >
+            Generate Now
+          </Button>
         </div>
       </Modal>
     </div>

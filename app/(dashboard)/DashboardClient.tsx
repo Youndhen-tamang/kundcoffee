@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Popover } from "@/components/ui/Popover";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import { Modal } from "@/components/ui/Modal";
-import OverviewCard from "@/components/OverViewCard";
+import { MetricCard } from "@/components/ui/MetricCard";
 import { spaceType, Table, TableType } from "@/lib/types";
 import { addSpace } from "@/services/space";
 import { addTable, addTableType } from "@/services/table";
@@ -15,22 +15,26 @@ interface DashboardClientProps {
   initialSpaces: spaceType[];
   initialTables: Table[];
   initialTableTypes: TableType[];
+  initialCustomers: any[];
 }
 
 export default function DashboardClient({
   initialSpaces,
   initialTables,
   initialTableTypes,
+  initialCustomers,
 }: DashboardClientProps) {
   const router = useRouter();
   const [spaces, setSpaces] = useState<spaceType[]>(initialSpaces);
   const [tables, setTables] = useState<Table[]>(initialTables);
   const [tableTypes, setTableTypes] = useState<TableType[]>(initialTableTypes);
+  const [customers, setCustomers] = useState<any[]>(initialCustomers);
 
   // Popover States
   const [isSpacePopoverOpen, setIsSpacePopoverOpen] = useState(false);
   const [isTablePopoverOpen, setIsTablePopoverOpen] = useState(false);
   const [isQRPopoverOpen, setIsQRPopoverOpen] = useState(false);
+  const [isCustomerPopoverOpen, setIsCustomerPopoverOpen] = useState(false);
 
   // Modal States
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
@@ -49,6 +53,13 @@ export default function DashboardClient({
   );
 
   const [newTypeName, setNewTypeName] = useState("");
+
+  const [newCustomer, setNewCustomer] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+    openingBalance: 0,
+  });
 
   // Handlers
   const handleAddSpace = async () => {
@@ -99,35 +110,62 @@ export default function DashboardClient({
     }
   };
 
+  const handleAddCustomer = async () => {
+    if (!newCustomer.fullName) return;
+    const res = await fetch("/api/customer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newCustomer),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setCustomers([...customers, data.data]);
+      setNewCustomer({
+        fullName: "",
+        phone: "",
+        email: "",
+        openingBalance: 0,
+      });
+      setIsCustomerPopoverOpen(false);
+      router.refresh();
+    }
+  };
+
   // Popover Contents
   const SpacePopoverContent = (
-    <div className="flex flex-col gap-4">
-      <h3 className="font-semibold text-gray-900 border-b pb-2">
+    <div className="flex flex-col gap-4 p-2">
+      <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
         Add New Space
       </h3>
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
-          <label className="text-xs font-medium text-gray-700">Name</label>
+          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+            Name
+          </label>
           <input
             type="text"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
             placeholder="e.g. Main Hall"
             value={newSpaceName}
             onChange={(e) => setNewSpaceName(e.target.value)}
           />
         </div>
         <div>
-          <label className="text-xs font-medium text-gray-700">
+          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
             Description
           </label>
           <textarea
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
             placeholder="Optional description"
             value={newSpaceDesc}
             onChange={(e) => setNewSpaceDesc(e.target.value)}
           />
         </div>
-        <Button size="sm" onClick={handleAddSpace} className="w-full">
+        <Button
+          size="sm"
+          onClick={handleAddSpace}
+          className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 border-none"
+        >
           Create Space
         </Button>
       </div>
@@ -135,28 +173,30 @@ export default function DashboardClient({
   );
 
   const TablePopoverContent = (
-    <div className="flex flex-col gap-4">
-      <h3 className="font-semibold text-gray-900 border-b pb-2">
+    <div className="flex flex-col gap-4 p-2">
+      <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
         Add New Table
       </h3>
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
-          <label className="text-xs font-medium text-gray-700">
+          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
             Table Name
           </label>
           <input
             type="text"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
             placeholder="e.g. T-01"
             value={newTableName}
             onChange={(e) => setNewTableName(e.target.value)}
           />
         </div>
         <div>
-          <label className="text-xs font-medium text-gray-700">Capacity</label>
+          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+            Capacity
+          </label>
           <input
             type="number"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
             placeholder="e.g. 4"
             value={newTableCapacity}
             onChange={(e) => setNewTableCapacity(e.target.value)}
@@ -179,14 +219,16 @@ export default function DashboardClient({
           placeholder="Select Type"
           onAddNew={() => {
             setIsTablePopoverOpen(false); // Close popover temporarily or keep open?
-            // Logic: Keep popover open might be tricky if modal is on top.
-            // Let's rely on z-index. The modal should be on top.
             setIsTypeModalOpen(true);
           }}
           addNewLabel="Add New Type"
         />
 
-        <Button size="sm" onClick={handleAddTable} className="w-full">
+        <Button
+          size="sm"
+          onClick={handleAddTable}
+          className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 border-none"
+        >
           Create Table
         </Button>
       </div>
@@ -194,13 +236,13 @@ export default function DashboardClient({
   );
 
   const QRPopoverContent = (
-    <div className="flex flex-col gap-4">
-      <h3 className="font-semibold text-gray-900 border-b pb-2">
+    <div className="flex flex-col gap-4 p-2">
+      <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
         QR Management
       </h3>
-      <div className="text-sm text-gray-500">
+      <div className="text-sm text-gray-500 space-y-2">
         <p>Manage QR codes for tables here.</p>
-        <p className="mt-2 text-xs">
+        <p className="text-[10px] font-medium text-violet-600 italic">
           Select a table to generate specialized QR.
         </p>
       </div>
@@ -211,31 +253,115 @@ export default function DashboardClient({
     </div>
   );
 
-  return (
-    <div>
-      {/* Top Action Bar */}
-      <div className="mb-8 flex items-center justify-between rounded-xl bg-white p-4 shadow-sm border border-zinc-100">
+  const CustomerPopoverContent = (
+    <div className="flex flex-col gap-4 p-2">
+      <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
+        Quick Add Customer
+      </h3>
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500">Manage your restaurant floor</p>
+          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+            Full Name
+          </label>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
+            placeholder="e.g. John Doe"
+            value={newCustomer.fullName}
+            onChange={(e) =>
+              setNewCustomer({ ...newCustomer, fullName: e.target.value })
+            }
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+            Phone
+          </label>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
+            placeholder="Phone Number"
+            value={newCustomer.phone}
+            onChange={(e) =>
+              setNewCustomer({ ...newCustomer, phone: e.target.value })
+            }
+          />
+        </div>
+        <Button
+          size="sm"
+          onClick={handleAddCustomer}
+          className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 border-none"
+        >
+          Add Customer
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="p-8 space-y-8 bg-slate-50 min-h-full">
+      {/* Top Action Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
+            Dashboard Overview
+          </h1>
+          <p className="text-gray-500 font-medium italic">
+            Monitor and manage your restaurant floor in real-time
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Popover
-            trigger={<Button variant="secondary">Add Space</Button>}
+            trigger={
+              <Button
+                variant="secondary"
+                className="bg-white hover:bg-gray-50 border-gray-200"
+              >
+                Add Customer
+              </Button>
+            }
+            content={CustomerPopoverContent}
+            isOpen={isCustomerPopoverOpen}
+            setIsOpen={setIsCustomerPopoverOpen}
+            align="right"
+          />
+          <Popover
+            trigger={
+              <Button
+                variant="secondary"
+                className="bg-white hover:bg-gray-50 border-gray-200"
+              >
+                Add Space
+              </Button>
+            }
             content={SpacePopoverContent}
             isOpen={isSpacePopoverOpen}
             setIsOpen={setIsSpacePopoverOpen}
             align="right"
           />
           <Popover
-            trigger={<Button variant="secondary">Add Table</Button>}
+            trigger={
+              <Button
+                variant="secondary"
+                className="bg-white hover:bg-gray-50 border-gray-200"
+              >
+                Add Table
+              </Button>
+            }
             content={TablePopoverContent}
             isOpen={isTablePopoverOpen}
             setIsOpen={setIsTablePopoverOpen}
             align="right"
           />
           <Popover
-            trigger={<Button variant="secondary">QR Codes</Button>}
+            trigger={
+              <Button
+                variant="secondary"
+                className="bg-white hover:bg-gray-50 border-gray-200"
+              >
+                QR Codes
+              </Button>
+            }
             content={QRPopoverContent}
             isOpen={isQRPopoverOpen}
             setIsOpen={setIsQRPopoverOpen}
@@ -245,16 +371,13 @@ export default function DashboardClient({
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
-        <OverviewCard title="Total Spaces" value={spaces.length} />
-        <OverviewCard title="Total Tables" value={tables.length} />
-        <OverviewCard
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard title="Total Customers" value={customers.length} />
+        <MetricCard title="Total Spaces" value={spaces.length} />
+        <MetricCard title="Total Tables" value={tables.length} />
+        <MetricCard
           title="Active Tables"
           value={tables.filter((t) => t.status === "ACTIVE").length}
-        />
-        <OverviewCard
-          title="Occupied Tables"
-          value={tables.filter((t) => t.status === "OCCUPIED").length}
         />
       </div>
 
@@ -267,22 +390,23 @@ export default function DashboardClient({
         }}
         title="Create Table Type"
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6 py-2">
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-semibold text-gray-700 block mb-2">
               Type Name
             </label>
             <input
               type="text"
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-              placeholder="e.g. Premium Details"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+              placeholder="e.g. VIP Lounge"
               value={newTypeName}
               onChange={(e) => setNewTypeName(e.target.value)}
             />
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
             <Button
-              variant="ghost"
+              variant="secondary"
+              className="flex-1"
               onClick={() => {
                 setIsTypeModalOpen(false);
                 setIsTablePopoverOpen(true);
@@ -290,7 +414,12 @@ export default function DashboardClient({
             >
               Cancel
             </Button>
-            <Button onClick={handleAddTableType}>Save Type</Button>
+            <Button
+              onClick={handleAddTableType}
+              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            >
+              Save Type
+            </Button>
           </div>
         </div>
       </Modal>
