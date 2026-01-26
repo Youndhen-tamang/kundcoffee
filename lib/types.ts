@@ -33,9 +33,7 @@ export type QRCode = {
   createdAt: Date;
 };
 
-export interface Params {
-  id: string;
-}
+export type Params = Promise<{ id: string }>;
 
 // Menu Module Types
 

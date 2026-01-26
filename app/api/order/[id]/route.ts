@@ -4,7 +4,7 @@ import { NextResponse,NextRequest } from "next/server";
 
 export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     const body = await req.json();
     const { status, paymentMethod, items } = body;
 

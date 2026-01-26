@@ -65,7 +65,7 @@ export async function GET(req: NextRequest, context: { params: Params }) {
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Params }) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
     await prisma.customer.delete({ where: { id } });
