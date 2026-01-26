@@ -100,30 +100,42 @@ export async function PATCH(req: Request, context: { params: Params }) {
       });
 
       // 4. Handle Completion and Payments
-      if (status === "COMPLETED" && paymentMethod) {
-        await tx.payment.upsert({
-          where: { orderId: id },
-          update: { amount: newTotal, method: paymentMethod, status: "PAID" },
-          create: {
-            orderId: id,
-            amount: newTotal,
-            method: paymentMethod,
-            status: "PAID",
-          },
-        });
+      // 4. Handle Completion and Payments
+if (status === "COMPLETED" && paymentMethod) {
+  await tx.payment.upsert({
+    where: { orderId: id },
+    update: { amount: newTotal, method: paymentMethod, status: "PAID" },
+    create: {
+      orderId: id,
+      amount: newTotal,
+      method: paymentMethod,
+      status: "PAID",
+    },
+  });
 
-        if (order.tableId && order.type === "DINE_IN") {
-          const session = await tx.tableSession.findFirst({
-            where: { tableId: order.tableId, isActive: true },
-          });
-          if (session) {
-            await tx.tableSession.update({
-              where: { id: session.id },
-              data: { total: { increment: order.total } },
-            });
-          }
-        }
-      }
+  if (order.tableId && order.type === "DINE_IN") {
+    const session = await tx.tableSession.findFirst({
+      where: { tableId: order.tableId, isActive: true },
+    });
+
+    if (session) {
+      await tx.tableSession.update({
+        where: { id: session.id },
+        data: {
+          total: { increment: order.total },
+          isActive: false,
+          endedAt: new Date(),
+        },
+      });
+    }
+
+    await tx.table.update({
+      where: { id: order.tableId },
+      data: { status: "ACTIVE" },
+    });
+  }
+}
+
 
       return order;
     });
@@ -158,7 +170,7 @@ export async function DELETE(req: Request, context: { params: Params }) {
       return NextResponse.json(
         {
           success: false,
-          message: "Cannot delter a processed order",
+          message: "Cannot delete a processed order",
         },
         { status: 400 },
       );
@@ -171,6 +183,40 @@ export async function DELETE(req: Request, context: { params: Params }) {
       message: "Deleted Successfully",
     });
   } catch (error: any) {
+    console.error(error);
+    return NextResponse.json(
+      { success: false, message: error.message },
+      { status: 500 },
+    );
+  }
+}
+
+
+export async function GET(req: Request, context: { params: Params }) {
+  try {
+    const { id } = await context.params;
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include:{
+        table:true,
+        customer:true,
+      }
+    });
+
+    if (!order)
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Order not found",
+        },
+        { status: 400 },
+      );
+
+      return NextResponse.json({
+        success:true,data:order
+      },{status:200})
+
+  } catch (error:any ) {
     console.error(error);
     return NextResponse.json(
       { success: false, message: error.message },

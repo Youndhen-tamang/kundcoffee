@@ -38,21 +38,22 @@ export const Modal: FC<ModalProps> = ({
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: "sm:max-w-sm",
-    md: "sm:max-w-md",
-    lg: "sm:max-w-lg",
-    xl: "sm:max-w-xl",
-    "2xl": "sm:max-w-2xl",
-    "3xl": "sm:max-w-3xl",
-    "4xl": "sm:max-w-4xl",
-    "5xl": "sm:max-w-5xl",
-    "6xl": "sm:max-w-6xl",
-    full: "sm:max-w-[95vw]",
+    sm: "w-[95vw] max-w-md",
+    md: "w-[95vw] max-w-2xl",
+    lg: "w-[95vw] max-w-4xl",
+    xl: "w-[90vw] max-w-5xl",
+    "2xl": "w-[90vw] max-w-6xl",
+    "3xl": "w-[92vw] max-w-[1200px]",
+    "4xl": "w-[94vw] max-w-[1400px]",
+    "5xl": "w-[95vw] max-w-[1600px]",
+    "6xl": "w-[96vw] max-w-[1800px]",
+    full: "w-[98vw] h-[96vh]",
   };
+  
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-0"
+    className="fixed inset-0 z-[60] flex items-center justify-center p-4"
       style={{
         zIndex:
           60 +
@@ -64,7 +65,7 @@ export const Modal: FC<ModalProps> = ({
         onClick={onClose}
       />
       <div
-        className={`relative transform rounded-2xl bg-white p-6 text-left shadow-2xl transition-all duration-300 ease-out sm:w-full ${sizeClasses[size]} sm:scale-100 opacity-100 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 overflow-visible`}
+        className={`relative transform rounded-2xl bg-white p-6 text-left shadow-2xl transition-all duration-300 ease-out ${sizeClasses[size]} sm:scale-100 opacity-100 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 overflow-visible`}
       >
         <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
           <h3 className="text-xl font-bold leading-6 text-gray-900 tracking-tight">

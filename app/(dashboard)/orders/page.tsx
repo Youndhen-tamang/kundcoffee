@@ -55,7 +55,6 @@ export default function OrdersPage() {
   const [tables, setTables] = useState<Table[]>([]);
   const [spaces, setSpaces] = useState<spaceType[]>([]);
   const [tableTypes, setTableTypes] = useState<TableType[]>([]);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrderType, setSelectedOrderType] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ACTIVE");
@@ -64,32 +63,85 @@ export default function OrdersPage() {
   const [activeTable, setActiveTable] = useState<Table | null>(null);
   const [existingOrderForAdding, setExistingOrderForAdding] =
     useState<Order | null>(null);
-
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
-
-  const fetchData = async () => {
-    if (activeTab === "ORDERS" || activeTab === "KOT") {
-      const oData = await getOrders();
-      setOrders(oData);
-      // Refresh selected order if open
-      if (selectedOrder) {
-        const fresh = oData.find((o) => o.id === selectedOrder.id);
-        if (fresh) setSelectedOrder(fresh);
+  const [newOrderType, setNewOrderType] = useState<OrderType>("DINE_IN");
+  const [showTableSelector, setShowTableSelector] = useState(false);
+  const [showReservationForm, setShowReservationForm] =
+    useState(false);
+    const fetchData = async () => {
+      if (activeTab === "ORDERS" || activeTab === "KOT") {
+        const oData = await getOrders();
+        console.log("ORDERS:", oData);
+        setOrders(oData);
       }
+    
+      if (activeTab === "TABLES") {
+        const [tData, sData, ttData] = await Promise.all([
+          getTables(),
+          getSpaces(),
+          getTableTypes(),
+        ]);
+    
+        console.log("TABLES:", tData);
+        console.log("SPACES:", sData);
+        console.log("TABLE TYPES:", ttData);
+    
+        setTables(tData);
+        setSpaces(sData);
+        setTableTypes(ttData);
+      }
+    };
+    
+  useEffect(() => {
+
+      const loadTables = async () => {
+        if (activeTab === "ORDERS" || activeTab === "KOT") {
+          const oData = await getOrders();
+          console.log("ORDERS:", oData);
+          setOrders(oData);
+        }
+      
+        if (activeTab === "TABLES") {
+          const [tData, sData, ttData] = await Promise.all([
+            getTables(),
+            getSpaces(),
+            getTableTypes(),
+          ]);
+      
+          console.log("TABLES:", tData);
+          console.log("SPACES:", sData);
+          console.log("TABLE TYPES:", ttData);
+      
+          setTables(tData);
+          setSpaces(sData);
+          setTableTypes(ttData);
+        }
+      };
+    
+      loadTables();
+    
+  }, [activeTab]);
+  
+  useEffect(() => {
+    if (!showTableSelector) return;
+  
+    if (tables.length === 0 || spaces.length === 0) {
+      const loadTableData = async () => {
+        const [tData, sData, ttData] = await Promise.all([
+          getTables(),
+          getSpaces(),
+          getTableTypes(),
+        ]);
+  
+        setTables(tData);
+        setSpaces(sData);
+        setTableTypes(ttData);
+      };
+  
+      loadTableData();
     }
-    if (activeTab === "TABLES") {
-      const [tData, sData, ttData] = await Promise.all([
-        getTables(),
-        getSpaces(),
-        getTableTypes(),
-      ]);
-      setTables(tData);
-      setSpaces(sData);
-      setTableTypes(ttData);
-    }
-  };
+  }, [showTableSelector]);
+  
+ 
 
   const orderTypes: { id: string; name: string }[] = [
     { id: "ALL", name: "All Types" },
@@ -235,8 +287,37 @@ export default function OrdersPage() {
     }
   };
 
+  const handleNewOrder = (type: OrderType) => {
+    setNewOrderType(type);
+
+    switch (type) {
+      case "DINE_IN":
+        setShowTableSelector(true);
+        break;
+
+      case "RESERVATION":
+        setShowReservationForm(true);
+        break;
+
+      case "TAKE_AWAY":
+      case "PICKUP":
+      case "DELIVERY":
+      case "QUICK_BILLING":
+        setActiveTable({
+          id: "DIRECT",
+          name: type.replace("_", " "),
+          status: "ACTIVE",
+          capacity: 0,
+          spaceId: "",
+          tableTypeId: "",
+          createdAt: new Date(),
+        });
+        break;
+    }
+  };
+
   return (
-    <div className="p-8 space-y-8 bg-zinc-50 min-h-screen">
+    <div className="p-8 space-y-8 bg-zinc-50 min-h-screen w-[]">
       {/* Header & Toggle */}
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
@@ -280,23 +361,39 @@ export default function OrdersPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button
-              onClick={() =>
-                setActiveTable({
-                  id: "DIRECT",
-                  name: "Direct",
-                  status: "ACTIVE",
-                  capacity: 0,
-                  spaceId: "",
-                  tableTypeId: "",
-                  createdAt: new Date(),
-                })
-              }
-              className="bg-red-600 hover:bg-red-700 text-white font-medium h-10 px-6 shadow-sm border-none uppercase tracking-widest text-[10px]"
-            >
-              <Plus size={16} className="mr-2" />
-              Add New Order
-            </Button>
+           
+              <Popover
+                trigger={
+                  <Button className="bg-red-600 text-black h-10 px-6 uppercase tracking-widest text-[10px]">
+                    <Plus size={14} className="mr-2" />
+                    Add New Order
+                  </Button>
+                }
+                align="right"
+                content={
+                  <div className="w-52 py-2">
+                    {[
+                      { id: "DINE_IN", label: "Dine In" },
+                      { id: "TAKE_AWAY", label: "Take Away" },
+                      { id: "PICKUP", label: "Pickup" },
+                      { id: "DELIVERY", label: "Delivery" },
+                      { id: "RESERVATION", label: "Reservation" },
+                      { id: "QUICK_BILLING", label: "Quick Billing" },
+                    ].map((type) => (
+                      <button
+                        key={type.id}
+                        onClick={() => handleNewOrder(type.id as OrderType)}
+                        className="w-full px-4 py-2 text-left text-[10px] uppercase tracking-widest hover:bg-zinc-50"
+                      >
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+                }
+              />
+
+     
+
             <Popover
               trigger={
                 <button className="p-2 hover:bg-zinc-100 rounded-lg transition-colors">
@@ -592,6 +689,47 @@ export default function OrdersPage() {
           />
         )}
       </Modal>
+
+
+      {/*Table Selector */}
+      <Modal
+  isOpen={showTableSelector}
+  onClose={() => setShowTableSelector(false)}
+  title="Select Table"
+  size="4xl"
+>
+  <div className="space-y-6">
+    {spaces.map((space) => (
+      <div key={space.id}>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">
+          {space.name}
+        </h2>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {tables
+            .filter((t) => t.spaceId === space.id)
+            .map((table) => (
+              <button
+                key={table.id}
+                onClick={() => {
+                  setActiveTable(table);
+                  setShowTableSelector(false);
+                }}
+                className="p-4 rounded-lg border bg-white hover:border-red-500 transition-all"
+              >
+                <div className="font-bold text-sm">{table.name}</div>
+                <div className="text-[10px] text-zinc-400">
+                  {table.capacity} seats
+                </div>
+              </button>
+            ))}
+        </div>
+      </div>
+    ))}
+  </div>
+</Modal>
+
+
     </div>
   );
 }

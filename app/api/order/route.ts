@@ -81,7 +81,26 @@ export async function POST(req: Request) {
       });
     }
 
-   
+if (tableId && type === "DINE_IN") {
+  const activeSession = await prisma.tableSession.findFirst({
+    where: { tableId, isActive: true }
+  });
+
+  if (!activeSession) {
+    await prisma.tableSession.create({
+      data: {
+        tableId,
+        isActive: true,
+      }
+    });
+
+    await prisma.table.update({
+      where: { id: tableId },
+      data: { status: "OCCUPIED" }
+    });
+  }
+}
+
     const newOrder = await prisma.order.create({
       data: {
         tableId: tableId || null,
@@ -122,26 +141,32 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const order =  await prisma.order.findMany({
-      include:{
-        table:true,
-        items:true,
-        payment:true,
+    const orders = await prisma.order.findMany({
+      where: {
+        status: { not: "CANCELLED" }
+      },
+      include: {
+        table: true,
+        items: {
+          include: {
+            dish: true,
+            combo: true,
+            selectedAddOns: true,
+          }
+        },
+        payment: true,
       }
-    })
-
-    if(!order) return NextResponse.json({
-      success:false,message:"No Orders"
-    },{status:409});
+    });
 
     return NextResponse.json({
-      success:true,data:order
-    },{status:200})
+      success: true,
+      data: orders
+    }, { status: 200 });
+
   } catch (error) {
-    console.error("Order Creation Error:", error);
     return NextResponse.json(
-        { error: 'Internal Server Error', details: error instanceof Error ? error.message : String(error) }, 
-        { status: 500 }
+      { success: false, message: "Internal Server Error" },
+      { status: 500 }
     );
   }
 }

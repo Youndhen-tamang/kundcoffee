@@ -1,7 +1,7 @@
 import { ButtonHTMLAttributes, FC } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  variant?: "primary" | "secondary" | "ghost" | "danger"|"none";
   size?: "sm" | "md" | "lg";
 }
 
@@ -21,6 +21,7 @@ export const Button: FC<ButtonProps> = ({
       "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 focus:ring-zinc-500",
     ghost: "bg-transparent hover:bg-zinc-100 text-zinc-700",
     danger: "bg-red-500 text-white hover:bg-red-600 focus:ring-red-500",
+    none:""
   };
 
   const sizes = {

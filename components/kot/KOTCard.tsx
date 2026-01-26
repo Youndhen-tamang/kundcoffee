@@ -65,8 +65,8 @@ export function KOTCard({
   const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
   return (
-    <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col group relative">
-      {/* KOT Header */}
+<div className="bg-white rounded-xl border border-zinc-200 shadow-sm flex flex-col group relative">
+{/* KOT Header */}
       <div className="p-4 flex items-center justify-between border-b border-zinc-100 bg-white">
         <div className="flex items-center gap-4">
           <div className="p-2 rounded-lg bg-zinc-900 text-white shadow-sm">
@@ -127,7 +127,7 @@ export function KOTCard({
       {/* Actions Trigger - Centered Popover */}
       <div className="p-4 bg-zinc-50 border-t border-zinc-200 flex items-center justify-center">
         <Popover
-          align="right"
+          align="left"
           trigger={
             <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-zinc-200 rounded-xl text-[10px] font-medium uppercase tracking-widest text-zinc-600 hover:text-red-500 hover:border-red-100 transition-all shadow-sm">
               Manage KOT <MoreVertical size={14} className="text-zinc-400" />

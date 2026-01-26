@@ -12,8 +12,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    // Create TableType
     const tableType = await prisma.tableType.create({
       data: { name },
     });

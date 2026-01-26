@@ -38,20 +38,27 @@ export async function addTable(
 
 export async function getTables(): Promise<Table[]> {
   try {
-    const res = await fetch(`/api/tables`, { cache: "no-store" });
+    const res = await fetch("/api/tables", {
+      cache: "no-store",
+      credentials: "include",
+    });
+
+    if (!res.ok) return [];
+
     const data = await res.json();
-    return data.data || []; // return the array
+    return data.data || [];
   } catch (error) {
     console.error(error);
     return [];
   }
 }
 
+
 export async function getTableTypes(): Promise<TableType[]> {
   try {
     const res = await fetch(`/api/tables/type`, { cache: "no-store" });
     const data = await res.json();
-    return data.tableType || []; // return the array
+    return data.tableType || []; 
   } catch (error) {
     console.error(error);
     return [];
