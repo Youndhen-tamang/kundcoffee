@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { Params } from "@/lib/types";
-import { NextResponse } from "next/server";
+import { NextResponse ,NextRequest} from "next/server";
 
-export async function GET(req: Request, context: { params: Params }) {
+export async function GET(req: NextRequest, context: { params: Params }) {
   const { id } = await context.params;
 
   try {
@@ -64,7 +64,7 @@ export async function GET(req: Request, context: { params: Params }) {
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: Params }) {
+export async function DELETE(req: NextRequest, { params }: { params: Params }) {
   const { id } = params;
 
   try {
@@ -78,7 +78,7 @@ export async function DELETE(req: Request, { params }: { params: Params }) {
   }
 }
 
-export async function PATCH(req: Request, context: { params: Params }) {
+export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
     const { id } = await context.params;
     if (!id)

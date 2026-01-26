@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { Params } from "@/lib/types";
 import { OrderStatus } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { NextResponse,NextRequest} from "next/server";
 
-export async function PATCH(req: Request, context: { params: Params }) {
+export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
     const { id } = await context.params;
     const body = await req.json();

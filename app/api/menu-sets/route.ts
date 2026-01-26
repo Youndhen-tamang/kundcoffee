@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest,NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -23,7 +23,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { name, service, isActive, subMenuIds } = await req.json();
 
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
   try {
     const { id, name, service, isActive, subMenuIds } = await req.json();
 
@@ -112,7 +112,7 @@ export async function PUT(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");

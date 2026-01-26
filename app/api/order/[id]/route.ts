@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { Params } from "@/lib/types";
-import { NextResponse } from "next/server";
+import { NextResponse,NextRequest } from "next/server";
 
-export async function PATCH(req: Request, context: { params: Params }) {
+export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
     const { id } = context.params;
     const body = await req.json();
@@ -150,7 +150,7 @@ if (status === "COMPLETED" && paymentMethod) {
   }
 }
 
-export async function DELETE(req: Request, context: { params: Params }) {
+export async function DELETE(req: NextRequest, context: { params: Params }) {
   try {
     const { id } = await context.params;
     const order = await prisma.order.findUnique({
@@ -192,7 +192,7 @@ export async function DELETE(req: Request, context: { params: Params }) {
 }
 
 
-export async function GET(req: Request, context: { params: Params }) {
+export async function GET(req: NextRequest, context: { params: Params }) {
   try {
     const { id } = await context.params;
     const order = await prisma.order.findUnique({

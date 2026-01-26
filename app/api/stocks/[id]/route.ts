@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { Params } from "@/lib/types";
-import { NextResponse } from "next/server";
+import { NextRequest,NextResponse } from "next/server";
 
-export async function  GET(req:Request,context:{params:Params}) {
+export async function  GET(req:NextRequest,context:{params:Params}) {
   try {
     const {id} = await context.params;
     if(!id) return NextResponse.json({
@@ -31,7 +31,7 @@ export async function  GET(req:Request,context:{params:Params}) {
 
 
 export async function PATCH(
-  req: Request,
+  req: NextRequest,
   context: { params: Params }
 ) {
   try {
