@@ -6,11 +6,9 @@ import {
   Printer,
   Copy,
   Zap,
-  ExternalLink,
   Clock,
   Utensils,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 
 interface OrderCardProps {
   order: Order;

@@ -18,7 +18,6 @@ import {
   UserPlus,
   Users,
   MessageSquare,
-  CheckCircle2,
   Printer,
   Filter,
   LayoutGrid,
@@ -77,6 +76,10 @@ export function TableOrderingSystem({
       setSubMenus(smData);
       setAvailableAddOns(aData);
     };
+    console.log("testing",categories);
+    console.log(dishes);
+    console.log(subMenus);
+    console.log(availableAddOns);
     fetchData();
   }, []);
 
@@ -152,8 +155,8 @@ export function TableOrderingSystem({
   const totalQty = cart.reduce((acc, item) => acc + (item.quantity || 0), 0);
 
   return (
-<div className="flex flex-col h-[85vh] w-full bg-zinc-50 overflow-hidden rounded-xl border border-zinc-200">
-{/* Top Header */}
+    <div className="flex flex-col h-[85vh] w-full bg-zinc-50 overflow-hidden rounded-xl border border-zinc-200">
+      {/* Top Header */}
       <div className="bg-white border-b border-zinc-100 p-4 flex items-center justify-between shadow-sm px-8">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
@@ -279,56 +282,51 @@ export function TableOrderingSystem({
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-    {filteredDishes.map((dish) => (
-      <div
-        key={dish.id}
-        onClick={() => setActiveDish(dish)}
-        className="group bg-white border border-zinc-100 rounded-md shadow-sm hover:shadow-md hover:border-red-400 transition-all cursor-pointer aspect-square flex flex-col p-3"
-      >
-        {/* Image */}
-        <div className="flex-1 rounded-md bg-zinc-50 overflow-hidden border border-zinc-100 mb-2">
-          {dish.image?.[0] ? (
-            <img
-              src={dish.image[0]}
-              alt={dish.name}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-zinc-300">
-              <LayoutGrid size={24} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {filteredDishes.map((dish) => (
+                <div
+                  key={dish.id}
+                  onClick={() => setActiveDish(dish)}
+                  className="group bg-white border border-zinc-100 rounded-md shadow-sm hover:shadow-md hover:border-red-400 transition-all cursor-pointer aspect-square flex flex-col p-3"
+                >
+                  {/* Image */}
+                  <div className="flex-1 rounded-md bg-zinc-50 overflow-hidden border border-zinc-100 mb-2">
+                    {dish.image?.[0] ? (
+                      <img
+                        src={dish.image[0]}
+                        alt={dish.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-zinc-300">
+                        <LayoutGrid size={24} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Text */}
+                  <div className="text-center space-y-0.5">
+                    <h4 className="text-[11px] font-bold text-zinc-900 uppercase truncate">
+                      {dish.name}
+                    </h4>
+                    <p className="text-[8px] text-zinc-500 font-medium uppercase tracking-widest truncate">
+                      {dish.type}
+                    </p>
+                  </div>
+
+                  {/* Bottom */}
+                  <div className="mt-auto pt-2 border-t border-zinc-100 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-zinc-900">
+                      ${dish.price?.listedPrice.toFixed(2)}
+                    </span>
+                    <div className="p-1 rounded-md text-zinc-400 group-hover:text-red-500 transition-colors">
+                      <PlusCircle size={16} />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
-
-        {/* Text */}
-        <div className="text-center space-y-0.5">
-          <h4 className="text-[11px] font-bold text-zinc-900 uppercase truncate">
-            {dish.name}
-          </h4>
-          <p className="text-[8px] text-zinc-500 font-medium uppercase tracking-widest truncate">
-            {dish.type}
-          </p>
-        </div>
-
-        {/* Bottom */}
-        <div className="mt-auto pt-2 border-t border-zinc-100 flex items-center justify-between">
-          <span className="text-[11px] font-bold text-zinc-900">
-            ${dish.price?.listedPrice.toFixed(2)}
-          </span>
-          <div className="p-1 rounded-md text-zinc-400 group-hover:text-red-500 transition-colors">
-            <PlusCircle size={16} />
           </div>
-        </div>
-      </div>
-    ))}
-  </div>
-</div>
-
-
-
-
-
         </div>
 
         {/* Right Side: Cart Summary */}

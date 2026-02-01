@@ -49,13 +49,27 @@ export async function addCategory(data: Partial<Category>) {
 }
 
 export async function updateCategory(data: Partial<Category>) {
-  if (!data.id) return { success: false, message: "ID required" };
+  if (!data.id) {
+    return { success: false, message: "ID required" };
+  }
+
   try {
-    const res = await fetch("/api/category", {
-      method: "PUT",
+    const res = await fetch(`/api/category/${data.id}`, {
+      method: "PATCH", 
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        name: data.name,
+        description: data.description,
+        image: data.image,
+      }),
     });
+
+    if (!res.ok) {
+      const data = await res.json();
+      console.error("Update category failed:", data);
+      return { success: false };
+    }
+
     return await res.json();
   } catch (error) {
     console.error("Failed to update category:", error);
@@ -105,8 +119,8 @@ export async function addDish(data: Partial<Dish>) {
 export async function updateDish(data: Partial<Dish>) {
   if (!data.id) return { success: false, message: "ID required" };
   try {
-    const res = await fetch("/api/dishes", {
-      method: "PUT",
+    const res = await fetch(`/api/dishes/${data.id}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
@@ -133,8 +147,9 @@ export async function deleteDish(id: string) {
 
 export async function getSubMenus(): Promise<SubMenu[]> {
   try {
-    const res = await fetch("/api/sub-menus", { cache: "no-store" });
+    const res = await fetch("/api/sub-menu", { cache: "no-store" });
     const data = await res.json();
+    console.log("submenu",data)
     return data.success ? data.data : [];
   } catch (error) {
     console.error("Failed to fetch sub menus:", error);
@@ -144,12 +159,13 @@ export async function getSubMenus(): Promise<SubMenu[]> {
 
 export async function addSubMenu(data: Partial<SubMenu>) {
   try {
-    const res = await fetch("/api/sub-menus", {
+    const res = await fetch("/api/sub-menu", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return await res.json();
+    const submenu = await res.json()
+    return submenu.data
   } catch (error) {
     console.error("Failed to add sub menu:", error);
     return { success: false, message: "Network error" };
@@ -159,12 +175,14 @@ export async function addSubMenu(data: Partial<SubMenu>) {
 export async function updateSubMenu(data: Partial<SubMenu>) {
   if (!data.id) return { success: false, message: "ID required" };
   try {
-    const res = await fetch("/api/sub-menus", {
-      method: "PUT",
+    const res = await fetch(`/api/sub-menu/${data.id}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return await res.json();
+
+    const submenu  =  await res.json();
+    return submenu.data
   } catch (error) {
     console.error("Failed to update sub menu:", error);
     return { success: false, message: "Network error" };
@@ -173,7 +191,7 @@ export async function updateSubMenu(data: Partial<SubMenu>) {
 
 export async function deleteSubMenu(id: string) {
   try {
-    const res = await fetch(`/api/sub-menus?id=${id}`, {
+    const res = await fetch(`/api/sub-menu?id=${id}`, {
       method: "DELETE",
     });
     return await res.json();
@@ -214,7 +232,7 @@ export async function updateAddOn(data: Partial<AddOn>) {
   if (!data.id) return { success: false, message: "ID required" };
   try {
     const res = await fetch("/api/addons", {
-      method: "PUT",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
@@ -268,7 +286,7 @@ export async function updateMenuSet(data: Partial<MenuSet>) {
   if (!data.id) return { success: false, message: "ID required" };
   try {
     const res = await fetch("/api/menu-sets", {
-      method: "PUT",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
@@ -322,7 +340,7 @@ export async function updateCombo(data: Partial<ComboOffer>) {
   if (!data.id) return { success: false, message: "ID required" };
   try {
     const res = await fetch("/api/combos", {
-      method: "PUT",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });

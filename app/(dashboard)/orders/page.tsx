@@ -8,6 +8,7 @@ import {
   Table,
   spaceType,
   TableType,
+  TableSession,
 } from "@/lib/types";
 import {
   getOrders,
@@ -15,11 +16,13 @@ import {
   updateOrderItemStatus,
   updateOrderItems,
   createOrder,
+  deleteOrderItem,
 } from "@/services/order";
-import { getTables, getTableTypes } from "@/services/table";
+import { getTables, getTableTypes, getOccupiedTable } from "@/services/table";
 import { getSpaces } from "@/services/space";
 import { OrderCard } from "@/components/orders/OrderCard";
 import { OrderDetailView } from "@/components/orders/OrderDetailView";
+import { CheckoutModal } from "@/components/orders/CheckoutModal";
 import { TableOrderingSystem } from "@/components/tables/TableOrderingSystem";
 import { KOTCard } from "@/components/kot/KOTCard";
 import { Button } from "@/components/ui/Button";
@@ -34,18 +37,13 @@ import {
   Slash,
   WifiOff,
   CalendarDays,
-  Filter,
-  MoreVertical,
-  LayoutGrid,
-  Table2,
-  UtensilsCrossed,
-  MapPin,
   Users,
   ChefHat,
   Wine,
   X,
 } from "lucide-react";
 import { Popover } from "@/components/ui/Popover";
+import { toast } from "sonner";
 
 type ActiveTab = "ORDERS" | "TABLES" | "KOT";
 
@@ -58,91 +56,123 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrderType, setSelectedOrderType] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ACTIVE");
-
+  const [occupiedTable, setOccupiedTable] = useState<TableSession[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [checkoutOrder, setCheckoutOrder] = useState<Order | null>(null);
   const [activeTable, setActiveTable] = useState<Table | null>(null);
   const [existingOrderForAdding, setExistingOrderForAdding] =
     useState<Order | null>(null);
   const [newOrderType, setNewOrderType] = useState<OrderType>("DINE_IN");
   const [showTableSelector, setShowTableSelector] = useState(false);
-  const [showReservationForm, setShowReservationForm] =
-    useState(false);
-    const fetchData = async () => {
+  const [showReservationForm, setShowReservationForm] = useState(false);
+  const fetchData = async () => {
+    if (activeTab === "ORDERS" || activeTab === "KOT") {
+      const oData = await getOrders();
+      console.log("ORDERS:", oData);
+      setOrders(oData);
+    }
+
+    if (activeTab === "TABLES") {
+      const [tData, sData, ttData] = await Promise.all([
+        getTables(),
+        getSpaces(),
+        getTableTypes(),
+      ]);
+
+      console.log("TABLES:", tData);
+      console.log("SPACES:", sData);
+      console.log("TABLE TYPES:", ttData);
+
+      setTables(tData);
+      setSpaces(sData);
+      setTableTypes(ttData);
+    }
+  };
+
+  useEffect(() => {
+    const loadTables = async () => {
       if (activeTab === "ORDERS" || activeTab === "KOT") {
         const oData = await getOrders();
         console.log("ORDERS:", oData);
         setOrders(oData);
       }
-    
+
       if (activeTab === "TABLES") {
         const [tData, sData, ttData] = await Promise.all([
           getTables(),
           getSpaces(),
           getTableTypes(),
         ]);
-    
+
         console.log("TABLES:", tData);
         console.log("SPACES:", sData);
         console.log("TABLE TYPES:", ttData);
-    
+
         setTables(tData);
         setSpaces(sData);
         setTableTypes(ttData);
       }
     };
-    
-  useEffect(() => {
 
-      const loadTables = async () => {
-        if (activeTab === "ORDERS" || activeTab === "KOT") {
-          const oData = await getOrders();
-          console.log("ORDERS:", oData);
-          setOrders(oData);
-        }
-      
-        if (activeTab === "TABLES") {
-          const [tData, sData, ttData] = await Promise.all([
-            getTables(),
-            getSpaces(),
-            getTableTypes(),
-          ]);
-      
-          console.log("TABLES:", tData);
-          console.log("SPACES:", sData);
-          console.log("TABLE TYPES:", ttData);
-      
-          setTables(tData);
-          setSpaces(sData);
-          setTableTypes(ttData);
-        }
-      };
-    
-      loadTables();
-    
+    loadTables();
   }, [activeTab]);
-  
+
   useEffect(() => {
     if (!showTableSelector) return;
-  
-    if (tables.length === 0 || spaces.length === 0) {
-      const loadTableData = async () => {
-        const [tData, sData, ttData] = await Promise.all([
-          getTables(),
-          getSpaces(),
-          getTableTypes(),
-        ]);
-  
-        setTables(tData);
-        setSpaces(sData);
-        setTableTypes(ttData);
-      };
-  
-      loadTableData();
-    }
-  }, [showTableSelector]);
-  
- 
 
+    const loadTableData = async () => {
+      const [tData, sData, ttData, busyTables] = await Promise.all([
+        getTables(),
+        getSpaces(),
+        getTableTypes(),
+        getOccupiedTable(),
+      ]);
+
+      setTables(tData);
+      setSpaces(sData);
+      setTableTypes(ttData);
+      setOccupiedTable(busyTables);
+      console.log(tData);
+      console.log("occupied tables loaded:", busyTables);
+    };
+
+    console.log("tableselectoer", tables);
+    console.log("tableselsctor", occupiedTable);
+
+    loadTableData();
+  }, [showTableSelector]);
+
+  useEffect(() => {
+    console.log("Busy tables", occupiedTable);
+    console.log("Busy tables", tables);
+  }, [occupiedTable, tables]);
+
+
+  const handleRemoveItem = async (itemId: string) => {
+    const success = await deleteOrderItem(itemId);
+    if (success) {
+      // 1. Refresh all orders from the server
+      await fetchData(); 
+      
+      // 2. Update the "selectedOrder" state so the Modal reflects the change
+      if (selectedOrder) {
+        // We look for the updated version of this order in the fresh orders list
+        const updatedOrders = await getOrders(); // Direct call to ensure fresh data
+        const refreshedOrder = updatedOrders.find((o: Order) => o.id === selectedOrder.id);
+        
+        if (refreshedOrder) {
+          setSelectedOrder(refreshedOrder);
+        } else {
+          setSelectedOrder(null); // Close if order itself is gone
+        }
+      }
+      toast.success("Item removed from order");
+    }
+  };
+
+  useEffect(()=>{
+    fetchData
+  },[])
   const orderTypes: { id: string; name: string }[] = [
     { id: "ALL", name: "All Types" },
     { id: "DINE_IN", name: "Dine In" },
@@ -311,6 +341,7 @@ export default function OrdersPage() {
           spaceId: "",
           tableTypeId: "",
           createdAt: new Date(),
+          sessions: [],
         });
         break;
     }
@@ -361,38 +392,36 @@ export default function OrdersPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-           
-              <Popover
-                trigger={
-                  <Button className="bg-red-600 text-black h-10 px-6 uppercase tracking-widest text-[10px]">
-                    <Plus size={14} className="mr-2" />
-                    Add New Order
-                  </Button>
-                }
-                align="right"
-                content={
-                  <div className="w-52 py-2">
-                    {[
-                      { id: "DINE_IN", label: "Dine In" },
-                      { id: "TAKE_AWAY", label: "Take Away" },
-                      { id: "PICKUP", label: "Pickup" },
-                      { id: "DELIVERY", label: "Delivery" },
-                      { id: "RESERVATION", label: "Reservation" },
-                      { id: "QUICK_BILLING", label: "Quick Billing" },
-                    ].map((type) => (
-                      <button
-                        key={type.id}
-                        onClick={() => handleNewOrder(type.id as OrderType)}
-                        className="w-full px-4 py-2 text-left text-[10px] uppercase tracking-widest hover:bg-zinc-50"
-                      >
-                        {type.label}
-                      </button>
-                    ))}
-                  </div>
-                }
-              />
 
-     
+            <Popover
+              trigger={
+                <Button className="bg-red-600 text-black h-10 px-6 uppercase tracking-widest text-[10px]">
+                  <Plus size={14} className="mr-2" />
+                  Add New Order
+                </Button>
+              }
+              align="right"
+              content={
+                <div className="w-52 py-2">
+                  {[
+                    { id: "DINE_IN", label: "Dine In" },
+                    { id: "TAKE_AWAY", label: "Take Away" },
+                    { id: "PICKUP", label: "Pickup" },
+                    { id: "DELIVERY", label: "Delivery" },
+                    { id: "RESERVATION", label: "Reservation" },
+                    { id: "QUICK_BILLING", label: "Quick Billing" },
+                  ].map((type) => (
+                    <button
+                      key={type.id}
+                      onClick={() => handleNewOrder(type.id as OrderType)}
+                      className="w-full px-4 py-2 text-left text-[10px] uppercase tracking-widest hover:bg-zinc-50"
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              }
+            />
 
             <Popover
               trigger={
@@ -434,12 +463,12 @@ export default function OrdersPage() {
             <span className="text-[9px] font-medium text-zinc-400 uppercase tracking-widest ml-3">
               Filter by
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               {orderTypes.slice(0, 6).map((type) => (
                 <button
                   key={type.id}
                   onClick={() => setSelectedOrderType(type.id)}
-                  className={`px-3 py-1.5 rounded-lg text-[9px] font-medium uppercase tracking-tight transition-all ${selectedOrderType === type.id ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-50"}`}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-medium uppercase tracking-tight transition-all ${selectedOrderType === type.id ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-50"} w-[150px]`}
                 >
                   {type.name}
                 </button>
@@ -470,7 +499,7 @@ export default function OrdersPage() {
       <div className="min-h-[60vh]">
         {activeTab === "ORDERS" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredOrders.map((order) => (
+            {filteredOrders.filter(i=>i.status !== "COMPLETED").map((order) => (
               <OrderCard
                 key={order.id}
                 order={order}
@@ -647,7 +676,11 @@ export default function OrdersPage() {
             onUpdateStatus={handleUpdateStatus}
             onUpdateItemStatus={handleUpdateItemStatus}
             onEditItem={handleEditItem}
-            onQuickCheckout={handleQuickCheckout}
+            onRemoveItem={handleRemoveItem} // <--- Pass this new prop
+            onCheckout={(o) => {
+              setSelectedOrder(null);
+              setCheckoutOrder(o);
+            }}
             onAddMore={(o) => {
               setSelectedOrder(null);
               setExistingOrderForAdding(o);
@@ -690,46 +723,59 @@ export default function OrdersPage() {
         )}
       </Modal>
 
+      {/* Checkout Modal */}
+      {checkoutOrder && (
+        <CheckoutModal
+          isOpen={!!checkoutOrder}
+          onClose={() => setCheckoutOrder(null)}
+          order={checkoutOrder}
+          onCheckoutComplete={() => {
+            fetchData(); 
+            setCheckoutOrder(null);
+          }}
+        />
+      )}
 
       {/*Table Selector */}
       <Modal
-  isOpen={showTableSelector}
-  onClose={() => setShowTableSelector(false)}
-  title="Select Table"
-  size="4xl"
->
-  <div className="space-y-6">
-    {spaces.map((space) => (
-      <div key={space.id}>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">
-          {space.name}
-        </h2>
+        isOpen={showTableSelector}
+        onClose={() => setShowTableSelector(false)}
+        title="Select Table"
+        size="4xl"
+      >
+        <div className="space-y-6">
+          {spaces.map((space) => (
+            <div key={space.id}>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">
+                {space.name}
+              </h2>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {tables
-            .filter((t) => t.spaceId === space.id)
-            .map((table) => (
-              <button
-                key={table.id}
-                onClick={() => {
-                  setActiveTable(table);
-                  setShowTableSelector(false);
-                }}
-                className="p-4 rounded-lg border bg-white hover:border-red-500 transition-all"
-              >
-                <div className="font-bold text-sm">{table.name}</div>
-                <div className="text-[10px] text-zinc-400">
-                  {table.capacity} seats
-                </div>
-              </button>
-            ))}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {tables
+                  .filter((t) => t.spaceId === space.id)
+                  .map((table) => (
+                    <button
+                      key={table.id}
+                      disabled={occupiedTable.some(
+                        (o) => o.tableId === table.id && table.status === "OCCUPIED"
+                      )}
+                      onClick={() => {
+                        setActiveTable(table);
+                        setShowTableSelector(false);
+                      }}
+                      className="p-4 rounded-lg border bg-white hover:border-red-500 transition-all"
+                    >
+                      <div className="font-bold text-sm">{table.name}</div>
+                      <div className="text-[10px] text-zinc-400">
+                        {table.capacity} seats
+                      </div>
+                    </button>
+                  ))}
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
-    ))}
-  </div>
-</Modal>
-
-
+      </Modal>
     </div>
   );
 }

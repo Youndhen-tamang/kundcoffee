@@ -128,7 +128,6 @@ export default function Sidebar() {
             <div className="space-y-1">
               <NavItem href="/" icon={LayoutDashboard} label="Dashboard" />
               <NavItem href="/orders" icon={Package} label="Orders" />
-              <NavItem href="/kot" icon={UtensilsCrossed} label="KOT" />
 
               <AccordionItem id="core" label="Tables" icon={Database}>
                 <NavItem href="/spaces" icon={Map} label="Spaces" />

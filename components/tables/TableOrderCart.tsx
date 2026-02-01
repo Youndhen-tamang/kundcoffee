@@ -15,6 +15,7 @@ const generateMockOrder = (tableId: string): Order => {
   return {
     id: `ord-${Math.random().toString(36).substr(2, 9)}`,
     tableId,
+    sessionId: "session-1",
     items: [
       {
         id: "1",

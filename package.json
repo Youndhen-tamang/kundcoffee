@@ -14,14 +14,18 @@
     "next": "16.1.2",
     "qrcode.react": "^4.2.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-qr-code": "^2.0.18",
+    "sonner": "^2.0.7",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@prisma/client": "^5.22.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^20.19.30",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.2",
     "prisma": "^5.22.0",

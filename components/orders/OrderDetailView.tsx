@@ -31,7 +31,8 @@ interface OrderDetailViewProps {
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
   onUpdateItemStatus: (itemId: string, status: OrderStatus) => void;
   onEditItem: (itemId: string, updatedData: any) => void;
-  onQuickCheckout: (order: Order) => void;
+  onCheckout: (order: Order) => void;
+  onRemoveItem: (itemId: string) => void; // <--- Add this
   onAddMore: (order: Order) => void;
 }
 
@@ -41,7 +42,8 @@ export function OrderDetailView({
   onUpdateStatus,
   onUpdateItemStatus,
   onEditItem,
-  onQuickCheckout,
+  onCheckout,
+  onRemoveItem,
   onAddMore,
 }: OrderDetailViewProps) {
   const [activeItemForPopover, setActiveItemForPopover] = useState<
@@ -336,22 +338,13 @@ export function OrderDetailView({
               Advance Payment
             </Button>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={() => onQuickCheckout(order)}
-                className="bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-[10px] h-12 uppercase tracking-widest border-none shadow-sm flex items-center justify-center gap-2"
-              >
-                <Zap size={16} fill="white" strokeWidth={1} />
-                Quick Pay
-              </Button>
-              <Button
-                onClick={() => onUpdateStatus(order.id, "COMPLETED")}
-                className="bg-red-600 hover:bg-red-700 text-white font-medium text-[10px] h-12 uppercase tracking-widest border-none shadow-sm flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 size={16} strokeWidth={2} />
-                Finalize
-              </Button>
-            </div>
+            <Button
+              onClick={() => onCheckout(order)}
+              className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-[10px] h-12 uppercase tracking-widest border-none shadow-sm flex items-center justify-center gap-2"
+            >
+              <CreditCard size={18} strokeWidth={1.5} />
+              Checkout
+            </Button>
           </div>
         </div>
       </div>
@@ -365,11 +358,16 @@ export function OrderDetailView({
       >
         {editingItem && (
           <EditOrderItemForm
+          onDelete={(id) => { // <--- Add this handler
+            onRemoveItem(id);
+            setEditingItem(null);
+        }}
             item={editingItem}
             onSave={(updated) => {
               onEditItem(editingItem.id, updated);
               setEditingItem(null);
-            }}
+            }
+          }
             onCancel={() => setEditingItem(null)}
           />
         )}

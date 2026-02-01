@@ -39,3 +39,28 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest, context: { params: Params }) {
+  try {
+    const { id } = await context.params;
+    if(!id){
+      return NextResponse.json(
+        { success: false, message: "Item ID is required" },
+        { status: 400 },
+      );
+    }
+    const deletedItem = await prisma.orderItem.delete({
+      where: { id },
+    });
+    return NextResponse.json({
+      success: true,
+      data: deletedItem,
+    });
+  } catch (error:any ) {
+    console.error(error);
+    return NextResponse.json(
+      { success: false, message: error.message },
+      { status: 500 },
+    );
+  }
+}

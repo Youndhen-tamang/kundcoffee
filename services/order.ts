@@ -1,4 +1,4 @@
-import { Order, OrderStatus } from "@/lib/types";
+import { ApiResponse, Order, OrderStatus } from "@/lib/types";
 
 export const getOrders = async (): Promise<Order[]> => {
   const res = await fetch("/api/order");
@@ -60,3 +60,25 @@ export const updateOrderItems = async (
 
 
 
+
+export const deleteOrderItem = async (orderItemId: string): Promise<ApiResponse> => {
+  try {
+    const res = await fetch(`/api/order/item/${orderItemId}`, {
+      method: "DELETE",
+    });
+    
+    const result = await res.json();
+
+    return {
+      success: result.success,
+      message: result.message,
+      data: result.data, 
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: "Internal Server Error",
+    };
+  }
+};

@@ -1,4 +1,5 @@
 import { Table, TableType } from "@/lib/types";
+import { TableSession } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 export async function addTableType(name: string): Promise<TableType | null> {
@@ -15,7 +16,23 @@ export async function addTableType(name: string): Promise<TableType | null> {
     return null;
   }
 }
+export async function getOccupiedTable(){
+  try {
+    const res = await fetch("/api/tableSession",{cache:"no-store"},
+    )
+    if (!res.ok) {
+      console.error("Failed to fetch tables:", res.status);
+      return null;
+    }
+    const data = await res.json();
+    return data.data || null;
 
+  } catch (error) {
+    console.error("Error fetching occupied table:", error);
+    return null;
+  }
+  
+}
 export async function addTable(
   name: string,
   capacity: number,

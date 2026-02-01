@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.log("price check",price)
    
     const actualPrice = parseFloat(price?.actualPrice || 0);
     const discountAmount = parseFloat(price?.discountPrice || 0);

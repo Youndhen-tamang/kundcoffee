@@ -24,11 +24,13 @@ model TableSession {
   endedAt   DateTime?
 
   total         Float @default(0)
+  discount      Float @default(0)
   serviceCharge Float @default(0)
   tax           Float @default(0)
   grandTotal    Float @default(0)
 
-  isActive Boolean @default(true)
+  isActive Boolean  @default(true)
+  payment  Payment?
 }
 
 model TableType {
@@ -38,18 +40,19 @@ model TableType {
 }
 
 model Table {
-  id          String         @id @default(uuid())
-  name        String
-  tableTypeId String?
-  tableType   TableType?     @relation(fields: [tableTypeId], references: [id])
-  capacity    Int
-  status      TableStatus    @default(ACTIVE)
-  spaceId     String?
-  space       Space?         @relation(fields: [spaceId], references: [id])
-  qrCode      QRCode?
-  sessions    TableSession[]
-  createdAt   DateTime       @default(now())
-  Order       Order[]
+  id           String         @id @default(uuid())
+  name         String
+  tableTypeId  String?
+  tableType    TableType?     @relation(fields: [tableTypeId], references: [id])
+  capacity     Int
+  status       TableStatus    @default(ACTIVE)
+  spaceId      String?
+  space        Space?         @relation(fields: [spaceId], references: [id])
+  qrCode       QRCode?
+  sessions     TableSession[]
+  reservations Reservation[]
+  createdAt    DateTime       @default(now())
+  Order        Order[]
 }
 
 model QRCode {
@@ -320,13 +323,22 @@ enum OrderStatus {
 }
 
 model Payment {
-  id        String        @id @default(uuid())
-  orderId   String        @unique
-  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  method    PaymentMethod
-  amount    Float
-  status    PaymentStatus @default(PENDING)
-  createdAt DateTime      @default(now())
+  id String @id @default(uuid())
+
+  orderId String? @unique
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  sessionId String?       @unique
+  session   TableSession? @relation(fields: [sessionId], references: [id])
+
+  method PaymentMethod
+  amount Float
+  status PaymentStatus @default(PENDING)
+
+  transactionUuid String? @unique
+  esewaRefId      String?
+
+  createdAt DateTime @default(now())
 }
 
 enum PaymentMethod {
@@ -367,9 +379,9 @@ model Customer {
   legalName String?
   taxNumber String?
 
-  address String?
-
-  notes String?
+  address     String?
+  reservation Reservation[]
+  notes       String?
 
   orders Order[]
 
@@ -400,4 +412,39 @@ enum LedgerType {
   RETURN
   ADJUSTMENT
   OPENING_BALANCE
+}
+
+model Reservation {
+  id    String @id @default(uuid())
+  name  String
+  phone String
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  images       String?
+  remark       String?
+  dateSelected ReservationTime[]
+  tableId      String
+  table        Table             @relation(fields: [tableId], references: [id])
+
+  guests    Int
+  status    ReservationStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+}
+
+model ReservationTime {
+  id            String      @id @default(uuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  date          DateTime
+  startTime     DateTime
+  endTime       DateTime
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
 }

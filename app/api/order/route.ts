@@ -154,7 +154,6 @@ export async function GET() {
             selectedAddOns: true,
           }
         },
-        payment: true,
       }
     });
 

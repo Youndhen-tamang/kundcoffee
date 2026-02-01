@@ -22,6 +22,7 @@ export type Table = {
   status: "ACTIVE" | "OCCUPIED" | "INACTIVE";
   spaceId?: string | null;
   createdAt: Date;
+  sessions:TableSession[];
   qrCode?: QRCode | null;
 };
 
@@ -185,6 +186,7 @@ export type OrderItemAddOn = {
 };
 
 export type Order = {
+  sessionId: any;
   id: string;
   tableId?: string | null;
   table?: Table | null;
@@ -234,3 +236,23 @@ export type CustomerLedger = {
   remarks?: string;
   createdAt: string;
 };
+
+
+export type TableSession = {
+  id: string;
+  tableId: string;
+  table?: Table; 
+  startedAt: string; 
+  endedAt?: string | null; 
+  total: number;
+  serviceCharge: number;
+  tax: number;
+  grandTotal: number;
+  isActive: boolean;
+};
+
+export interface ApiResponse<T= any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+}

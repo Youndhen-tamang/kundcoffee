@@ -98,39 +98,48 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
           table: true,
         },
       });
-
-      // 4. Handle Completion and Payments
-      // 4. Handle Completion and Payments
+// 4. Handle Completion and Payments
 if (status === "COMPLETED" && paymentMethod) {
+  
+  // First, find the session if it's a DINE_IN order
+  let session = null;
+  if (order.tableId && order.type === "DINE_IN") {
+    session = await tx.tableSession.findFirst({
+      where: { tableId: order.tableId, isActive: true },
+    });
+  }
+
+  // Now upsert the payment
   await tx.payment.upsert({
     where: { orderId: id },
-    update: { amount: newTotal, method: paymentMethod, status: "PAID" },
+    update: { 
+      amount: newTotal, 
+      method: paymentMethod, 
+      status: "PAID",
+      sessionId: session?.id || null ,
+    },
     create: {
       orderId: id,
       amount: newTotal,
       method: paymentMethod,
       status: "PAID",
+      sessionId: session?.id || null
     },
   });
 
-  if (order.tableId && order.type === "DINE_IN") {
-    const session = await tx.tableSession.findFirst({
-      where: { tableId: order.tableId, isActive: true },
+  // Handle Session and Table status
+  if (session) {
+    await tx.tableSession.update({
+      where: { id: session.id },
+      data: {
+        total: { increment: order.total },
+        isActive: false,
+        endedAt: new Date(),
+      },
     });
 
-    if (session) {
-      await tx.tableSession.update({
-        where: { id: session.id },
-        data: {
-          total: { increment: order.total },
-          isActive: false,
-          endedAt: new Date(),
-        },
-      });
-    }
-
     await tx.table.update({
-      where: { id: order.tableId },
+      where: { id: order.tableId! },
       data: { status: "ACTIVE" },
     });
   }
