@@ -52,6 +52,7 @@ model Table {
   sessions     TableSession[]
   reservations Reservation[]
   createdAt    DateTime       @default(now())
+  isDeleted    Boolean        @default(false)
   Order        Order[]
 }
 
@@ -282,6 +283,7 @@ model Order {
   payment    Payment?
   status     OrderStatus @default(PENDING)
   createdAt  DateTime    @default(now())
+  isDeleted  Boolean     @default(false)
 }
 
 model OrderItem {
@@ -339,12 +341,14 @@ model Payment {
   esewaRefId      String?
 
   createdAt DateTime @default(now())
+  isDeleted Boolean  @default(false)
 }
 
 enum PaymentMethod {
   CASH
   ESEWA
   QR
+  BANK_TRANSFER
 }
 
 enum PaymentStatus {
@@ -387,6 +391,7 @@ model Customer {
 
   createdAt      DateTime         @default(now())
   CustomerLedger CustomerLedger[]
+  salesReturns   SalesReturn[]
 }
 
 model CustomerLedger {
@@ -447,4 +452,45 @@ enum ReservationStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
+}
+
+model SalesReturn {
+  id              String            @id @default(uuid())
+  referenceNumber String            @unique
+  customerId      String?
+  customer        Customer?         @relation(fields: [customerId], references: [id])
+  txnDate         DateTime          @default(now())
+  billReference   String
+  salesStaff      String?
+  items           SalesReturnItem[]
+
+  taxableAmount Float
+  totalAmount   Float
+  roundOff      Float @default(0)
+  discount      Float @default(0)
+
+  attachment String?
+  remark     String?
+
+  paymentStatus ReturnPaymentStatus @default(UNPAID)
+  paymentMode   PaymentMethod?
+
+  createdAt DateTime @default(now())
+  isDeleted Boolean  @default(false)
+}
+
+model SalesReturnItem {
+  id            String      @id @default(uuid())
+  salesReturnId String
+  salesReturn   SalesReturn @relation(fields: [salesReturnId], references: [id], onDelete: Cascade)
+  dishName      String
+  quantity      Int
+  rate          Float
+  amount        Float
+}
+
+enum ReturnPaymentStatus {
+  PAID
+  UNPAID
+  CREDIT
 }

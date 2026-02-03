@@ -230,7 +230,7 @@ export default function DishesPage() {
         <div className="flex items-center gap-3">
           <Button
             onClick={openCreate}
-            className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
           >
             <Plus size={18} className="mr-2" /> Add Dish
           </Button>
@@ -251,7 +251,7 @@ export default function DishesPage() {
         <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm sticky top-0">
           <input
             placeholder="Search dishes..."
-            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 w-full max-w-sm transition-all"
+            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 w-full max-w-sm transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -285,7 +285,7 @@ export default function DishesPage() {
                 <tr
                   key={d.id}
                   onClick={() => openEdit(d)}
-                  className="hover:bg-violet-50/50 transition-colors cursor-pointer group"
+                  className="hover:bg-red-50/50 transition-colors cursor-pointer group"
                 >
                   <td className="px-6 py-4 text-gray-400">{i + 1}</td>
                   <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-3">
@@ -335,7 +335,7 @@ export default function DishesPage() {
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={(e) => openEdit(d, e)}
-                        className="p-2 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <Edit2 size={16} />
                       </button>
@@ -369,7 +369,7 @@ export default function DishesPage() {
           {/* Basic Info Section */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-              <Coffee size={18} className="text-violet-600" />
+              <Coffee size={18} className="text-red-600" />
               <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
                 Basic Info
               </h3>
@@ -381,7 +381,7 @@ export default function DishesPage() {
                   Dish Name <span className="text-red-500">*</span>
                 </label>
                 <input
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                   placeholder="e.g. Grilled Chicken"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -392,7 +392,7 @@ export default function DishesPage() {
                   HS Code
                 </label>
                 <input
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                   placeholder="HS Code"
                   value={hscode}
                   onChange={(e) => setHscode(e.target.value)}
@@ -406,7 +406,7 @@ export default function DishesPage() {
                   Category *
                 </label>
                 <select
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all appearance-none outline-none"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all appearance-none outline-none"
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
                 >
@@ -423,7 +423,7 @@ export default function DishesPage() {
                   Sub Menu (Optional)
                 </label>
                 <select
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all appearance-none outline-none"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all appearance-none outline-none"
                   value={subMenuId}
                   onChange={(e) => setSubMenuId(e.target.value)}
                 >
@@ -443,7 +443,7 @@ export default function DishesPage() {
                   Type
                 </label>
                 <select
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all outline-none"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all outline-none"
                   value={type}
                   onChange={(e) => setType(e.target.value as any)}
                 >
@@ -458,7 +458,7 @@ export default function DishesPage() {
                   KOT
                 </label>
                 <select
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all outline-none"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all outline-none"
                   value={kotType}
                   onChange={(e) => setKotType(e.target.value as any)}
                 >
@@ -472,7 +472,7 @@ export default function DishesPage() {
                 </label>
                 <input
                   type="number"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                   value={prepTime}
                   onChange={(e) => setPrepTime(e.target.value)}
                 />
@@ -532,13 +532,13 @@ export default function DishesPage() {
                   key={addon.id}
                   className={`flex items-center gap-2 border px-3 py-2 rounded-lg text-sm cursor-pointer transition-all ${
                     selectedAddOnIds.includes(addon.id)
-                      ? "bg-violet-50 border-violet-200 text-violet-700 font-medium"
+                      ? "bg-red-50 border-red-200 text-red-700 font-medium"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   <input
                     type="checkbox"
-                    className="rounded text-violet-600 focus:ring-violet-500"
+                    className="rounded text-red-600 focus:ring-red-500"
                     checked={selectedAddOnIds.includes(addon.id)}
                     onChange={(e) => {
                       if (e.target.checked)
@@ -575,7 +575,7 @@ export default function DishesPage() {
           </Button>
           <Button
             onClick={handleSubmit}
-            className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
             disabled={!name || !categoryId || uploading}
           >
             {uploading

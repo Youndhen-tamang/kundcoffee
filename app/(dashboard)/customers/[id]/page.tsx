@@ -43,7 +43,7 @@ export default function CustomerProfilePage() {
       <div className="w-80 flex flex-col gap-6">
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-20 h-20 bg-violet-100 text-violet-600 rounded-full flex items-center justify-center text-2xl font-bold mb-4">
+            <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-2xl font-bold mb-4">
               {customer.fullName.charAt(0)}
             </div>
             <h2 className="text-xl font-bold text-gray-900">
@@ -55,11 +55,11 @@ export default function CustomerProfilePage() {
           </div>
 
           <div className="space-y-4">
-            <div className="p-3 bg-violet-50/50 rounded-xl border border-violet-100/50">
-              <p className="text-xs text-violet-600 font-semibold uppercase tracking-wider mb-1">
+            <div className="p-3 bg-red-50/50 rounded-xl border border-red-100/50">
+              <p className="text-xs text-red-600 font-semibold uppercase tracking-wider mb-1">
                 Reward Points
               </p>
-              <p className="text-xl font-bold text-violet-700">
+              <p className="text-xl font-bold text-red-700">
                 {customer.loyaltyPoints} pts
               </p>
             </div>
@@ -199,7 +199,7 @@ export default function CustomerProfilePage() {
                   {customer.CustomerLedger.map((txn: any, index: number) => (
                     <tr
                       key={txn.id}
-                      className="hover:bg-violet-50/50 transition-colors cursor-pointer"
+                      className="hover:bg-red-50/50 transition-colors cursor-pointer"
                       onClick={() => setSelectedTxn(txn)}
                     >
                       <td className="px-4 py-3 text-gray-500">{index + 1}</td>
@@ -266,7 +266,7 @@ export default function CustomerProfilePage() {
                     return (
                       <tr
                         key={order.id}
-                        className="hover:bg-violet-50/50 transition-colors cursor-pointer"
+                        className="hover:bg-red-50/50 transition-colors cursor-pointer"
                         onClick={() => setSelectedTxn(order)}
                       >
                         <td className="px-4 py-3 text-gray-500">{index + 1}</td>
@@ -358,7 +358,7 @@ export default function CustomerProfilePage() {
               <DetailRow
                 label="Amount"
                 value={`Rs. ${selectedTxn.amount?.toLocaleString() || selectedTxn.total?.toLocaleString()}`}
-                color="text-violet-600 font-bold"
+                color="text-red-600 font-bold"
               />
               <DetailRow label="Remarks" value={selectedTxn.remarks || "N/A"} />
               <DetailRow
@@ -446,7 +446,7 @@ function TabButton({
       onClick={onClick}
       className={`px-6 py-4 text-sm font-semibold transition-all ${
         active
-          ? "text-violet-600 border-b-2 border-violet-600 bg-violet-50/30"
+          ? "text-red-600 border-b-2 border-red-600 bg-red-50/30"
           : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
       }`}
     >
@@ -471,7 +471,7 @@ function ActivityItem({
       {!isLast && (
         <div className="absolute left-[3px] top-6 bottom-[-24px] w-[2px] bg-slate-100" />
       )}
-      <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-violet-600 ring-4 ring-violet-100" />
+      <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-red-600 ring-4 ring-red-100" />
       <div>
         <div className="flex justify-between items-baseline mb-1">
           <h4 className="text-sm font-bold text-gray-900">{title}</h4>

@@ -36,6 +36,7 @@ interface TableOrderingSystemProps {
   onClose: () => void;
   onConfirm: (cart: CartItem[], guests: number, kotRemarks: string) => void;
   isAddingToExisting?: boolean;
+  existingItems?: OrderItem[];
 }
 
 export function TableOrderingSystem({
@@ -43,6 +44,7 @@ export function TableOrderingSystem({
   onClose,
   onConfirm,
   isAddingToExisting = false,
+  existingItems = [],
 }: TableOrderingSystemProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
@@ -76,7 +78,7 @@ export function TableOrderingSystem({
       setSubMenus(smData);
       setAvailableAddOns(aData);
     };
-    console.log("testing",categories);
+    console.log("testing", categories);
     console.log(dishes);
     console.log(subMenus);
     console.log(availableAddOns);
@@ -155,26 +157,47 @@ export function TableOrderingSystem({
   const totalQty = cart.reduce((acc, item) => acc + (item.quantity || 0), 0);
 
   return (
-    <div className="flex flex-col h-[85vh] w-full bg-zinc-50 overflow-hidden rounded-xl border border-zinc-200">
+    <div
+      className={`flex flex-col h-[85vh] w-full overflow-hidden rounded-xl border ${isAddingToExisting ? "bg-red-50/30 border-red-200" : "bg-zinc-50 border-zinc-200"}`}
+    >
       {/* Top Header */}
-      <div className="bg-white border-b border-zinc-100 p-4 flex items-center justify-between shadow-sm px-8">
+      <div
+        className={`border-b p-4 flex items-center justify-between shadow-sm px-8 ${isAddingToExisting ? "bg-red-600 text-white" : "bg-white text-zinc-900 border-zinc-100"}`}
+      >
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-zinc-900 rounded-lg flex items-center justify-center text-white">
               <Users size={18} />
             </div>
             <div>
-              <h2 className="text-sm font-medium text-zinc-900 leading-tight uppercase tracking-tight">
-                {table?.id === "DIRECT"
-                  ? "Direct Order"
-                  : `Table: ${table?.name || "Order"}`}
+              <h2
+                className={`text-sm font-black leading-tight uppercase tracking-widest ${isAddingToExisting ? "text-white" : "text-zinc-900"}`}
+              >
+                {isAddingToExisting
+                  ? "Updating Ongoing Order"
+                  : table?.id === "DIRECT"
+                    ? "Direct Order"
+                    : `Table: ${table?.name || "Order"}`}
               </h2>
-              <p className="text-[9px] text-zinc-500 font-medium uppercase tracking-widest mt-0.5">
-                {table?.tableType?.name || "Standard Order"}
-              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p
+                  className={`text-[9px] font-bold uppercase tracking-widest ${isAddingToExisting ? "text-red-100" : "text-zinc-500"}`}
+                >
+                  {isAddingToExisting
+                    ? `Table ${table?.name || ""} • Ongoing Session`
+                    : table?.tableType?.name || "Standard Order"}
+                </p>
+                {isAddingToExisting && (
+                  <span className="text-[9px] bg-white text-red-600 px-1.5 py-0.5 rounded font-black uppercase tracking-widest">
+                    Active
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-          <div className="h-6 w-px bg-zinc-200" />
+          <div
+            className={`h-6 w-px ${isAddingToExisting ? "bg-red-400" : "bg-zinc-200"}`}
+          />
           <Popover
             trigger={
               <button className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 rounded-lg border border-zinc-200 hover:border-red-500 transition-all group">
@@ -204,7 +227,7 @@ export function TableOrderingSystem({
         </div>
         <button
           onClick={onClose}
-          className="p-2 text-zinc-400 hover:text-red-500 transition-all"
+          className={`p-2 transition-all ${isAddingToExisting ? "text-red-100 hover:text-white" : "text-zinc-400 hover:text-red-500"}`}
         >
           <X size={20} />
         </button>
@@ -223,7 +246,7 @@ export function TableOrderingSystem({
                 <input
                   type="text"
                   placeholder="Search and add dishes..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs focus:border-red-500 transition-all outline-none font-normal placeholder:text-zinc-400 text-zinc-900"
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-xs transition-all outline-none font-normal placeholder:text-zinc-400 ${isAddingToExisting ? "bg-white border-red-200 focus:border-red-500 text-red-900" : "bg-zinc-50 border-zinc-200 focus:border-red-500 text-zinc-900"}`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -232,9 +255,12 @@ export function TableOrderingSystem({
                 trigger={
                   <Button
                     variant="secondary"
-                    className="h-10 px-4 bg-white border-zinc-200 shadow-sm text-zinc-600 flex items-center gap-2 rounded-xl"
+                    className={`h-10 px-4 bg-white border shadow-sm text-zinc-600 flex items-center gap-2 rounded-xl ${isAddingToExisting ? "border-red-200 hover:border-red-400" : "border-zinc-200 hover:border-red-400"}`}
                   >
-                    <Filter size={14} />
+                    <Filter
+                      size={14}
+                      className={isAddingToExisting ? "text-red-400" : ""}
+                    />
                     <span className="text-[10px] font-medium uppercase tracking-widest">
                       Sub-Menus
                     </span>
@@ -317,7 +343,7 @@ export function TableOrderingSystem({
                   {/* Bottom */}
                   <div className="mt-auto pt-2 border-t border-zinc-100 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-zinc-900">
-                      ${dish.price?.listedPrice.toFixed(2)}
+                      Rs. {dish.price?.listedPrice.toFixed(2)}
                     </span>
                     <div className="p-1 rounded-md text-zinc-400 group-hover:text-red-500 transition-colors">
                       <PlusCircle size={16} />
@@ -331,16 +357,44 @@ export function TableOrderingSystem({
 
         {/* Right Side: Cart Summary */}
         <div className="w-[380px] bg-zinc-50/50 flex flex-col border-l border-zinc-100 shadow-sm z-10">
-          <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-white/50 sticky top-0 backdrop-blur-sm">
-            <h3 className="text-[10px] font-medium text-zinc-500 uppercase tracking-[0.2em]">
-              Draft Order
+          <div
+            className={`p-6 border-b flex items-center justify-between sticky top-0 backdrop-blur-sm z-20 ${isAddingToExisting ? "bg-red-600/5 text-zinc-900 border-red-100" : "bg-white/50 border-zinc-100"}`}
+          >
+            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">
+              {isAddingToExisting ? "Current Order Addition" : "Draft Order"}
             </h3>
-            <span className="text-[9px] bg-zinc-200 text-zinc-700 px-2.5 py-1 rounded font-medium uppercase tracking-widest">
-              {cart.length} Items
+            <span
+              className={`text-[9px] px-2.5 py-1 rounded font-bold uppercase tracking-widest ${isAddingToExisting ? "bg-red-100 text-red-700" : "bg-zinc-200 text-zinc-700"}`}
+            >
+              {cart.length} New Items
             </span>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+            {isAddingToExisting && existingItems.length > 0 && (
+              <div className="mb-6 space-y-3">
+                <h4 className="text-[9px] font-black text-red-400 uppercase tracking-widest px-1">
+                  Already in Order
+                </h4>
+                <div className="space-y-2 opacity-60">
+                  {existingItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center text-[10px] bg-red-50/50 p-2 rounded-lg border border-red-100/50"
+                    >
+                      <span className="font-medium text-red-900">
+                        {item.quantity} x{" "}
+                        {item.dish?.name || item.combo?.name || "Item"}
+                      </span>
+                      <span className="text-red-600 font-bold">
+                        Rs. {item.totalPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="h-px bg-red-100 mx-1" />
+              </div>
+            )}
             {cart.map((item, idx) => (
               <div
                 key={idx}
@@ -352,7 +406,7 @@ export function TableOrderingSystem({
                       {item.dish?.name}
                     </h4>
                     <span className="text-[10px] text-zinc-500 font-medium">
-                      ${item.unitPrice?.toFixed(2)}
+                      Rs. {item.unitPrice?.toFixed(2)}
                     </span>
                     {item.addons && item.addons.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
@@ -369,7 +423,7 @@ export function TableOrderingSystem({
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <span className="text-[12px] font-medium text-zinc-900">
-                      ${item.totalPrice?.toFixed(2)}
+                      Rs. {item.totalPrice?.toFixed(2)}
                     </span>
                     <div className="flex items-center gap-3 bg-zinc-50 rounded-lg p-1 border border-zinc-100">
                       <button
@@ -474,7 +528,9 @@ export function TableOrderingSystem({
 
               <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-widest text-zinc-600 px-1">
                 <span>Sub-Total ({totalQty} pkts)</span>
-                <span className="text-zinc-900">${totalAmount.toFixed(2)}</span>
+                <span className="text-zinc-900">
+                  Rs. {totalAmount.toFixed(2)}
+                </span>
               </div>
 
               <div className="flex justify-between items-end px-1">
@@ -482,7 +538,7 @@ export function TableOrderingSystem({
                   Grand Total
                 </span>
                 <span className="text-3xl font-medium text-zinc-900 leading-none tracking-tight">
-                  ${grandTotal.toFixed(2)}
+                  Rs. {grandTotal.toFixed(2)}
                 </span>
               </div>
 
@@ -495,9 +551,11 @@ export function TableOrderingSystem({
                 </button>
                 <Button
                   onClick={() => onConfirm(cart, guests, kotRemarks)}
-                  className="h-12 bg-red-600 hover:bg-red-700 text-white font-medium text-[10px] uppercase tracking-widest border-none rounded-xl"
+                  className={`h-12 text-white font-bold text-[10px] uppercase tracking-widest border-none rounded-xl shadow-lg transition-all active:scale-95 ${isAddingToExisting ? "bg-red-600 hover:bg-red-700 shadow-red-500/20" : "bg-red-600 hover:bg-red-700 shadow-red-500/20"}`}
                 >
-                  {isAddingToExisting ? "Add Order" : "Confirm Order"}
+                  {isAddingToExisting
+                    ? "Update & Print KOT"
+                    : "Confirm & Send to Kitchen"}
                 </Button>
               </div>
             </div>
@@ -539,7 +597,7 @@ export function TableOrderingSystem({
                   </p>
                 </div>
                 <span className="text-2xl font-medium text-zinc-900">
-                  ${activeDish.price?.listedPrice.toFixed(2)}
+                  Rs. {activeDish.price?.listedPrice.toFixed(2)}
                 </span>
               </div>
 
@@ -561,7 +619,8 @@ export function TableOrderingSystem({
                         }
                         className={`px-3 py-1.5 rounded-lg border text-[9px] font-medium uppercase tracking-widest transition-all ${selectedAddOnIds.includes(addon.id) ? "bg-zinc-900 text-white border-zinc-900" : "bg-white text-zinc-500 border-zinc-100 hover:border-zinc-200"}`}
                       >
-                        {addon.name} (+${addon.price?.listedPrice.toFixed(2)})
+                        {addon.name} (+Rs. {addon.price?.listedPrice.toFixed(2)}
+                        )
                       </button>
                     ))}
                   </div>
@@ -618,7 +677,7 @@ export function TableOrderingSystem({
               }
               className="w-full h-14 bg-red-600 hover:bg-red-700 text-white font-medium text-[10px] uppercase tracking-widest rounded-xl transition-all active:scale-[0.98]"
             >
-              Add — $
+              Add — Rs.{" "}
               {(
                 ((activeDish.price?.listedPrice || 0) +
                   availableAddOns

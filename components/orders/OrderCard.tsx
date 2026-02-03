@@ -1,14 +1,7 @@
 "use client";
 
 import { Order, OrderStatus } from "@/lib/types";
-import {
-  Plus,
-  Printer,
-  Copy,
-  Zap,
-  Clock,
-  Utensils,
-} from "lucide-react";
+import { Plus, Printer, Copy, Zap, Clock, Utensils } from "lucide-react";
 
 interface OrderCardProps {
   order: Order;
@@ -57,11 +50,11 @@ export function OrderCard({
         </div>
         <div className="flex items-center justify-between mt-1">
           <div className="flex items-center gap-3">
-            <span className="text-[9px] font-medium text-zinc-600 uppercase tracking-widest">
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
               {order.type.replace("_", " ")}
             </span>
-            <div className="flex items-center gap-1.5 text-zinc-400 text-[9px] font-normal">
-              <Clock size={10} />
+            <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] font-medium">
+              <Clock size={11} />
               {new Date(order.createdAt).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -96,11 +89,11 @@ export function OrderCard({
             </span>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[8px] font-medium text-zinc-400 uppercase tracking-widest leading-none mb-1">
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-none mb-1">
               Total Payable
             </span>
-            <span className="text-xl font-medium text-zinc-900 leading-none">
-              ${order.total.toFixed(2)}
+            <span className="text-xl font-bold text-zinc-900 leading-none">
+              Rs. {order.total.toFixed(2)}
             </span>
           </div>
         </div>

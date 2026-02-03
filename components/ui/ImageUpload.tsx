@@ -82,7 +82,7 @@ export function ImageUpload({
         ) : (
           <label
             htmlFor={`file-upload-${label}`}
-            className="w-32 h-32 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-violet-500 hover:text-violet-500 hover:bg-violet-50 transition-all cursor-pointer"
+            className="w-32 h-32 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-red-500 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

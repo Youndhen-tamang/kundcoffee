@@ -28,8 +28,6 @@ import {
   getCustomerSummary,
 } from "@/services/customer";
 
-
-
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -88,8 +86,6 @@ export function CheckoutModal({
   });
 
   const [showQrImage, setShowQrImage] = useState(false);
-
-
 
   const fetchData = async () => {
     const res = await getCustomerSummary();
@@ -241,13 +237,12 @@ export function CheckoutModal({
       if (data.success) {
         // SUCCESS FOR ALL METHODS (CASH, CARD, AND QR)
         setStep("SUCCESS");
-        
+
         // Wait 2 seconds then close
-        setTimeout(() => { 
-          onCheckoutComplete(data.data); 
-          onClose(); 
+        setTimeout(() => {
+          onCheckoutComplete(data.data);
+          onClose();
         }, 2000);
-        
       } else {
         alert(data.message);
       }
@@ -258,9 +253,6 @@ export function CheckoutModal({
       setIsProcessing(false);
     }
   };
-
-
-
 
   const toggleComplimentary = (itemId: string) => {
     setComplimentaryItems((prev) => ({
@@ -299,9 +291,6 @@ export function CheckoutModal({
     customer();
   }, []);
 
-  
-
-
   const renderPrepare = () => (
     <div className="space-y-6">
       {/* Items Table */}
@@ -338,7 +327,7 @@ export function CheckoutModal({
                     {item.quantity}
                   </td>
                   <td className="px-4 py-4 text-right font-medium text-zinc-600">
-                    ${item.unitPrice.toFixed(2)}
+                    Rs. {item.unitPrice.toFixed(2)}
                   </td>
                   <td className="px-4 py-4 text-right font-bold text-zinc-900">
                     <span
@@ -348,10 +337,10 @@ export function CheckoutModal({
                           : ""
                       }
                     >
-                      ${item.totalPrice.toFixed(2)}
+                      Rs. {item.totalPrice.toFixed(2)}
                     </span>
                     {isComplimentary && (
-                      <span className="ml-2 text-emerald-600">$0.00</span>
+                      <span className="ml-2 text-emerald-600">Rs. 0.00</span>
                     )}
                   </td>
                   <td className="px-4 py-4 text-center">
@@ -393,7 +382,7 @@ export function CheckoutModal({
                     onClick={() => setDiscountType("AMOUNT")}
                     className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${discountType === "AMOUNT" ? "bg-zinc-900 text-white shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
                   >
-                    Amount ($)
+                    Amount (Rs.)
                   </button>
                 </div>
               </div>
@@ -545,33 +534,33 @@ export function CheckoutModal({
             <div className="flex justify-between text-xs text-zinc-400 uppercase tracking-widest font-black">
               <span>Subtotal</span>
               <span className="text-white">
-                ${calculatedSubtotal.toFixed(2)}
+                Rs. {calculatedSubtotal.toFixed(2)}
               </span>
             </div>
             {loyaltyDiscountAmount > 0 && (
-              <div className="flex justify-between text-xs text-violet-400 uppercase tracking-widest font-black">
+              <div className="flex justify-between text-xs text-red-400 uppercase tracking-widest font-black">
                 <span>Loyalty ({loyaltyDiscountPercent}%)</span>
-                <span>- ${loyaltyDiscountAmount.toFixed(2)}</span>
+                <span>- Rs. {loyaltyDiscountAmount.toFixed(2)}</span>
               </div>
             )}
             {manualDiscountAmount > 0 && (
               <div className="flex justify-between text-xs text-emerald-400 uppercase tracking-widest font-black">
                 <span>Discount</span>
-                <span>- ${manualDiscountAmount.toFixed(2)}</span>
+                <span>- Rs. {manualDiscountAmount.toFixed(2)}</span>
               </div>
             )}
 
             {includeTax && (
               <div className="flex justify-between text-xs text-zinc-400 uppercase tracking-widest font-black">
                 <span>Tax (13%)</span>
-                <span className="text-white">${taxAmount.toFixed(2)}</span>
+                <span className="text-white">Rs. {taxAmount.toFixed(2)}</span>
               </div>
             )}
             {includeServiceCharge && (
               <div className="flex justify-between text-xs text-zinc-400 uppercase tracking-widest font-black">
                 <span>Service Charge (10%)</span>
                 <span className="text-white">
-                  ${serviceChargeAmount.toFixed(2)}
+                  Rs. {serviceChargeAmount.toFixed(2)}
                 </span>
               </div>
             )}
@@ -582,7 +571,7 @@ export function CheckoutModal({
                 Grand Total
               </span>
               <span className="text-4xl font-black">
-                ${grandTotal.toFixed(2)}
+                Rs. {grandTotal.toFixed(2)}
               </span>
             </div>
             <Button
@@ -654,17 +643,17 @@ export function CheckoutModal({
                     )}
                   </p>
                   <p className="text-[9px] text-zinc-500 uppercase tracking-wider mt-0.5">
-                    {item.quantity} × ${item.unitPrice.toFixed(2)}
+                    {item.quantity} × Rs. {item.unitPrice.toFixed(2)}
                   </p>
                 </div>
                 <div className="text-right">
                   <p
                     className={`font-bold text-zinc-900 ${isComplimentary ? "line-through text-zinc-300" : ""}`}
                   >
-                    ${item.totalPrice.toFixed(2)}
+                    Rs. {item.totalPrice.toFixed(2)}
                   </p>
                   {isComplimentary && (
-                    <p className="font-bold text-emerald-600">$0.00</p>
+                    <p className="font-bold text-emerald-600">Rs. 0.00</p>
                   )}
                 </div>
               </div>
@@ -676,34 +665,34 @@ export function CheckoutModal({
         <div className="space-y-1 border-t border-zinc-200 pt-4 text-[10px]">
           <div className="flex justify-between font-black uppercase tracking-widest text-zinc-500">
             <span>Subtotal</span>
-            <span>${calculatedSubtotal.toFixed(2)}</span>
+            <span>Rs. {calculatedSubtotal.toFixed(2)}</span>
           </div>
 
           {loyaltyDiscountAmount > 0 && (
-            <div className="flex justify-between font-black uppercase tracking-widest text-violet-600">
+            <div className="flex justify-between font-black uppercase tracking-widest text-red-600">
               <span>Loyalty ({loyaltyDiscountPercent}%)</span>
-              <span>- ${loyaltyDiscountAmount.toFixed(2)}</span>
+              <span>- Rs. {loyaltyDiscountAmount.toFixed(2)}</span>
             </div>
           )}
 
           {manualDiscountAmount > 0 && (
             <div className="flex justify-between font-black uppercase tracking-widest text-emerald-600">
               <span>Discount</span>
-              <span>- ${manualDiscountAmount.toFixed(2)}</span>
+              <span>- Rs. {manualDiscountAmount.toFixed(2)}</span>
             </div>
           )}
 
           {includeTax && (
             <div className="flex justify-between font-black uppercase tracking-widest text-zinc-500">
               <span>Tax (13%)</span>
-              <span>${taxAmount.toFixed(2)}</span>
+              <span>Rs. {taxAmount.toFixed(2)}</span>
             </div>
           )}
 
           {includeServiceCharge && (
             <div className="flex justify-between font-black uppercase tracking-widest text-zinc-500">
               <span>Service Charge (10%)</span>
-              <span>${serviceChargeAmount.toFixed(2)}</span>
+              <span>Rs. {serviceChargeAmount.toFixed(2)}</span>
             </div>
           )}
 
@@ -712,7 +701,7 @@ export function CheckoutModal({
             <span className="uppercase tracking-[0.2em] text-[10px] self-center">
               Grand Total
             </span>
-            <span>${grandTotal.toFixed(2)}</span>
+            <span>Rs. {grandTotal.toFixed(2)}</span>
           </div>
         </div>
 
@@ -815,7 +804,7 @@ export function CheckoutModal({
     <div className="space-y-8 max-w-2xl mx-auto py-4">
       <div className="text-center space-y-2">
         <h3 className="text-3xl font-black text-zinc-900 tracking-tight">
-          ${grandTotal.toFixed(2)}
+          Rs. {grandTotal.toFixed(2)}
         </h3>
         <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">
           {showQrImage ? "Scan & Verify" : "Select Payment Method to Finalize"}
@@ -825,42 +814,49 @@ export function CheckoutModal({
       {showQrImage ? (
         /* --- STATIC QR VIEW (MANUAL VERIFY) --- */
         <div className="flex flex-col items-center justify-center space-y-6 animate-in fade-in zoom-in">
-          
           {/* QR Image Container */}
           <div className="p-2 bg-white border-2 border-emerald-500 rounded-2xl shadow-xl">
-             {/* MAKE SURE 'merchant-qr.jpg' IS IN YOUR PUBLIC FOLDER */}
-             <img 
-               src="/merchant-qr.jpg" 
-               alt="Merchant QR" 
-               className="w-64 h-64 object-contain rounded-xl"
-             />
+            {/* MAKE SURE 'merchant-qr.jpg' IS IN YOUR PUBLIC FOLDER */}
+            <img
+              src="/merchant-qr.jpg"
+              alt="Merchant QR"
+              className="w-64 h-64 object-contain rounded-xl"
+            />
           </div>
 
           <div className="text-center space-y-1">
-             <p className="text-xs font-bold text-zinc-800 uppercase">Scan using Mobile Banking / Wallet</p>
-             <p className="text-[10px] text-zinc-500">
-               Ask customer to pay <span className="text-emerald-600 font-black">${grandTotal.toFixed(2)}</span>
-             </p>
+            <p className="text-xs font-bold text-zinc-800 uppercase">
+              Scan using Mobile Banking / Wallet
+            </p>
+            <p className="text-[10px] text-zinc-500">
+              Ask customer to pay{" "}
+              <span className="text-emerald-600 font-black">
+                Rs. {grandTotal.toFixed(2)}
+              </span>
+            </p>
           </div>
 
           {/* Action Buttons */}
           <div className="flex gap-4 w-full max-w-sm">
-             <Button 
-                variant="secondary" 
-                onClick={() => { setShowQrImage(false); setPaymentMethod("CASH"); }}
-                className="flex-1 text-[10px] uppercase font-black h-12"
-             >
-                Back
-             </Button>
-             
-             <Button 
-                onClick={handleProcessCheckout} 
-                disabled={isProcessing}
-                className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] uppercase font-black tracking-widest h-12"
-             >
-                {isProcessing ? "Processing..." : "Payment Received"}
-                <CheckCircle2 size={16} className="ml-2" />
-             </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowQrImage(false);
+                setPaymentMethod("CASH");
+              }}
+              className="flex-1 text-[10px] uppercase font-black h-12"
+            >
+              Back
+            </Button>
+
+            <Button
+              onClick={handleProcessCheckout}
+              disabled={isProcessing}
+              className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] uppercase font-black tracking-widest h-12"
+            >
+              {isProcessing ? "Processing..." : "Payment Received"}
+              <CheckCircle2 size={16} className="ml-2" />
+            </Button>
           </div>
         </div>
       ) : (
@@ -874,10 +870,10 @@ export function CheckoutModal({
               <button
                 key={method.id}
                 onClick={() => {
-                   setPaymentMethod(method.id as any);
-                   if (method.id === "QR") {
-                       setShowQrImage(true); // Toggle the image view
-                   }
+                  setPaymentMethod(method.id as any);
+                  if (method.id === "QR") {
+                    setShowQrImage(true); // Toggle the image view
+                  }
                 }}
                 className={`flex flex-col items-center justify-center p-8 rounded-3xl border-2 transition-all gap-4 ${
                   paymentMethod === method.id
@@ -902,7 +898,7 @@ export function CheckoutModal({
               <ArrowLeft size={16} className="mr-2" />
               Review Bill
             </Button>
-            
+
             {/* Main Proceed Button (Only for Cash/Card now) */}
             <Button
               onClick={handleProcessCheckout}
@@ -1032,7 +1028,7 @@ export function CheckoutModal({
             <input
               type="text"
               placeholder="Full Name"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
               value={formData.fullName}
               onChange={(e) =>
                 setFormData({ ...formData, fullName: e.target.value })
@@ -1047,7 +1043,7 @@ export function CheckoutModal({
               <input
                 type="text"
                 placeholder="Phone Number"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 value={formData.phone}
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
@@ -1061,7 +1057,7 @@ export function CheckoutModal({
               <input
                 type="email"
                 placeholder="Email Address"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
@@ -1076,7 +1072,7 @@ export function CheckoutModal({
               </label>
               <input
                 type="date"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 value={formData.dob}
                 onChange={(e) =>
                   setFormData({ ...formData, dob: e.target.value })
@@ -1090,7 +1086,7 @@ export function CheckoutModal({
               <input
                 type="text"
                 placeholder="Optional"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 value={formData.loyaltyId}
                 onChange={(e) =>
                   setFormData({ ...formData, loyaltyId: e.target.value })
@@ -1105,7 +1101,7 @@ export function CheckoutModal({
             <input
               type="number"
               placeholder="0.00"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
               value={formData.openingBalance}
               onChange={(e) =>
                 setFormData({
@@ -1117,7 +1113,7 @@ export function CheckoutModal({
           </div>
           <Button
             onClick={handleCreateCustomer}
-            className="w-full mt-2 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="w-full mt-2 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
           >
             Create Customer
           </Button>

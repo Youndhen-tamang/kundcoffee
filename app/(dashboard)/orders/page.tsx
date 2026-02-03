@@ -41,6 +41,8 @@ import {
   ChefHat,
   Wine,
   X,
+  Package,
+  CreditCard,
 } from "lucide-react";
 import { Popover } from "@/components/ui/Popover";
 import { toast } from "sonner";
@@ -48,7 +50,7 @@ import { toast } from "sonner";
 type ActiveTab = "ORDERS" | "TABLES" | "KOT";
 
 export default function OrdersPage() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("ORDERS");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("TABLES");
   const [orders, setOrders] = useState<Order[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
   const [spaces, setSpaces] = useState<spaceType[]>([]);
@@ -65,23 +67,26 @@ export default function OrdersPage() {
   const [newOrderType, setNewOrderType] = useState<OrderType>("DINE_IN");
   const [showTableSelector, setShowTableSelector] = useState(false);
   const [showReservationForm, setShowReservationForm] = useState(false);
+  const [showOrderTypeSelector, setShowOrderTypeSelector] = useState(false);
+  const [pendingTable, setPendingTable] = useState<Table | null>(null);
+  const [quickMenuTable, setQuickMenuTable] = useState<Table | null>(null);
   const fetchData = async () => {
-    if (activeTab === "ORDERS" || activeTab === "KOT") {
-      const oData = await getOrders();
-      console.log("ORDERS:", oData);
-      setOrders(oData);
-    }
+    // Always refresh orders and occupied tables as they are core to state
+    const [oData, busyTables] = await Promise.all([
+      getOrders(),
+      getOccupiedTable(),
+    ]);
 
-    if (activeTab === "TABLES") {
+    setOrders(oData);
+    setOccupiedTable(busyTables || []);
+
+    // Refresh structural data if in TABLES tab or if not yet loaded
+    if (activeTab === "TABLES" || tables.length === 0) {
       const [tData, sData, ttData] = await Promise.all([
         getTables(),
         getSpaces(),
         getTableTypes(),
       ]);
-
-      console.log("TABLES:", tData);
-      console.log("SPACES:", sData);
-      console.log("TABLE TYPES:", ttData);
 
       setTables(tData);
       setSpaces(sData);
@@ -90,31 +95,31 @@ export default function OrdersPage() {
   };
 
   useEffect(() => {
-    const loadTables = async () => {
-      if (activeTab === "ORDERS" || activeTab === "KOT") {
-        const oData = await getOrders();
-        console.log("ORDERS:", oData);
-        setOrders(oData);
-      }
-
-      if (activeTab === "TABLES") {
-        const [tData, sData, ttData] = await Promise.all([
-          getTables(),
-          getSpaces(),
-          getTableTypes(),
+    const loadData = async () => {
+      try {
+        const [oData, busyTables] = await Promise.all([
+          getOrders(),
+          getOccupiedTable(),
         ]);
+        setOrders(oData || []);
+        setOccupiedTable(busyTables || []);
 
-        console.log("TABLES:", tData);
-        console.log("SPACES:", sData);
-        console.log("TABLE TYPES:", ttData);
-
-        setTables(tData);
-        setSpaces(sData);
-        setTableTypes(ttData);
+        if (activeTab === "TABLES") {
+          const [tData, sData, ttData] = await Promise.all([
+            getTables(),
+            getSpaces(),
+            getTableTypes(),
+          ]);
+          setTables(tData || []);
+          setSpaces(sData || []);
+          setTableTypes(ttData || []);
+        }
+      } catch (error) {
+        console.error("Failed to load data:", error);
       }
     };
 
-    loadTables();
+    loadData();
   }, [activeTab]);
 
   useEffect(() => {
@@ -147,19 +152,20 @@ export default function OrdersPage() {
     console.log("Busy tables", tables);
   }, [occupiedTable, tables]);
 
-
   const handleRemoveItem = async (itemId: string) => {
     const success = await deleteOrderItem(itemId);
     if (success) {
       // 1. Refresh all orders from the server
-      await fetchData(); 
-      
+      await fetchData();
+
       // 2. Update the "selectedOrder" state so the Modal reflects the change
       if (selectedOrder) {
         // We look for the updated version of this order in the fresh orders list
         const updatedOrders = await getOrders(); // Direct call to ensure fresh data
-        const refreshedOrder = updatedOrders.find((o: Order) => o.id === selectedOrder.id);
-        
+        const refreshedOrder = updatedOrders.find(
+          (o: Order) => o.id === selectedOrder.id,
+        );
+
         if (refreshedOrder) {
           setSelectedOrder(refreshedOrder);
         } else {
@@ -170,9 +176,9 @@ export default function OrdersPage() {
     }
   };
 
-  useEffect(()=>{
-    fetchData
-  },[])
+  useEffect(() => {
+    fetchData();
+  }, []);
   const orderTypes: { id: string; name: string }[] = [
     { id: "ALL", name: "All Types" },
     { id: "DINE_IN", name: "Dine In" },
@@ -195,14 +201,18 @@ export default function OrdersPage() {
 
   const getFilteredKOTs = () => {
     let kots: { type: "KITCHEN" | "BAR"; order: Order; items: any[] }[] = [];
-    orders.forEach((o) => {
-      const kitchenItems = o.items.filter((i) => i.dish?.kotType === "KITCHEN");
-      const barItems = o.items.filter((i) => i.dish?.kotType === "BAR");
-      if (kitchenItems.length > 0)
-        kots.push({ type: "KITCHEN", order: o, items: kitchenItems });
-      if (barItems.length > 0)
-        kots.push({ type: "BAR", order: o, items: barItems });
-    });
+    orders
+      .filter((o) => o.status !== "COMPLETED" && o.status !== "CANCELLED")
+      .forEach((o) => {
+        const kitchenItems = o.items.filter(
+          (i) => i.dish?.kotType === "KITCHEN",
+        );
+        const barItems = o.items.filter((i) => i.dish?.kotType === "BAR");
+        if (kitchenItems.length > 0)
+          kots.push({ type: "KITCHEN", order: o, items: kitchenItems });
+        if (barItems.length > 0)
+          kots.push({ type: "BAR", order: o, items: barItems });
+      });
 
     if (searchQuery) {
       kots = kots.filter(
@@ -233,6 +243,14 @@ export default function OrdersPage() {
     .filter((s) => s.tables.length > 0);
 
   // Handlers for Order Actions
+  const handlePrintOrder = (order: Order) => {
+    window.print();
+  };
+
+  const handleCopyOrder = (order: Order) => {
+    toast.info("Order copying is not yet implemented.");
+  };
+
   const handleUpdateStatus = async (orderId: string, status: OrderStatus) => {
     const success = await updateOrderStatus(orderId, status);
     if (success) fetchData();
@@ -317,12 +335,30 @@ export default function OrdersPage() {
     }
   };
 
+  const handleTableClick = (table: Table) => {
+    const session = occupiedTable.find((o) => o.tableId === table.id);
+
+    if (session) {
+      setQuickMenuTable(table);
+    } else {
+      // Open table: Show selection modal
+      setPendingTable(table);
+      setShowOrderTypeSelector(true);
+    }
+  };
+
   const handleNewOrder = (type: OrderType) => {
     setNewOrderType(type);
+    setShowOrderTypeSelector(false);
 
     switch (type) {
       case "DINE_IN":
-        setShowTableSelector(true);
+        if (pendingTable) {
+          setActiveTable(pendingTable);
+          setPendingTable(null);
+        } else {
+          setShowTableSelector(true);
+        }
         break;
 
       case "RESERVATION":
@@ -358,10 +394,10 @@ export default function OrdersPage() {
             </h1>
             <div className="bg-zinc-100 p-1 rounded-lg flex items-center gap-1">
               <button
-                onClick={() => setActiveTab("ORDERS")}
-                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${activeTab === "ORDERS" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
+                onClick={() => setActiveTab("TABLES")}
+                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${activeTab === "TABLES" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
               >
-                Orders
+                Tables
               </button>
               <button
                 onClick={() => setActiveTab("KOT")}
@@ -370,10 +406,10 @@ export default function OrdersPage() {
                 KOT
               </button>
               <button
-                onClick={() => setActiveTab("TABLES")}
-                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${activeTab === "TABLES" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
+                onClick={() => setActiveTab("ORDERS")}
+                className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${activeTab === "ORDERS" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
               >
-                Tables
+                Orders
               </button>
             </div>
           </div>
@@ -393,35 +429,16 @@ export default function OrdersPage() {
               />
             </div>
 
-            <Popover
-              trigger={
-                <Button className="bg-red-600 text-black h-10 px-6 uppercase tracking-widest text-[10px]">
-                  <Plus size={14} className="mr-2" />
-                  Add New Order
-                </Button>
-              }
-              align="right"
-              content={
-                <div className="w-52 py-2">
-                  {[
-                    { id: "DINE_IN", label: "Dine In" },
-                    { id: "TAKE_AWAY", label: "Take Away" },
-                    { id: "PICKUP", label: "Pickup" },
-                    { id: "DELIVERY", label: "Delivery" },
-                    { id: "RESERVATION", label: "Reservation" },
-                    { id: "QUICK_BILLING", label: "Quick Billing" },
-                  ].map((type) => (
-                    <button
-                      key={type.id}
-                      onClick={() => handleNewOrder(type.id as OrderType)}
-                      className="w-full px-4 py-2 text-left text-[10px] uppercase tracking-widest hover:bg-zinc-50"
-                    >
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
-              }
-            />
+            <Button
+              onClick={() => {
+                setPendingTable(null);
+                setShowOrderTypeSelector(true);
+              }}
+              className="bg-red-600 text-black h-10 px-6 uppercase tracking-widest text-[10px]"
+            >
+              <Plus size={14} className="mr-2" />
+              Add New Order
+            </Button>
 
             <Popover
               trigger={
@@ -460,7 +477,7 @@ export default function OrdersPage() {
         {/* Sub-Filters */}
         <div className="flex items-center justify-between gap-4 bg-white p-2 rounded-xl border border-zinc-100 shadow-sm">
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-medium text-zinc-400 uppercase tracking-widest ml-3">
+            <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-3">
               Filter by
             </span>
             <div className="flex items-center gap-2">
@@ -468,7 +485,7 @@ export default function OrdersPage() {
                 <button
                   key={type.id}
                   onClick={() => setSelectedOrderType(type.id)}
-                  className={`px-3 py-1.5 rounded-lg text-[9px] font-medium uppercase tracking-tight transition-all ${selectedOrderType === type.id ? "bg-zinc-900 text-white" : "text-zinc-400 hover:bg-zinc-50"} w-[150px]`}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-tight transition-all ${selectedOrderType === type.id ? "bg-zinc-900 text-white" : "text-zinc-500 hover:bg-zinc-50"} w-[150px]`}
                 >
                   {type.name}
                 </button>
@@ -483,7 +500,7 @@ export default function OrdersPage() {
           </div>
 
           <div className="flex items-center gap-2 mr-3">
-            <span className="text-[10px] font-medium text-zinc-300">
+            <span className="text-xs font-bold text-zinc-600">
               {activeTab === "ORDERS"
                 ? filteredOrders.length
                 : activeTab === "TABLES"
@@ -499,17 +516,19 @@ export default function OrdersPage() {
       <div className="min-h-[60vh]">
         {activeTab === "ORDERS" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredOrders.filter(i=>i.status !== "COMPLETED").map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onClick={setSelectedOrder}
-                onQuickCheckout={handleQuickCheckout}
-                onPrint={() => {}}
-                onCopy={() => {}}
-                onAddItems={(o) => setExistingOrderForAdding(o)}
-              />
-            ))}
+            {filteredOrders
+              .filter((i) => i.status !== "COMPLETED")
+              .map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onClick={setSelectedOrder}
+                  onQuickCheckout={handleQuickCheckout}
+                  onPrint={handlePrintOrder}
+                  onCopy={handleCopyOrder}
+                  onAddItems={(o) => setExistingOrderForAdding(o)}
+                />
+              ))}
           </div>
         )}
 
@@ -527,13 +546,16 @@ export default function OrdersPage() {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                   {space.tables.map((table) => {
-                    const isOccupied = table.status === "OCCUPIED";
+                    const session = occupiedTable.find(
+                      (o) => o.tableId === table.id,
+                    );
+                    const isOccupied = !!session;
                     const isBilled = false; // logic for billed state if exists
 
                     return (
                       <div
                         key={table.id}
-                        onClick={() => setActiveTable(table)}
+                        onClick={() => handleTableClick(table)}
                         className={`relative group cursor-pointer rounded-xl p-5 border transition-all duration-200 flex flex-col items-center gap-3 ${
                           isBilled
                             ? "bg-amber-50 border-amber-200 text-amber-700"
@@ -549,23 +571,23 @@ export default function OrdersPage() {
                         </div>
                         <div className="text-center">
                           <h3
-                            className={`font-black text-xs uppercase tracking-tight ${isOccupied || isBilled ? "text-zinc-900" : "text-zinc-500"}`}
+                            className={`font-bold text-xs uppercase tracking-tight ${isOccupied || isBilled ? "text-zinc-900" : "text-zinc-600"}`}
                           >
                             {table.name}
                           </h3>
-                          <p className="text-[8px] font-black uppercase opacity-60 mt-0.5">
+                          <p className="text-[9px] font-bold uppercase opacity-80 mt-0.5 text-zinc-500">
                             {table.capacity} Seats
                           </p>
                         </div>
 
                         {/* Status Label */}
                         <span
-                          className={`text-[8px] font-black px-2 py-0.5 rounded-full border uppercase tracking-widest ${
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-widest ${
                             isBilled
-                              ? "bg-amber-200 border-amber-300"
+                              ? "bg-amber-100 border-amber-200 text-amber-700"
                               : isOccupied
-                                ? "bg-emerald-200 border-emerald-300"
-                                : "bg-white border-zinc-300 text-zinc-500"
+                                ? "bg-emerald-100 border-emerald-200 text-emerald-700"
+                                : "bg-white border-zinc-200 text-zinc-500"
                           }`}
                         >
                           {isBilled
@@ -630,8 +652,8 @@ export default function OrdersPage() {
               </div>
             </div>
             <div className="space-y-6">
-              <div className="flex items-center gap-3 px-2 border-b-2 border-indigo-100 pb-3">
-                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
+              <div className="flex items-center gap-3 px-2 border-b-2 border-zinc-100 pb-3">
+                <div className="p-2.5 bg-zinc-50 text-zinc-600 rounded-2xl">
                   <Wine size={22} />
                 </div>
                 <h2 className="text-xl font-black text-gray-900 uppercase">
@@ -676,7 +698,7 @@ export default function OrdersPage() {
             onUpdateStatus={handleUpdateStatus}
             onUpdateItemStatus={handleUpdateItemStatus}
             onEditItem={handleEditItem}
-            onRemoveItem={handleRemoveItem} // <--- Pass this new prop
+            onRemoveItem={handleRemoveItem}
             onCheckout={(o) => {
               setSelectedOrder(null);
               setCheckoutOrder(o);
@@ -685,6 +707,7 @@ export default function OrdersPage() {
               setSelectedOrder(null);
               setExistingOrderForAdding(o);
             }}
+            onPrint={handlePrintOrder}
           />
         )}
       </Modal>
@@ -719,6 +742,7 @@ export default function OrdersPage() {
             onClose={() => setExistingOrderForAdding(null)}
             onConfirm={handleAddItemsToOrder}
             isAddingToExisting={true}
+            existingItems={existingOrderForAdding.items}
           />
         )}
       </Modal>
@@ -730,11 +754,120 @@ export default function OrdersPage() {
           onClose={() => setCheckoutOrder(null)}
           order={checkoutOrder}
           onCheckoutComplete={() => {
-            fetchData(); 
+            fetchData();
             setCheckoutOrder(null);
           }}
         />
       )}
+
+      {/* Table QuickMenu Modal */}
+      <Modal
+        isOpen={!!quickMenuTable}
+        onClose={() => setQuickMenuTable(null)}
+        title=""
+        size="md"
+      >
+        {quickMenuTable && (
+          <div className="p-8 space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-red-200">
+                  <Package size={22} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">
+                    Table {quickMenuTable.name}
+                  </h3>
+                  <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">
+                    Ongoing session
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setQuickMenuTable(null)}
+                className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              {(() => {
+                const activeOrder = orders.find(
+                  (o) =>
+                    o.tableId === quickMenuTable.id &&
+                    o.status !== "COMPLETED" &&
+                    o.status !== "CANCELLED",
+                );
+                return (
+                  <>
+                    <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-6 flex items-center justify-between">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
+                          Current Total
+                        </span>
+                        <span className="text-2xl font-black text-zinc-900">
+                          Rs. {activeOrder?.total.toFixed(2) || "0.00"}
+                        </span>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
+                          Items
+                        </span>
+                        <span className="text-sm font-black text-zinc-900">
+                          {activeOrder?.items.length || 0} Products
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 space-y-3">
+                      <Button
+                        onClick={() => {
+                          if (activeOrder) {
+                            setExistingOrderForAdding(activeOrder);
+                          } else {
+                            // Fallback if no order found but session active
+                            setActiveTable(quickMenuTable);
+                          }
+                          setQuickMenuTable(null);
+                        }}
+                        className="w-full h-14 bg-red-600 hover:bg-red-700 text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-red-200 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95"
+                      >
+                        <Plus size={18} /> Modify / Add More
+                      </Button>
+
+                      <Button
+                        onClick={() => {
+                          if (activeOrder) {
+                            setCheckoutOrder(activeOrder);
+                          }
+                          setQuickMenuTable(null);
+                        }}
+                        className="w-full h-14 bg-zinc-900 hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-zinc-200 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95"
+                      >
+                        <CreditCard size={18} /> Direct Checkout
+                      </Button>
+
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          if (activeOrder) {
+                            setSelectedOrder(activeOrder);
+                          }
+                          setQuickMenuTable(null);
+                        }}
+                        className="w-full h-12 border-zinc-200 text-zinc-600 font-bold text-[10px] uppercase tracking-widest rounded-2xl"
+                      >
+                        View Order Details
+                      </Button>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/*Table Selector */}
       <Modal
@@ -757,7 +890,8 @@ export default function OrdersPage() {
                     <button
                       key={table.id}
                       disabled={occupiedTable.some(
-                        (o) => o.tableId === table.id && table.status === "OCCUPIED"
+                        (o) =>
+                          o.tableId === table.id && table.status === "OCCUPIED",
                       )}
                       onClick={() => {
                         setActiveTable(table);
@@ -773,6 +907,36 @@ export default function OrdersPage() {
                   ))}
               </div>
             </div>
+          ))}
+        </div>
+      </Modal>
+
+      {/* Order Type Selector */}
+      <Modal
+        isOpen={showOrderTypeSelector}
+        onClose={() => setShowOrderTypeSelector(false)}
+        title="Select Order Type"
+        size="md"
+      >
+        <div className="grid grid-cols-2 gap-4 p-4">
+          {[
+            { id: "DINE_IN", label: "Dine In", icon: Users },
+            { id: "TAKE_AWAY", label: "Take Away", icon: Package },
+            { id: "PICKUP", label: "Pickup", icon: Package },
+            { id: "DELIVERY", label: "Delivery", icon: Package },
+            { id: "RESERVATION", label: "Reservation", icon: CalendarDays },
+            { id: "QUICK_BILLING", label: "Quick Billing", icon: FileText },
+          ].map((type) => (
+            <button
+              key={type.id}
+              onClick={() => handleNewOrder(type.id as OrderType)}
+              className="flex flex-col items-center justify-center p-6 bg-zinc-50 border border-zinc-100 rounded-xl hover:border-red-500 hover:bg-white transition-all gap-3"
+            >
+              <type.icon size={24} className="text-zinc-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900">
+                {type.label}
+              </span>
+            </button>
           ))}
         </div>
       </Modal>

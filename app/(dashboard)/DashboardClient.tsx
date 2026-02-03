@@ -144,7 +144,7 @@ export default function DashboardClient({
           </label>
           <input
             type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
             placeholder="e.g. Main Hall"
             value={newSpaceName}
             onChange={(e) => setNewSpaceName(e.target.value)}
@@ -155,7 +155,7 @@ export default function DashboardClient({
             Description
           </label>
           <textarea
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
             placeholder="Optional description"
             value={newSpaceDesc}
             onChange={(e) => setNewSpaceDesc(e.target.value)}
@@ -164,7 +164,7 @@ export default function DashboardClient({
         <Button
           size="sm"
           onClick={handleAddSpace}
-          className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 border-none"
+          className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
         >
           Create Space
         </Button>
@@ -184,7 +184,7 @@ export default function DashboardClient({
           </label>
           <input
             type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
             placeholder="e.g. T-01"
             value={newTableName}
             onChange={(e) => setNewTableName(e.target.value)}
@@ -196,7 +196,7 @@ export default function DashboardClient({
           </label>
           <input
             type="number"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
             placeholder="e.g. 4"
             value={newTableCapacity}
             onChange={(e) => setNewTableCapacity(e.target.value)}
@@ -227,7 +227,7 @@ export default function DashboardClient({
         <Button
           size="sm"
           onClick={handleAddTable}
-          className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 border-none"
+          className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
         >
           Create Table
         </Button>
@@ -242,7 +242,7 @@ export default function DashboardClient({
       </h3>
       <div className="text-sm text-gray-500 space-y-2">
         <p>Manage QR codes for tables here.</p>
-        <p className="text-[10px] font-medium text-violet-600 italic">
+        <p className="text-[10px] font-medium text-red-600 italic">
           Select a table to generate specialized QR.
         </p>
       </div>
@@ -265,7 +265,7 @@ export default function DashboardClient({
           </label>
           <input
             type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
             placeholder="e.g. John Doe"
             value={newCustomer.fullName}
             onChange={(e) =>
@@ -279,7 +279,7 @@ export default function DashboardClient({
           </label>
           <input
             type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all placeholder:text-gray-400"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
             placeholder="Phone Number"
             value={newCustomer.phone}
             onChange={(e) =>
@@ -290,7 +290,7 @@ export default function DashboardClient({
         <Button
           size="sm"
           onClick={handleAddCustomer}
-          className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200 border-none"
+          className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
         >
           Add Customer
         </Button>
@@ -397,7 +397,7 @@ export default function DashboardClient({
             </label>
             <input
               type="text"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
               placeholder="e.g. VIP Lounge"
               value={newTypeName}
               onChange={(e) => setNewTypeName(e.target.value)}
@@ -416,7 +416,7 @@ export default function DashboardClient({
             </Button>
             <Button
               onClick={handleAddTableType}
-              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
             >
               Save Type
             </Button>

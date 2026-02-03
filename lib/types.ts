@@ -22,7 +22,7 @@ export type Table = {
   status: "ACTIVE" | "OCCUPIED" | "INACTIVE";
   spaceId?: string | null;
   createdAt: Date;
-  sessions:TableSession[];
+  sessions: TableSession[];
   qrCode?: QRCode | null;
 };
 
@@ -153,6 +153,7 @@ export type OrderStatus =
   | "SERVED"
   | "COMPLETED"
   | "CANCELLED";
+
 export type OrderType =
   | "DINE_IN"
   | "PICKUP"
@@ -172,7 +173,7 @@ export type OrderItem = {
   unitPrice: number;
   totalPrice: number;
   selectedAddOns?: OrderItemAddOn[];
-  status?: OrderStatus; // Added for per-item status tracking if needed
+  status?: OrderStatus;
   remarks?: string;
 };
 
@@ -237,13 +238,12 @@ export type CustomerLedger = {
   createdAt: string;
 };
 
-
 export type TableSession = {
   id: string;
   tableId: string;
-  table?: Table; 
-  startedAt: string; 
-  endedAt?: string | null; 
+  table?: Table;
+  startedAt: string;
+  endedAt?: string | null;
   total: number;
   serviceCharge: number;
   tax: number;
@@ -251,7 +251,41 @@ export type TableSession = {
   isActive: boolean;
 };
 
-export interface ApiResponse<T= any> {
+export type PaymentMethod = "CASH" | "ESEWA" | "QR" | "BANK_TRANSFER";
+
+export type ReturnPaymentStatus = "PAID" | "UNPAID" | "CREDIT";
+
+export type SalesReturn = {
+  id: string;
+  referenceNumber: string;
+  customerId?: string | null;
+  customer?: Customer | null;
+  txnDate: Date;
+  billReference: string;
+  salesStaff?: string | null;
+  items: SalesReturnItem[];
+  taxableAmount: number;
+  totalAmount: number;
+  roundOff: number;
+  discount: number;
+  attachment?: string | null;
+  remark?: string | null;
+  paymentStatus: ReturnPaymentStatus;
+  paymentMode?: PaymentMethod | null;
+  createdAt: Date;
+  isDeleted: boolean;
+};
+
+export type SalesReturnItem = {
+  id: string;
+  salesReturnId: string;
+  dishName: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+};
+
+export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
