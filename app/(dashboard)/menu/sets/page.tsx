@@ -111,7 +111,7 @@ export default function MenuSetsPage() {
         <div className="flex items-center gap-3">
           <Button
             onClick={openCreate}
-            className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
           >
             <Plus size={18} className="mr-2" /> Create Set
           </Button>
@@ -130,7 +130,7 @@ export default function MenuSetsPage() {
         <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm sticky top-0">
           <input
             placeholder="Search menu sets..."
-            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 w-full max-w-sm transition-all"
+            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 w-full max-w-sm transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -154,7 +154,7 @@ export default function MenuSetsPage() {
               <tr
                 key={m.id}
                 onClick={() => openEdit(m)}
-                className="hover:bg-violet-50/50 transition-colors cursor-pointer group"
+                className="hover:bg-red-50/50 transition-colors cursor-pointer group"
               >
                 <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500">
@@ -185,7 +185,7 @@ export default function MenuSetsPage() {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-2 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg">
+                    <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
                       <Edit2 size={16} />
                     </button>
                   </div>
@@ -222,7 +222,7 @@ export default function MenuSetsPage() {
                 Name *
               </label>
               <input
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 placeholder="e.g. Lunch Set"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -234,7 +234,7 @@ export default function MenuSetsPage() {
                 Service *
               </label>
               <input
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 placeholder="e.g. Daily Lunch"
                 value={service}
                 onChange={(e) => setService(e.target.value)}
@@ -247,7 +247,7 @@ export default function MenuSetsPage() {
                   type="checkbox"
                   checked={isActive}
                   onChange={(e) => setIsActive(e.target.checked)}
-                  className="w-5 h-5 rounded text-violet-600 focus:ring-violet-500"
+                  className="w-5 h-5 rounded text-red-600 focus:ring-red-500"
                 />
                 <span className="text-sm font-medium text-gray-700">
                   Active
@@ -266,13 +266,13 @@ export default function MenuSetsPage() {
                   key={sm.id}
                   className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                     selectedSubMenuIds.includes(sm.id)
-                      ? "bg-violet-50 border-violet-200"
+                      ? "bg-red-50 border-red-200"
                       : "bg-white border-gray-200 hover:bg-gray-50"
                   }`}
                 >
                   <input
                     type="checkbox"
-                    className="w-4 h-4 rounded text-violet-600"
+                    className="w-4 h-4 rounded text-red-600"
                     checked={selectedSubMenuIds.includes(sm.id)}
                     onChange={(e) => {
                       if (e.target.checked)
@@ -312,7 +312,7 @@ export default function MenuSetsPage() {
           </Button>
           <Button
             onClick={handleSubmit}
-            className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
             disabled={!name || !service || uploading}
           >
             {uploading ? "Saving..." : isEditing ? "Update" : "Create"}

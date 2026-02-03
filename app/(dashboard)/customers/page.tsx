@@ -119,7 +119,7 @@ export default function CustomersPage() {
         actionButton={
           <Button
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
           >
             <span className="flex items-center gap-2">Add Customer</span>
           </Button>
@@ -162,7 +162,7 @@ export default function CustomersPage() {
             {filteredCustomers.map((customer, index) => (
               <tr
                 key={customer.id}
-                className="hover:bg-violet-50/50 transition-colors cursor-pointer group"
+                className="hover:bg-red-50/50 transition-colors cursor-pointer group"
                 onClick={() => router.push(`/customers/${customer.id}`)}
               >
                 <td className="px-6 py-4 font-medium text-gray-500">
@@ -210,7 +210,7 @@ export default function CustomersPage() {
             <input
               type="text"
               placeholder="Full Name"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
               value={formData.fullName}
               onChange={(e) =>
                 setFormData({ ...formData, fullName: e.target.value })
@@ -225,7 +225,7 @@ export default function CustomersPage() {
               <input
                 type="text"
                 placeholder="Phone Number"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 value={formData.phone}
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
@@ -239,7 +239,7 @@ export default function CustomersPage() {
               <input
                 type="email"
                 placeholder="Email Address"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
@@ -254,7 +254,7 @@ export default function CustomersPage() {
               </label>
               <input
                 type="date"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 value={formData.dob}
                 onChange={(e) =>
                   setFormData({ ...formData, dob: e.target.value })
@@ -268,7 +268,7 @@ export default function CustomersPage() {
               <input
                 type="text"
                 placeholder="Optional"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 value={formData.loyaltyId}
                 onChange={(e) =>
                   setFormData({ ...formData, loyaltyId: e.target.value })
@@ -283,7 +283,7 @@ export default function CustomersPage() {
             <input
               type="number"
               placeholder="0.00"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
               value={formData.openingBalance}
               onChange={(e) =>
                 setFormData({
@@ -295,7 +295,7 @@ export default function CustomersPage() {
           </div>
           <Button
             onClick={handleCreateCustomer}
-            className="w-full mt-2 bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="w-full mt-2 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
           >
             Create Customer
           </Button>

@@ -210,7 +210,7 @@ export function RichTextEditor({
       <label className="text-sm font-medium text-gray-700 block mb-1">
         {label}
       </label>
-      <div className="border border-gray-300 rounded-lg p-1 bg-white focus-within:ring-2 focus-within:ring-violet-500/20 focus-within:border-violet-500 transition-all">
+      <div className="border border-gray-300 rounded-lg p-1 bg-white focus-within:ring-2 focus-within:ring-red-500/20 focus-within:border-red-500 transition-all">
         <div className="flex gap-1 border-b border-gray-100 pb-2 mb-2 px-1">
           <button
             type="button"

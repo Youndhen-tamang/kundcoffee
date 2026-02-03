@@ -82,3 +82,14 @@ export const deleteOrderItem = async (orderItemId: string): Promise<ApiResponse>
     };
   }
 };
+
+export const getOrderHistory = async (page = 1, limit = 20, search = "") => {
+  try {
+    const res = await fetch(`/api/order/history?page=${page}&limit=${limit}&search=${search}`);
+    const data = await res.json();
+    return data; 
+  } catch (error) {
+    console.error("History Fetch Error:", error);
+    return { success: false, data: [] };
+  }
+};

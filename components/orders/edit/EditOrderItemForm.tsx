@@ -106,13 +106,13 @@ export function EditOrderItemForm({
         <div className="flex items-center gap-3">
           <button
             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center hover:text-violet-600"
+            className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center hover:text-red-600"
           >
             <Minus size={20} />
           </button>
           <button
             onClick={() => setQuantity(quantity + 1)}
-            className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center hover:text-violet-600"
+            className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center hover:text-red-600"
           >
             <Plus size={20} />
           </button>
@@ -131,7 +131,7 @@ export function EditOrderItemForm({
               onClick={() => handleToggleAddOn(addon.id)}
               className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
                 selectedAddOnIds.includes(addon.id)
-                  ? "border-violet-600 bg-violet-50 text-violet-700"
+                  ? "border-red-600 bg-red-50 text-red-700"
                   : "border-gray-100 bg-white text-gray-600"
               }`}
             >
@@ -139,7 +139,7 @@ export function EditOrderItemForm({
                 <span className="text-xs font-bold truncate">{addon.name}</span>
                 <span className="text-[10px] opacity-70">${addon.price?.listedPrice.toFixed(2)}</span>
               </div>
-              {selectedAddOnIds.includes(addon.id) && <Check size={14} className="text-violet-600" />}
+              {selectedAddOnIds.includes(addon.id) && <Check size={14} className="text-red-600" />}
             </button>
           ))}
         </div>
@@ -150,7 +150,7 @@ export function EditOrderItemForm({
         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Remarks</label>
         <textarea
           placeholder="Specific instructions..."
-          className="w-full p-4 bg-slate-50 border border-gray-100 rounded-xl text-xs outline-none focus:bg-white focus:border-violet-500 h-24 resize-none"
+          className="w-full p-4 bg-slate-50 border border-gray-100 rounded-xl text-xs outline-none focus:bg-white focus:border-red-500 h-24 resize-none"
           value={remarks}
           onChange={(e) => setRemarks(e.target.value)}
         />
@@ -163,7 +163,7 @@ export function EditOrderItemForm({
         </Button>
         <Button
           onClick={handleSave}
-          className="flex-[2] bg-violet-600 hover:bg-violet-700 text-white font-black h-11 shadow-lg"
+          className="flex-[2] bg-red-600 hover:bg-red-700 text-white font-black h-11 shadow-lg"
         >
           Save Changes
         </Button>

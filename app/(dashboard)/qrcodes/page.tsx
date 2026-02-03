@@ -87,7 +87,7 @@ export default function QRCodesPage() {
         actionButton={
           <Button
             onClick={() => setIsModalOpen(true)}
-            className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
           >
             <span className="flex items-center gap-2">Add QR</span>
           </Button>
@@ -110,7 +110,7 @@ export default function QRCodesPage() {
         <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm sticky top-0">
           <input
             placeholder="Search QR codes..."
-            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 w-full max-w-sm transition-all"
+            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 w-full max-w-sm transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -127,7 +127,7 @@ export default function QRCodesPage() {
             {filteredQrs.map((item) => (
               <tr
                 key={item.id}
-                className="hover:bg-violet-50/50 transition-colors cursor-pointer group"
+                className="hover:bg-red-50/50 transition-colors cursor-pointer group"
               >
                 <td className="px-6 py-4">
                   <div className="w-16 h-16 rounded-lg bg-gray-50 border border-gray-100 p-1">
@@ -173,7 +173,7 @@ export default function QRCodesPage() {
           {/* Placeholder for generation action */}
           <Button
             onClick={handleGenerate}
-            className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200"
+            className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
           >
             Generate Now
           </Button>

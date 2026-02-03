@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Order, OrderItem, OrderStatus, OrderType } from "@/lib/types";
+import { Order, OrderItem, OrderStatus } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Popover } from "@/components/ui/Popover";
 import { Modal } from "@/components/ui/Modal";
@@ -10,19 +10,14 @@ import {
   X,
   Clock,
   User,
-  Trash2,
   Edit2,
   Plus,
-  Minus,
-  ChevronRight,
-  CheckCircle2,
-  AlertCircle,
   Package,
   CreditCard,
-  Zap,
-  Printer,
-  ChevronDown,
   LayoutGrid,
+  CheckCircle2,
+  Ban,
+  Printer,
 } from "lucide-react";
 
 interface OrderDetailViewProps {
@@ -32,8 +27,9 @@ interface OrderDetailViewProps {
   onUpdateItemStatus: (itemId: string, status: OrderStatus) => void;
   onEditItem: (itemId: string, updatedData: any) => void;
   onCheckout: (order: Order) => void;
-  onRemoveItem: (itemId: string) => void; // <--- Add this
   onAddMore: (order: Order) => void;
+  onRemoveItem?: (itemId: string) => void; // Optional for History Views
+  onPrint?: (order: Order) => void;
 }
 
 export function OrderDetailView({
@@ -43,13 +39,19 @@ export function OrderDetailView({
   onUpdateItemStatus,
   onEditItem,
   onCheckout,
-  onRemoveItem,
   onAddMore,
+  onRemoveItem,
+  onPrint,
 }: OrderDetailViewProps) {
   const [activeItemForPopover, setActiveItemForPopover] = useState<
     string | null
   >(null);
   const [editingItem, setEditingItem] = useState<OrderItem | null>(null);
+  const [includeTax, setIncludeTax] = useState(false);
+
+  // 1. READ-ONLY LOGIC: Determine if this is a History View
+  const isReadOnly =
+    order.status === "COMPLETED" || order.status === "CANCELLED";
 
   const statuses: OrderStatus[] = [
     "PENDING",
@@ -60,24 +62,22 @@ export function OrderDetailView({
     "CANCELLED",
   ];
 
-  const [includeTax, setIncludeTax] = useState(false);
-
   const getStatusStyle = (status: OrderStatus) => {
     switch (status) {
       case "PENDING":
-        return "border-red-100 text-red-600 bg-red-50 font-medium";
+        return "border-red-100 text-red-600 bg-red-50";
       case "PREPARING":
-        return "border-zinc-200 text-zinc-600 bg-zinc-50 font-medium";
+        return "border-zinc-200 text-zinc-600 bg-zinc-50";
       case "READYTOPICK":
-        return "border-emerald-100 text-emerald-600 bg-emerald-50 font-medium";
+        return "border-emerald-100 text-emerald-600 bg-emerald-50";
       case "SERVED":
-        return "border-blue-100 text-blue-600 bg-blue-50 font-medium";
+        return "border-blue-100 text-blue-600 bg-blue-50";
       case "COMPLETED":
-        return "border-zinc-200 text-zinc-400 bg-zinc-50 font-medium";
+        return "border-zinc-200 text-zinc-400 bg-zinc-50";
       case "CANCELLED":
-        return "border-zinc-200 text-zinc-400 bg-zinc-100 font-medium";
+        return "border-zinc-200 text-zinc-400 bg-zinc-100";
       default:
-        return "border-zinc-200 text-zinc-400 bg-zinc-50 font-medium";
+        return "border-zinc-200 text-zinc-400 bg-zinc-50";
     }
   };
 
@@ -92,7 +92,7 @@ export function OrderDetailView({
 
   return (
     <div className="flex flex-col m-auto h-[85vh] bg-white overflow-hidden rounded-xl border border-zinc-100">
-      {/* Header */}
+      {/* HEADER */}
       <div className="bg-white border-b border-zinc-100 p-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-zinc-900 rounded-lg flex items-center justify-center text-white">
@@ -100,31 +100,40 @@ export function OrderDetailView({
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-medium text-zinc-900 leading-none tracking-tight">
-                Order #{order.id.slice(-6)}
+              <h2 className="text-lg font-medium text-zinc-900 tracking-tight">
+                Order #{order.id.slice(-6).toUpperCase()}
               </h2>
               <span className="text-[9px] font-medium px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-700 uppercase tracking-widest">
                 {order.type.replace("_", " ")}
               </span>
             </div>
             <div className="flex items-center gap-3 mt-1.5">
-              <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-widest">
+              <span className="text-[11px] text-zinc-600 font-bold uppercase tracking-widest">
                 Table:{" "}
                 <span className="text-zinc-900">
-                  {order.table?.name || "No Table"}
+                  {order.table?.name || "Direct"}
                 </span>
               </span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {/* HIDE ADD ITEMS IF READ ONLY */}
+          {!isReadOnly && (
+            <Button
+              onClick={() => onAddMore(order)}
+              variant="secondary"
+              className="h-10 px-5 border-zinc-200 text-zinc-700 font-medium flex items-center gap-2 uppercase text-[10px] tracking-widest bg-white"
+            >
+              <Plus size={16} /> Add Items
+            </Button>
+          )}
           <Button
-            onClick={() => onAddMore(order)}
+            onClick={() => onPrint?.(order)}
             variant="secondary"
             className="h-10 px-5 border-zinc-200 text-zinc-700 font-medium flex items-center gap-2 uppercase text-[10px] tracking-widest bg-white"
           >
-            <Plus size={16} />
-            Add Items
+            <Printer size={16} /> Print Bill
           </Button>
           <div className="h-6 w-px bg-zinc-200 mx-1" />
           <button
@@ -137,13 +146,13 @@ export function OrderDetailView({
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Main Content: Dishes List */}
+        {/* DISHES LIST */}
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-white">
           <div className="space-y-3">
             {order.items.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-xl border border-zinc-200 p-5 hover:border-red-400 transition-all cursor-pointer group flex items-center justify-between gap-4"
+                className="bg-white rounded-xl border border-zinc-200 p-5 hover:border-zinc-400 transition-all group flex items-center justify-between gap-4"
               >
                 <div className="flex items-center gap-5 flex-1">
                   <Popover
@@ -152,7 +161,7 @@ export function OrderDetailView({
                       setActiveItemForPopover(open ? item.id : null)
                     }
                     trigger={
-                      <div className="w-14 h-14 bg-zinc-50 rounded-lg flex items-center justify-center overflow-hidden border border-zinc-100 transition-transform hover:scale-105">
+                      <div className="w-14 h-14 bg-zinc-50 rounded-lg flex items-center justify-center overflow-hidden border border-zinc-100 cursor-pointer">
                         {item.dish?.image?.[0] ? (
                           <img
                             src={item.dish.image[0]}
@@ -165,55 +174,44 @@ export function OrderDetailView({
                     }
                     content={
                       <div className="w-60 p-2 space-y-4">
-                        <div className="flex items-center gap-3 p-2 bg-zinc-50 rounded-lg border border-zinc-100">
-                          <div className="w-9 h-9 rounded bg-white border border-zinc-200 overflow-hidden">
-                            {item.dish?.image?.[0] && (
-                              <img
-                                src={item.dish.image[0]}
-                                className="w-full h-full object-cover"
-                              />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-medium text-zinc-900 truncate uppercase tracking-tight">
-                              {item.dish?.name}
-                            </p>
-                            <p className="text-[9px] text-zinc-500 font-normal truncate uppercase">
-                              Options
-                            </p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-1 text-zinc-500">
+                        {/* Status Change - Disabled in History */}
+                        <div className="grid grid-cols-2 gap-1">
                           {statuses.map((s) => (
                             <button
                               key={s}
+                              disabled={isReadOnly}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onUpdateItemStatus(item.id, s);
                                 setActiveItemForPopover(null);
                               }}
-                              className={`text-left px-3 py-1.5 text-[9px] font-medium rounded transition-all uppercase tracking-widest ${
+                              className={`text-left px-3 py-1.5 text-[9px] font-medium rounded uppercase tracking-widest transition-all ${
                                 (item.status || "PENDING") === s
                                   ? "bg-zinc-900 text-white shadow-sm"
-                                  : "text-zinc-500 hover:bg-zinc-50"
+                                  : isReadOnly
+                                    ? "text-zinc-300 cursor-not-allowed"
+                                    : "text-zinc-500 hover:bg-zinc-50"
                               }`}
                             >
                               {s}
                             </button>
                           ))}
                         </div>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveItemForPopover(null);
-                            setEditingItem(item);
-                          }}
-                          variant="secondary"
-                          className="w-full h-9 border-zinc-200 text-zinc-700 font-medium text-[9px] uppercase tracking-widest bg-white"
-                        >
-                          <Edit2 size={12} className="mr-2" />
-                          Modify Item
-                        </Button>
+
+                        {/* HIDE MODIFY IF READ ONLY */}
+                        {!isReadOnly && (
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveItemForPopover(null);
+                              setEditingItem(item);
+                            }}
+                            variant="secondary"
+                            className="w-full h-9 border-zinc-200 text-zinc-700 text-[9px] uppercase tracking-widest bg-white"
+                          >
+                            <Edit2 size={12} className="mr-2" /> Modify Item
+                          </Button>
+                        )}
                       </div>
                     }
                   />
@@ -228,31 +226,31 @@ export function OrderDetailView({
                       </span>
                     </div>
                     {item.remarks && (
-                      <p className="text-[9px] text-zinc-600 font-normal uppercase italic mt-1 bg-zinc-50 px-2 py-1 rounded inline-block">
-                        Note: {item.remarks}
+                      <p className="text-[9px] text-zinc-600 uppercase italic mt-1 bg-zinc-50 px-2 py-1 rounded inline-block">
+                        {item.remarks}
                       </p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-8">
-                  <div className="hidden sm:flex flex-col items-end">
-                    <span className="text-[7px] font-medium text-zinc-400 uppercase tracking-widest">
+                <div className="flex items-center gap-8 text-right">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
                       Status
                     </span>
                     <span
-                      className={`text-[9px] font-medium px-2 py-0.5 rounded border uppercase tracking-widest mt-1 ${getStatusStyle(item.status || "PENDING")}`}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase mt-1 ${getStatusStyle(item.status || "PENDING")}`}
                     >
                       {item.status || "PENDING"}
                     </span>
                   </div>
-                  <div className="flex flex-col items-end min-w-[60px]">
-                    <span className="text-[7px] font-medium text-zinc-400 uppercase tracking-widest">
-                      Price
+                  <div className="min-w-[70px]">
+                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
+                      Subtotal
                     </span>
-                    <span className="text-sm font-medium text-zinc-900 mt-1">
-                      ${item.totalPrice.toFixed(2)}
-                    </span>
+                    <p className="text-sm font-bold text-zinc-900 mt-1">
+                      Rs. {item.totalPrice.toFixed(2)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -260,59 +258,57 @@ export function OrderDetailView({
           </div>
         </div>
 
-        {/* Right Summary Sidebar */}
+        {/* SUMMARY SIDEBAR */}
         <div className="w-80 border-l border-zinc-100 p-8 flex flex-col gap-8 bg-zinc-50/30">
           <div className="space-y-6">
             <h3 className="font-medium text-zinc-400 text-[9px] uppercase tracking-[0.2em] border-b border-zinc-100 pb-4">
               Order Summary
             </h3>
 
-            <div className="space-y-5">
-              <div className="bg-white p-5 rounded-xl border border-zinc-200 space-y-4 shadow-sm">
-                <div className="flex items-center justify-between text-[9px] font-medium uppercase tracking-widest text-zinc-500">
-                  <div className="flex items-center gap-3">
-                    <User size={12} className="text-zinc-400" />{" "}
-                    <span className="text-zinc-500">Guests</span>
-                  </div>
+            <div className="space-y-4">
+              <div className="bg-white p-5 rounded-xl border border-zinc-200 space-y-3 shadow-sm">
+                <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest text-zinc-400">
+                  <span className="flex items-center gap-2">
+                    <User size={12} /> Guests
+                  </span>
                   <span className="text-zinc-900">04</span>
                 </div>
-                <div className="flex items-center justify-between text-[9px] font-medium uppercase tracking-widest text-zinc-500">
-                  <div className="flex items-center gap-3">
-                    <Clock size={12} className="text-red-500" />{" "}
-                    <span className="text-zinc-500">Pending</span>
-                  </div>
-                  <span className="text-red-600">
-                    {pendingItems.reduce((a, b) => a + b.quantity, 0)}
+                <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest text-zinc-400">
+                  <span className="flex items-center gap-2 text-red-500">
+                    <Clock size={12} /> Pending
+                  </span>
+                  <span className="text-red-600 font-black">
+                    {pendingItems.length} Items
                   </span>
                 </div>
               </div>
 
               <div className="space-y-3 px-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-widest">
+                  <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
                     Include Tax (13%)
                   </span>
                   <button
+                    disabled={isReadOnly}
                     onClick={() => setIncludeTax(!includeTax)}
-                    className={`w-8 h-4 rounded-full transition-colors relative ${includeTax ? "bg-red-500" : "bg-zinc-300"}`}
+                    className={`w-8 h-4 rounded-full transition-colors relative ${includeTax ? "bg-zinc-900" : "bg-zinc-300"}`}
                   >
                     <div
                       className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${includeTax ? "left-[18px]" : "left-0.5"}`}
                     />
                   </button>
                 </div>
-
-                <div className="flex justify-between text-[10px] text-zinc-500 font-medium uppercase tracking-widest">
+                <div className="flex justify-between text-[11px] text-zinc-600 uppercase font-bold">
                   <span>Subtotal</span>
                   <span className="text-zinc-900">
-                    ${order.total.toFixed(2)}
+                    Rs. {order.total.toFixed(2)}
                   </span>
                 </div>
                 {includeTax && (
-                  <div className="flex justify-between text-[10px] text-zinc-500 font-medium uppercase tracking-widest">
-                    <span>Tax Amount</span>
-                    <span className="text-zinc-700">
-                      ${taxAmount.toFixed(2)}
+                  <div className="flex justify-between text-[11px] text-zinc-600 uppercase font-bold">
+                    <span>VAT Amount</span>
+                    <span className="text-zinc-900">
+                      Rs. {taxAmount.toFixed(2)}
                     </span>
                   </div>
                 )}
@@ -321,54 +317,69 @@ export function OrderDetailView({
           </div>
 
           <div className="mt-auto space-y-4">
-            <div className="flex flex-col gap-2 items-end mb-6 pr-1">
-              <span className="text-[9px] font-medium text-zinc-400 uppercase tracking-[0.2em] leading-none">
-                Total Payable
+            <div className="text-right mb-6 pr-1">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                Grand Total
               </span>
-              <span className="text-4xl font-medium text-zinc-900 leading-none tracking-tighter">
-                ${grandTotal.toFixed(2)}
-              </span>
+              <p className="text-4xl font-bold text-zinc-900 leading-none mt-1">
+                Rs. {grandTotal.toFixed(2)}
+              </p>
             </div>
 
-            <Button
-              variant="secondary"
-              className="w-full flex items-center justify-center gap-3 font-medium text-[10px] h-12 border-zinc-200 text-zinc-700 uppercase tracking-widest bg-white shadow-sm"
-            >
-              <CreditCard size={18} strokeWidth={1.5} />
-              Advance Payment
-            </Button>
-
-            <Button
-              onClick={() => onCheckout(order)}
-              className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-[10px] h-12 uppercase tracking-widest border-none shadow-sm flex items-center justify-center gap-2"
-            >
-              <CreditCard size={18} strokeWidth={1.5} />
-              Checkout
-            </Button>
+            {/* ACTION BUTTONS: HIDE IF READ ONLY */}
+            {!isReadOnly ? (
+              <>
+                <Button
+                  variant="secondary"
+                  className="w-full flex items-center justify-center gap-3 font-bold text-[10px] h-12 uppercase tracking-widest bg-white"
+                >
+                  <CreditCard size={18} strokeWidth={1.5} /> Advance Payment
+                </Button>
+                <Button
+                  onClick={() => onCheckout(order)}
+                  className="w-full bg-zinc-900 hover:bg-black text-white font-black text-[10px] h-12 uppercase tracking-widest flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 size={18} /> Checkout
+                </Button>
+              </>
+            ) : (
+              <div className="w-full py-4 bg-zinc-100 rounded-xl border border-zinc-200 flex flex-col items-center gap-1">
+                {order.status === "COMPLETED" ? (
+                  <CheckCircle2 className="text-emerald-500" size={20} />
+                ) : (
+                  <Ban className="text-red-400" size={20} />
+                )}
+                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                  Order {order.status}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Edit Item Popover Replacement: Centered Modal for better management */}
+      {/* EDIT MODAL */}
       <Modal
         isOpen={!!editingItem}
         onClose={() => setEditingItem(null)}
-        title={`Customize: ${editingItem?.dish?.name || "Dish"}`}
+        title={editingItem?.dish?.name}
         size="2xl"
       >
         {editingItem && (
           <EditOrderItemForm
-          onDelete={(id) => { // <--- Add this handler
-            onRemoveItem(id);
-            setEditingItem(null);
-        }}
             item={editingItem}
+            onCancel={() => setEditingItem(null)}
             onSave={(updated) => {
               onEditItem(editingItem.id, updated);
               setEditingItem(null);
-            }
-          }
-            onCancel={() => setEditingItem(null)}
+            }}
+            // SAFE CALLING: Use optional chaining or existence check
+            onDelete={(id: string) => {
+              if (onRemoveItem) {
+                onRemoveItem(id);
+                setEditingItem(null);
+              }
+            }}
           />
         )}
       </Modal>

@@ -31,11 +31,11 @@ export const PageHeaderAction: FC<PageHeaderActionProps> = ({
             <input
               type="text"
               placeholder="Search..."
-              className="w-full sm:w-64 rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm focus:border-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/10 transition-all placeholder:text-gray-400"
+              className="w-full sm:w-64 rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm focus:border-red-500 focus:outline-none focus:ring-4 focus:ring-red-500/10 transition-all placeholder:text-gray-400"
               onChange={(e) => onSearch(e.target.value)}
             />
             <svg
-              className="absolute left-3.5 top-3 h-4 w-4 text-gray-400 group-focus-within:text-violet-500 transition-colors"
+              className="absolute left-3.5 top-3 h-4 w-4 text-gray-400 group-focus-within:text-red-500 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

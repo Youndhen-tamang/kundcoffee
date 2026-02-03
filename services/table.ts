@@ -16,22 +16,19 @@ export async function addTableType(name: string): Promise<TableType | null> {
     return null;
   }
 }
-export async function getOccupiedTable(){
+export async function getOccupiedTable() {
   try {
-    const res = await fetch("/api/tableSession",{cache:"no-store"},
-    )
+    const res = await fetch("/api/tableSession", { cache: "no-store" });
     if (!res.ok) {
       console.error("Failed to fetch tables:", res.status);
       return null;
     }
     const data = await res.json();
     return data.data || null;
-
   } catch (error) {
     console.error("Error fetching occupied table:", error);
     return null;
   }
-  
 }
 export async function addTable(
   name: string,
@@ -57,6 +54,7 @@ export async function getTables(): Promise<Table[]> {
   try {
     const res = await fetch("/api/tables", {
       cache: "no-store",
+      next: { revalidate: 0 },
       credentials: "include",
     });
 
@@ -70,12 +68,11 @@ export async function getTables(): Promise<Table[]> {
   }
 }
 
-
 export async function getTableTypes(): Promise<TableType[]> {
   try {
     const res = await fetch(`/api/tables/type`, { cache: "no-store" });
     const data = await res.json();
-    return data.tableType || []; 
+    return data.tableType || [];
   } catch (error) {
     console.error(error);
     return [];

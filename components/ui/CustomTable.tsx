@@ -32,7 +32,7 @@ export function CustomTable<T>({
               <tr
                 key={i}
                 onClick={() => onRowClick?.(row)}
-                className="hover:bg-violet-50/50 transition-colors cursor-pointer group"
+                className="hover:bg-red-50/50 transition-colors cursor-pointer group"
               >
                 {columns.map((col, j) => {
                   const cell = col.accessor(row, i);

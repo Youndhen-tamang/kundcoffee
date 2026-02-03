@@ -65,18 +65,18 @@ export function KOTCard({
   const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
   return (
-<div className="bg-white rounded-xl border border-zinc-200 shadow-sm flex flex-col group relative">
-{/* KOT Header */}
+    <div className="bg-white rounded-xl border border-zinc-200 shadow-sm flex flex-col group relative">
+      {/* KOT Header */}
       <div className="p-4 flex items-center justify-between border-b border-zinc-100 bg-white">
         <div className="flex items-center gap-4">
           <div className="p-2 rounded-lg bg-zinc-900 text-white shadow-sm">
             {type === "BAR" ? <Wine size={16} /> : <ChefHat size={16} />}
           </div>
           <div>
-            <h3 className="text-sm font-medium text-zinc-900 leading-none tracking-tight">
+            <h3 className="text-sm font-bold text-zinc-900 leading-none tracking-tight">
               KOT #{order.id.slice(-6)}
             </h3>
-            <p className="text-[9px] text-zinc-500 font-medium uppercase tracking-widest mt-1.5">
+            <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-1.5">
               Table:{" "}
               <span className="text-zinc-900">
                 {order.table?.name || "No Table"}
@@ -85,8 +85,8 @@ export function KOTCard({
           </div>
         </div>
         <div className="text-right">
-          <div className="flex items-center gap-1.5 text-zinc-400 text-[9px] font-medium uppercase tracking-widest leading-none">
-            <Clock size={10} />
+          <div className="flex items-center gap-1.5 text-zinc-600 text-[10px] font-bold uppercase tracking-widest leading-none">
+            <Clock size={11} />
             {new Date(order.createdAt).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
@@ -110,13 +110,13 @@ export function KOTCard({
                 </span>
               </div>
               {item.remarks && (
-                <p className="text-[8px] text-zinc-600 font-normal uppercase italic mt-1 bg-zinc-50 px-2 py-0.5 rounded inline-block">
+                <p className="text-[10px] text-zinc-600 font-bold uppercase italic mt-1 bg-zinc-50 px-2 py-0.5 rounded inline-block">
                   Note: {item.remarks}
                 </p>
               )}
             </div>
             <span
-              className={`text-[8px] font-medium px-2 py-0.5 rounded border uppercase tracking-widest ${getStatusColor(item.status || "PENDING")}`}
+              className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-widest ${getStatusColor(item.status || "PENDING")}`}
             >
               {item.status || "PENDING"}
             </span>

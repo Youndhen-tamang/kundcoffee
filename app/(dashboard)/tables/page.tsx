@@ -185,19 +185,19 @@ export default function TablesPage() {
         <table className="w-full text-left text-sm text-zinc-600">
           <thead className="bg-zinc-50 border-b border-zinc-200">
             <tr>
-              <th className="px-6 py-4 font-semibold text-zinc-700 uppercase text-[10px] tracking-widest">
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
                 Name
               </th>
-              <th className="px-6 py-4 font-semibold text-zinc-700 uppercase text-[10px] tracking-widest">
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
                 Type
               </th>
-              <th className="px-6 py-4 font-semibold text-zinc-700 uppercase text-[10px] tracking-widest">
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
                 Space
               </th>
-              <th className="px-6 py-4 font-semibold text-zinc-700 uppercase text-[10px] tracking-widest">
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
                 Capacity
               </th>
-              <th className="px-6 py-4 font-semibold text-zinc-700 uppercase text-[10px] tracking-widest">
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
                 Status
               </th>
             </tr>
@@ -212,20 +212,20 @@ export default function TablesPage() {
                 <td className="px-6 py-4 font-medium text-zinc-900">
                   {table.name}
                 </td>
-                <td className="px-6 py-4 font-medium text-zinc-700 uppercase text-[10px]">
+                <td className="px-6 py-4 font-bold text-zinc-600 uppercase text-[10px]">
                   {table.tableType?.name || "-"}
                 </td>
-                <td className="px-6 py-4 text-zinc-500">
+                <td className="px-6 py-4 text-zinc-600 font-medium">
                   {table.space?.name || "-"}
                 </td>
-                <td className="px-6 py-4 text-zinc-700 font-medium">
+                <td className="px-6 py-4 text-zinc-900 font-bold">
                   {table.capacity}
                 </td>
                 <td className="px-6 py-4">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[9px] font-medium uppercase tracking-widest border ${
+                    className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border ${
                       table.status === "ACTIVE"
-                        ? "bg-zinc-50 text-zinc-500 border-zinc-100"
+                        ? "bg-zinc-50 text-zinc-600 border-zinc-100"
                         : table.status === "OCCUPIED"
                           ? "bg-red-50 text-red-600 border-red-100"
                           : "bg-amber-50 text-amber-600 border-amber-100"
