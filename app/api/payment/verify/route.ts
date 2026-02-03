@@ -15,10 +15,17 @@ export async function POST(req: NextRequest) {
   // 2. Fetch Payment & Session Details to close the table
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
-    include: { session: true }
+    include: { session: true },
   });
 
-  if (!payment || payment.status === "PAID") return NextResponse.json({ success: true });
+  if (!payment || payment.status === "PAID")
+    return NextResponse.json({ success: true });
+  if (!payment.sessionId || !payment.session) {
+    return NextResponse.json(
+      { success: false, message: "No session associated with this payment" },
+      { status: 400 },
+    );
+  }
 
   // 3. Finalize Transaction (Close table, etc.)
   await finalizeSessionTransaction({
@@ -27,6 +34,7 @@ export async function POST(req: NextRequest) {
     amount: payment.amount,
     subtotal: payment.session.total, // Ensure these are stored/calculated correctly
     tax: payment.session.tax,
+    serviceCharge: payment.session.serviceCharge,
     discount: payment.session.discount,
     paymentId: payment.id,
   });
