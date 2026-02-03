@@ -28,10 +28,10 @@ export default function Sidebar() {
     pathname.includes("menu")
       ? "menu"
       : pathname.includes("tables") ||
-          pathname.includes("spaces") ||
-          pathname.includes("qrcodes")
-        ? "core"
-        : null,
+        pathname.includes("spaces") ||
+        pathname.includes("qrcodes")
+      ? "core"
+      : null,
   );
 
   const isActive = (path: string) => pathname === path;
@@ -143,18 +143,23 @@ export default function Sidebar() {
                   label="Categories"
                 />
                 <NavItem
+                  href="/menu/sub-menus"
+                  icon={Layers}
+                  label="Sub Categories"
+                />
+                <NavItem
                   href="/menu/dishes"
                   icon={UtensilsCrossed}
                   label="Dishes"
                 />
-                <NavItem
-                  href="/menu/sub-menus"
-                  icon={Layers}
-                  label="Sub Menus"
-                />
+
                 <NavItem href="/menu/addons" icon={Puzzle} label="Add-ons" />
-                <NavItem href="/menu/combos" icon={Package} label="Combos" />
-                <NavItem href="/menu/sets" icon={Coffee} label="Menu Sets" />
+                <NavItem
+                  href="/menu/combos"
+                  icon={Package}
+                  label="Combos Set"
+                />
+                {/* <NavItem href="/menu/sets" icon={Coffee} label="Menu Sets" /> */}
               </AccordionItem>
 
               <NavItem href="/customers" icon={Users} label="Customers" />

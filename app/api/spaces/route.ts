@@ -31,3 +31,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message: "Something went wrong" }, { status: 500 });
   }
 }
+
+
+export async function PATCH(req:NextRequest) {
+  try {
+    const body = await req.json();
+    const {
+      id,
+      name,
+      description
+      } = body;
+      if(!id) return NextResponse.json({
+        success:false,message:"Item not found"
+      },{status:400})
+      if(!name || !description  )return  NextResponse.json({
+        success:false,message:"Nothing to change"
+      },{status:400})
+  
+      await prisma.space.update({
+        where:{id},
+        data:{
+            name,
+            description
+          }
+      })
+
+      return NextResponse.json({success:true,message:"Updated Successfully"},{status:200})
+  } catch (error) {
+    console.log(error);
+    return  NextResponse.json({
+      success:false,message:"Something went wrong"
+    },{status:500})
+  }
+}

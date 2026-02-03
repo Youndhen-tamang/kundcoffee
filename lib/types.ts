@@ -1,3 +1,5 @@
+import { Space } from "lucide-react";
+
 export type spaceType = {
   id: string;
   name: string;
@@ -26,6 +28,11 @@ export type Table = {
   qrCode?: QRCode | null;
 };
 
+export type Space = {
+  id:string;
+  name:string;
+  description?: string
+} 
 export type QRCode = {
   id: string;
   tableId: string;
@@ -290,3 +297,5 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
 }
+
+

@@ -69,7 +69,7 @@ export default function DishesPage() {
       getCategories(),
       getSubMenus(),
       getAddOns(),
-      getStocks(), // Ensure this exists in fetch/menu.ts or similar
+      getStocks(),
     ]);
     setDishes(dData);
     setFiltered(dData);
@@ -117,7 +117,6 @@ export default function DishesPage() {
     setSelectedId(d.id);
     setName(d.name);
     setHscode(d.hscode || "");
-    // Handle image array -> single string/file for upload component
     const firstImage = d.image && d.image.length > 0 ? d.image[0] : null;
     setImageFile(firstImage);
 
@@ -128,7 +127,9 @@ export default function DishesPage() {
     setType(d.type);
     setKotType(d.kotType);
 
-    setPrice(d.price || {});
+    // Ensure price is an object, even if null from backend
+    setPrice(d.price || {}); 
+    
     setStockConsumption(
       d.stocks?.map((s) => ({ stockId: s.stockId, quantity: s.quantity })) ||
         [],
@@ -137,6 +138,38 @@ export default function DishesPage() {
     setSelectedAddOnIds(d.addOns?.map((da) => da.addOnId) || []);
 
     setIsPanelOpen(true);
+  };
+
+  /**
+   * Price calculation logic:
+   * 1. Merges new changes with existing state.
+   * 2. Calculates listedPrice and grossProfit.
+   * 3. Updates the price state.
+   */
+  const calculateAndSetPrice = (newPartialPrice: Partial<Price>) => {
+    // 1. Merge the new changes with the current state
+    const newState = { ...price, ...newPartialPrice };
+
+    // 2. Extract and ensure numeric types (use 0 for missing/invalid)
+    const actualPrice = parseFloat(newState.actualPrice?.toString() || '0') || 0;
+    const discountPrice = parseFloat(newState.discountPrice?.toString() || '0') || 0;
+    const cogs = parseFloat(newState.cogs?.toString() || '0') || 0;
+
+    // 3. Auto-calculate listedPrice: listedPrice = actualPrice - discountPrice
+    const listedPrice = Math.max(0, actualPrice - discountPrice);
+
+    // 4. Auto-calculate grossProfit: grossProfit = listedPrice - cogs
+    const grossProfit = listedPrice - cogs;
+
+    // 5. Update state with calculated values
+    setPrice({
+      ...newState,
+      actualPrice,
+      discountPrice,
+      cogs,
+      listedPrice,
+      grossProfit,
+    });
   };
 
   const handleSubmit = async () => {
@@ -161,7 +194,6 @@ export default function DishesPage() {
         });
         const { url } = await uploadRes.json();
         if (url) imageUrl = url;
-        console.log("Uploaded image URL:", url);
       } catch (err) {
         console.error("Upload failed", err);
       }
@@ -178,16 +210,15 @@ export default function DishesPage() {
       subMenuId: subMenuId || undefined,
       type,
       kotType,
+      // Pass the fully calculated price object from state
       price: {
         actualPrice: price.actualPrice || 0,
         listedPrice: price.listedPrice || 0,
         cogs: price.cogs || 0,
         grossProfit: price.grossProfit || 0,
-        discountPrice: price.discountPrice,
+        discountPrice: price.discountPrice || 0,
         id: price.id,
       },
-      // Ideally backend handles stock consumption creation/update logic
-      // Here passing raw data
       stocks: stockConsumption.filter((s) => s.stockId && s.quantity > 0),
       addOnIds: selectedAddOnIds,
     };
@@ -492,7 +523,7 @@ export default function DishesPage() {
             />
           </section>
 
-          {/* Pricing Section */}
+          {/* Pricing Section - UPDATED HANDLER HERE */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
               <span className="text-green-600 font-bold">$</span>
@@ -500,7 +531,8 @@ export default function DishesPage() {
                 Pricing & Cost
               </h3>
             </div>
-            <PriceForm value={price} onChange={setPrice} />
+            {/* Using the new handler for dynamic calculation */}
+            <PriceForm value={price} onChange={calculateAndSetPrice} />
           </section>
 
           {/* Stock Consumption Section */}

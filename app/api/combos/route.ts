@@ -1,5 +1,6 @@
 import { NextResponse,NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Params } from "@/lib/types";
 
 export async function GET() {
   try {
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function PUT(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const {
@@ -240,3 +241,5 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
+

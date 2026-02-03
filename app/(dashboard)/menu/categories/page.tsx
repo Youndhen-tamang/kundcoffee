@@ -7,7 +7,6 @@ import {
   deleteCategory,
   updateCategory,
 } from "@/services/menu";
-import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { SidePanel } from "@/components/ui/SidePanel";

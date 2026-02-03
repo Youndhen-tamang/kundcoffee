@@ -1,21 +1,27 @@
 "use client";
 import { useEffect, useState } from "react";
 import { spaceType } from "@/lib/types";
-import { getSpaces, addSpace } from "@/services/space";
+// Make sure to import updateSpace here
+import { getSpaces, addSpace, updateSpace } from "@/services/space"; 
 import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
-import { Modal } from "@/components/ui/Modal";
 import { useRouter } from "next/navigation";
+import { SidePanel } from "@/components/ui/SidePanel";
 
 export default function SpacesPage() {
   const router = useRouter();
   const [spaces, setSpaces] = useState<spaceType[]>([]);
   const [filteredSpaces, setFilteredSpaces] = useState<spaceType[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Form
+  
+  // Panel & Form State
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  
+  // Form Fields
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -35,16 +41,56 @@ export default function SpacesPage() {
     );
   }, [searchQuery, spaces]);
 
-  const handleCreate = async () => {
+  // Handle opening the panel for creating
+  const openCreate = () => {
+    setIsEditing(false);
+    setSelectedId(null);
+    setName("");
+    setDescription("");
+    setIsPanelOpen(true);
+  };
+
+  // Handle opening the panel for editing
+  const openEdit = (space: spaceType, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setIsEditing(true);
+    setSelectedId(space.id);
+    setName(space.name);
+    setDescription(space.description || "");
+    setIsPanelOpen(true);
+  };
+
+  // Unified Submit Handler
+  const handleSubmit = async () => {
     if (!name) return;
-    const res = await addSpace(name, description);
-    if (res) {
+    setIsLoading(true);
+
+    try {
+      if (isEditing && selectedId) {
+        const data = {
+          id: selectedId,
+          name: name,
+          description: description
+        };
+        
+        await updateSpace(data);
+      } else {
+        await addSpace(name, description);
+      }
+
+      // Refresh data
       const updated = await getSpaces();
       setSpaces(updated);
+      setIsPanelOpen(false);
+      
+      // Reset form
       setName("");
       setDescription("");
-      setIsModalOpen(false);
       router.refresh();
+    } catch (error) {
+      console.error("Failed to save space", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,7 +122,7 @@ export default function SpacesPage() {
         onExport={handleExport}
         actionButton={
           <Button
-            onClick={() => setIsModalOpen(true)}
+            onClick={openCreate}
             className="bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm"
           >
             <span className="flex items-center gap-2">Add Space</span>
@@ -111,6 +157,7 @@ export default function SpacesPage() {
             {filteredSpaces.map((s) => (
               <tr
                 key={s.id}
+                onClick={(e) => openEdit(s, e)}
                 className="hover:bg-zinc-50 transition-colors cursor-pointer group"
               >
                 <td className="px-6 py-4 font-medium text-zinc-900">
@@ -135,42 +182,62 @@ export default function SpacesPage() {
         </table>
       </div>
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Add New Space"
+      <SidePanel
+        isOpen={isPanelOpen}
+        onClose={() => setIsPanelOpen(false)}
+        title={isEditing ? "Edit Space" : "Add New Space"}
       >
-        <div className="flex flex-col gap-5">
+        <div className="space-y-6 pb-20">
+          {/* Name Field */}
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
-              Space Name
+            <label className="text-sm font-semibold text-gray-700 block mb-2">
+              Space Name <span className="text-red-500">*</span>
             </label>
             <input
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-              placeholder="e.g. Garden"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all placeholder:text-gray-400"
+              placeholder="e.g. Garden, Main Hall"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
+
+          {/* Description Field */}
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
+            <label className="text-sm font-semibold text-gray-700 block mb-2">
               Description
             </label>
             <textarea
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-              placeholder="Optional description"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all placeholder:text-gray-400 min-h-[120px]"
+              placeholder="Optional details about this area..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex items-center gap-3">
           <Button
-            onClick={handleCreate}
-            className="w-full bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm h-12 uppercase tracking-widest text-[10px] font-bold"
+            onClick={() => setIsPanelOpen(false)}
+            variant="secondary"
+            className="flex-1"
+            disabled={isLoading}
           >
-            Create Space
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white"
+            disabled={!name || isLoading}
+          >
+            {isLoading
+              ? "Saving..."
+              : isEditing
+                ? "Update Space"
+                : "Create Space"}
           </Button>
         </div>
-      </Modal>
+      </SidePanel>
     </div>
   );
 }
