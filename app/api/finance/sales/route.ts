@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     const payments = await prisma.payment.findMany({
       where,
       include: {
-        order: {
+        orders: {
           include: {
             customer: true,
             items: {
@@ -78,8 +78,9 @@ export async function GET(req: NextRequest) {
 
     // Metrics calculation
     const totalSales = payments.reduce((acc, p) => acc + p.amount, 0);
-    const totalOrders = new Set(payments.map((p) => p.orderId || p.sessionId))
-      .size;
+    const totalOrders = new Set(
+      payments.map((p) => p.orders?.[0]?.id || p.sessionId).filter(Boolean),
+    ).size;
 
     const methodCounts: Record<string, number> = {};
     payments.forEach((p) => {
@@ -103,23 +104,27 @@ export async function GET(req: NextRequest) {
           totalSales,
           leadingPayment,
         },
-        transactions: payments.map((p) => ({
-          id: p.id,
-          orderId: p.orderId,
-          sessionId: p.sessionId,
-          orderType: p.order?.type || "DINE_IN", // Fallback for sessions
-          amount: p.amount,
-          mode: p.method,
-          status: p.status,
-          date: p.createdAt,
-          billedBy: "Admin", // Placeholder as User model is not present
-          customer: p.order?.customer?.fullName || "Guest",
-          items: p.order?.items.map((it: any) => ({
-            dishName: it.dish?.name || "Unknown Item",
-            quantity: it.quantity,
-            amount: it.totalPrice,
-          })),
-        })),
+        transactions: payments.map((p) => {
+          const order = p.orders?.[0];
+          return {
+            id: p.id,
+            orderId: order?.id,
+            sessionId: p.sessionId,
+            orderType: order?.type || "DINE_IN", // Fallback for sessions
+            amount: p.amount,
+            mode: p.method,
+            status: p.status,
+            date: p.createdAt,
+            billedBy: "Admin", // Placeholder as User model is not present
+            customer: order?.customer?.fullName || "Guest",
+            items:
+              order?.items.map((it: any) => ({
+                dishName: it.dish?.name || "Unknown Item",
+                quantity: it.quantity,
+                amount: it.totalPrice,
+              })) || [],
+          };
+        }),
       },
     };
 

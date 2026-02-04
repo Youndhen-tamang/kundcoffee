@@ -1,4 +1,4 @@
-import { NextResponse,NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -36,9 +36,9 @@ export async function POST(req: NextRequest) {
       subMenuId,
       type,
       kotType,
-      price, 
-      stockConsumption, 
-      addOnIds, 
+      price,
+      stockConsumption,
+      addOnIds,
     } = body;
 
     if (!name || !categoryId) {
@@ -48,17 +48,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("price check",price)
-   
+    const existingDish = await prisma.dish.findFirst({
+      where: {
+        name,
+        OR: [{ categoryId }, { subMenuId: subMenuId || null }],
+      },
+    });
+
+    if (existingDish) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Dish "${name}" already exists in this category or sub-menu`,
+        },
+        { status: 400 },
+      );
+    }
+
+    console.log("price check", price);
+
     const actualPrice = parseFloat(price?.actualPrice || 0);
     const discountAmount = parseFloat(price?.discountPrice || 0);
     const cogs = parseFloat(price?.cogs || 0);
     const listedPrice = Math.max(0, actualPrice - discountAmount);
 
-
-   
     const grossProfit = listedPrice - cogs;
-
 
     const dish = await prisma.dish.create({
       data: {
@@ -194,7 +208,6 @@ export async function PUT(req: NextRequest) {
         }
       }
 
-      
       if (addOnIds) {
         // Note: DishAddOn is the join table name? We need to check schema.
         // Assuming the schema has a many-to-many relation or explicit join table.

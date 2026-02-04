@@ -1,13 +1,13 @@
-import { NextResponse,NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma'; 
+import { NextResponse, NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { tableId, type, items,customerId,customer } = body;
+    const { tableId, type, items, customerId, customer } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'No items in order' }, { status: 400 });
+      return NextResponse.json({ error: "No items in order" }, { status: 400 });
     }
 
     let calculatedGrandTotal = 0;
@@ -15,10 +15,10 @@ export async function POST(req: NextRequest) {
 
     for (const item of items) {
       const { dishId, comboId, quantity, addOnIds } = item;
-      
+
       let dbItem;
       let itemName = "";
-      
+
       if (dishId) {
         dbItem = await prisma.dish.findUnique({
           where: { id: dishId },
@@ -35,35 +35,35 @@ export async function POST(req: NextRequest) {
 
       if (!dbItem || !dbItem.price) {
         return NextResponse.json(
-          { error: `Item not found or price missing: ${itemName}` }, 
-          { status: 404 }
+          { error: `Item not found or price missing: ${itemName}` },
+          { status: 404 },
         );
       }
 
-
-      const unitPrice = (dbItem.price.discountPrice && dbItem.price.discountPrice > 0)
-        ? dbItem.price.discountPrice
-        : dbItem.price.listedPrice; 
+      const unitPrice =
+        dbItem.price.discountPrice && dbItem.price.discountPrice > 0
+          ? dbItem.price.discountPrice
+          : dbItem.price.listedPrice;
       let itemTotalPrice = unitPrice * quantity;
-      
+
       const addOnsData = [];
       if (addOnIds && Array.isArray(addOnIds) && addOnIds.length > 0) {
         const dbAddOns = await prisma.addOn.findMany({
           where: { id: { in: addOnIds } },
-          include: { price: true }
+          include: { price: true },
         });
 
         for (const dbAddOn of dbAddOns) {
-            if(dbAddOn.price) {
-                const addOnPrice = dbAddOn.price.listedPrice; 
-                itemTotalPrice += addOnPrice * quantity;
-                
-                addOnsData.push({
-                    addOnId: dbAddOn.id,
-                    unitPrice: addOnPrice,
-                    quantity: 1 
-                });
-            }
+          if (dbAddOn.price) {
+            const addOnPrice = dbAddOn.price.listedPrice;
+            itemTotalPrice += addOnPrice * quantity;
+
+            addOnsData.push({
+              addOnId: dbAddOn.id,
+              unitPrice: addOnPrice,
+              quantity: 1,
+            });
+          }
         }
       }
 
@@ -73,77 +73,79 @@ export async function POST(req: NextRequest) {
         dishId: dishId || null,
         comboId: comboId || null,
         quantity: quantity,
-        unitPrice: unitPrice, 
-        totalPrice: itemTotalPrice, 
+        unitPrice: unitPrice,
+        totalPrice: itemTotalPrice,
         selectedAddOns: {
-            create: addOnsData
-        }
+          create: addOnsData,
+        },
       });
     }
 
-if (tableId && type === "DINE_IN") {
-  const activeSession = await prisma.tableSession.findFirst({
-    where: { tableId, isActive: true }
-  });
+    let activeSessionId: string | undefined;
 
-  if (!activeSession) {
-    await prisma.tableSession.create({
-      data: {
-        tableId,
-        isActive: true,
+    if (tableId && type === "DINE_IN") {
+      let activeSession = await prisma.tableSession.findFirst({
+        where: { tableId, isActive: true },
+      });
+
+      if (!activeSession) {
+        activeSession = await prisma.tableSession.create({
+          data: {
+            tableId,
+            isActive: true,
+          },
+        });
+
+        await prisma.table.update({
+          where: { id: tableId },
+          data: { status: "OCCUPIED" },
+        });
       }
-    });
-
-    await prisma.table.update({
-      where: { id: tableId },
-      data: { status: "OCCUPIED" }
-    });
-  }
-}
+      activeSessionId = activeSession.id;
+    }
 
     const newOrder = await prisma.order.create({
       data: {
         tableId: tableId || null,
-        type: type, 
-        status: 'PENDING',
-        total: calculatedGrandTotal, 
+        type: type,
+        status: "PENDING",
+        total: calculatedGrandTotal,
         items: {
-          create: orderItemsData 
+          create: orderItemsData,
         },
         customerId,
-        
-        
+        sessionId: activeSessionId,
       },
       include: {
         items: {
           include: {
             selectedAddOns: true,
             dish: true,
-            combo: true, 
-          }
+            combo: true,
+          },
         },
-        customer:true
-      }
+        customer: true,
+      },
     });
 
     return NextResponse.json(newOrder, { status: 201 });
-
   } catch (error) {
     console.error("Order Creation Error:", error);
     return NextResponse.json(
-        { error: 'Internal Server Error', details: error instanceof Error ? error.message : String(error) }, 
-        { status: 500 }
+      {
+        error: "Internal Server Error",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }
-
-
 
 export async function GET() {
   try {
     const orders = await prisma.order.findMany({
       where: {
-        status: { not: "CANCELLED" }
+        status: { not: "CANCELLED" },
       },
       include: {
         table: true,
@@ -152,20 +154,22 @@ export async function GET() {
             dish: true,
             combo: true,
             selectedAddOns: true,
-          }
+          },
         },
-      }
+      },
     });
 
-    return NextResponse.json({
-      success: true,
-      data: orders
-    }, { status: 200 });
-
+    return NextResponse.json(
+      {
+        success: true,
+        data: orders,
+      },
+      { status: 200 },
+    );
   } catch (error) {
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

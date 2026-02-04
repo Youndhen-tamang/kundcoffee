@@ -10,12 +10,13 @@ export const getCheckoutDetails = async (tableId: string) => {
 export const processCheckout = async (payload: {
   tableId: string;
   sessionId: string;
-  paymentMethod: "CASH" | "QR" | "ESEWA";
+  paymentMethod: "CASH" | "QR" | "ESEWA" | "CARD" | "CREDIT";
   amount: number;
   customerId?: string;
   subtotal: number;
   tax: number;
   serviceCharge: number;
+  discount: number;
 }) => {
   const res = await fetch("/api/checkout", {
     method: "POST",

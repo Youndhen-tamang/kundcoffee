@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
-import { finalizeSessionTransaction } from "@/lib/checkout-helper"; 
+import { finalizeSessionTransaction } from "@/lib/checkout-helper";
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     if (sessionId) {
       session = await prisma.tableSession.findUnique({
         where: { id: sessionId },
-        include: { table: true }, 
+        include: { table: true },
       });
     }
 
@@ -52,7 +52,6 @@ export async function POST(req: NextRequest) {
 
     const activeSessionId = session.id;
 
-
     // --- 2. BRANCHING LOGIC ---
 
     // === OPTION A: ESEWA GATEWAY (Only for actual ESEWA integration) ===
@@ -61,14 +60,14 @@ export async function POST(req: NextRequest) {
       const transactionUuid = `${Date.now()}-${uuidv4()}`;
 
       const payment = await prisma.payment.upsert({
-        where: { 
-          sessionId: activeSessionId 
+        where: {
+          sessionId: activeSessionId,
         },
         update: {
           method: "ESEWA",
           amount,
           status: "PENDING",
-          transactionUuid, 
+          transactionUuid,
         },
         create: {
           session: { connect: { id: activeSessionId } },
@@ -80,67 +79,77 @@ export async function POST(req: NextRequest) {
       });
 
       if (payment.status === "PAID" && payment.method !== "ESEWA") {
-         return NextResponse.json({ 
-             success: false, 
-             message: "This order is already paid." 
-         }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            message: "This order is already paid.",
+          },
+          { status: 400 },
+        );
       }
-
 
       return NextResponse.json({
         success: true,
         isPending: true,
         paymentId: payment.id,
         config: {
-            amount,
+          amount,
           transaction_uuid: transactionUuid,
           success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success?pid=${payment.id}`,
           failure_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/failure`,
-        }
+        },
       });
     }
 
-    // === OPTION B: INSTANT PAYMENT (CASH / CARD / MANUAL QR) ===
-    // CHANGE 2: Added `|| paymentMethod === "QR"` here
-    if (paymentMethod === "CASH" || paymentMethod === "CARD" || paymentMethod === "QR") {
+    // === OPTION B: INSTANT PAYMENT (CASH / CARD / MANUAL QR / CREDIT) ===
+    if (["CASH", "CARD", "QR", "CREDIT"].includes(paymentMethod)) {
+      if (paymentMethod === "CREDIT" && !customerId) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Customer is required for credit payments",
+          },
+          { status: 400 },
+        );
+      }
 
       const existingPayment = await prisma.payment.findUnique({
-        where:{
-          sessionId: activeSessionId
-        }
+        where: { sessionId: activeSessionId },
       });
 
       let payment;
-      if(existingPayment){
-        
-        if(existingPayment.status === "PAID"){
-          return NextResponse.json({
-            success:false,
-            message:"Session is already paid."
-          },{status:400});
+      if (existingPayment) {
+        if (existingPayment.status === "PAID") {
+          return NextResponse.json(
+            {
+              success: false,
+              message: "Session is already paid.",
+            },
+            { status: 400 },
+          );
         }
 
-        // Update existing to PAID
+        // Update existing
         payment = await prisma.payment.update({
-          where:{id: existingPayment.id},
-          data:{
-            method: paymentMethod, // Will save "QR", "CASH", or "CARD"
+          where: { id: existingPayment.id },
+          data: {
+            method: paymentMethod,
             amount,
-            status: "PAID",
+            status: paymentMethod === "CREDIT" ? "CREDIT" : "PAID",
             transactionUuid: null,
-            esewaRefId: null
-          }
-        })
+            esewaRefId: null,
+          },
+        });
       } else {
-        // Create new PAID record
+        // Create new
         payment = await prisma.payment.create({
-          data:{
+          data: {
             session: { connect: { id: activeSessionId } },
             method: paymentMethod,
             amount,
-            status: "PAID"
-          }
-        })
+            status: paymentMethod === "CREDIT" ? "CREDIT" : "PAID",
+          },
+        });
       }
 
       // 3. Finalize Session (Helper function)
@@ -153,21 +162,24 @@ export async function POST(req: NextRequest) {
         serviceCharge,
         discount,
         customerId,
-        paymentId: payment.id
+        paymentId: payment.id,
+        paymentMethod,
       });
 
       return NextResponse.json({
         success: true,
         data: payment,
-        message: "Payment completed and session closed"
+        message:
+          paymentMethod === "CREDIT"
+            ? "Saved as Credit"
+            : "Payment completed and session closed",
       });
     }
 
     return NextResponse.json(
       { success: false, message: "Invalid Payment Method" },
-      { status: 400 }
+      { status: 400 },
     );
-
   } catch (error) {
     console.error("Checkout Processing Error:", error);
     return NextResponse.json(

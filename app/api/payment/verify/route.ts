@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
     serviceCharge: payment.session.serviceCharge,
     discount: payment.session.discount,
     paymentId: payment.id,
+    paymentMethod: payment.method,
   });
 
   return NextResponse.json({ success: true });

@@ -47,9 +47,9 @@ export function CheckoutModal({
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     order.customer || null,
   );
-  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "QR" | "CARD">(
-    "CASH",
-  );
+  const [paymentMethod, setPaymentMethod] = useState<
+    "CASH" | "QR" | "CARD" | "CREDIT"
+  >("CASH");
   const [isProcessing, setIsProcessing] = useState(false);
   const [includeTax, setIncludeTax] = useState(false);
   const [includeServiceCharge, setIncludeServiceCharge] = useState(false);
@@ -866,16 +866,26 @@ export function CheckoutModal({
             {[
               { id: "CASH", label: "Cash", icon: Banknote },
               { id: "QR", label: "Scan QR", icon: QrCode },
+              { id: "CREDIT", label: "Store Credit", icon: CreditCard },
             ].map((method) => (
               <button
                 key={method.id}
                 onClick={() => {
+                  if (method.id === "CREDIT" && !selectedCustomer) {
+                    alert("Please select a customer for credit payment");
+                    return;
+                  }
                   setPaymentMethod(method.id as any);
                   if (method.id === "QR") {
-                    setShowQrImage(true); // Toggle the image view
+                    setShowQrImage(true);
                   }
                 }}
+                disabled={method.id === "CREDIT" && !selectedCustomer}
                 className={`flex flex-col items-center justify-center p-8 rounded-3xl border-2 transition-all gap-4 ${
+                  method.id === "CREDIT" && !selectedCustomer
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                } ${
                   paymentMethod === method.id
                     ? "border-red-500 bg-red-50 text-red-600 shadow-xl shadow-red-500/10 active:scale-95"
                     : "border-zinc-100 hover:border-zinc-200 text-zinc-400 bg-white"

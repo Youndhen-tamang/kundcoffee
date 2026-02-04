@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Params } from "@/lib/types";
-import { NextResponse,NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
@@ -98,53 +98,59 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
           table: true,
         },
       });
-// 4. Handle Completion and Payments
-if (status === "COMPLETED" && paymentMethod) {
-  
-  // First, find the session if it's a DINE_IN order
-  let session = null;
-  if (order.tableId && order.type === "DINE_IN") {
-    session = await tx.tableSession.findFirst({
-      where: { tableId: order.tableId, isActive: true },
-    });
-  }
+      // 4. Handle Completion and Payments
+      // 4. Handle Completion and Payments
+      if (status === "COMPLETED" && paymentMethod) {
+        // First, find the session if it's a DINE_IN order
+        let session = null;
+        if (order.tableId && order.type === "DINE_IN") {
+          session = await tx.tableSession.findFirst({
+            where: { tableId: order.tableId, isActive: true },
+          });
+        }
 
-  // Now upsert the payment
-  await tx.payment.upsert({
-    where: { orderId: id },
-    update: { 
-      amount: newTotal, 
-      method: paymentMethod, 
-      status: "PAID",
-      sessionId: session?.id || null ,
-    },
-    create: {
-      orderId: id,
-      amount: newTotal,
-      method: paymentMethod,
-      status: "PAID",
-      sessionId: session?.id || null
-    },
-  });
+        // Now create or update the payment
+        if (order.paymentId) {
+          await tx.payment.update({
+            where: { id: order.paymentId },
+            data: {
+              amount: newTotal,
+              method: paymentMethod,
+              status: "PAID",
+              sessionId: session?.id || null,
+            },
+          });
+        } else {
+          await tx.payment.create({
+            data: {
+              amount: newTotal,
+              method: paymentMethod,
+              status: "PAID",
+              sessionId: session?.id || null,
+              orders: {
+                connect: { id: id },
+              },
+            },
+          });
+        }
 
-  // Handle Session and Table status
-  if (session) {
-    await tx.tableSession.update({
-      where: { id: session.id },
-      data: {
-        total: { increment: order.total },
-        isActive: false,
-        endedAt: new Date(),
-      },
-    });
+        // Handle Session and Table status
+        if (session) {
+          await tx.tableSession.update({
+            where: { id: session.id },
+            data: {
+              total: { increment: order.total },
+              isActive: false,
+              endedAt: new Date(),
+            },
+          });
 
-    await tx.table.update({
-      where: { id: order.tableId! },
-      data: { status: "ACTIVE" },
-    });
-  }
-}
-
+          await tx.table.update({
+            where: { id: order.tableId! },
+            data: { status: "ACTIVE" },
+          });
+        }
+      }
 
       return order;
     });
@@ -200,16 +206,15 @@ export async function DELETE(req: NextRequest, context: { params: Params }) {
   }
 }
 
-
 export async function GET(req: NextRequest, context: { params: Params }) {
   try {
     const { id } = await context.params;
     const order = await prisma.order.findUnique({
       where: { id },
-      include:{
-        table:true,
-        customer:true,
-      }
+      include: {
+        table: true,
+        customer: true,
+      },
     });
 
     if (!order)
@@ -221,11 +226,14 @@ export async function GET(req: NextRequest, context: { params: Params }) {
         { status: 400 },
       );
 
-      return NextResponse.json({
-        success:true,data:order
-      },{status:200})
-
-  } catch (error:any ) {
+    return NextResponse.json(
+      {
+        success: true,
+        data: order,
+      },
+      { status: 200 },
+    );
+  } catch (error: any) {
     console.error(error);
     return NextResponse.json(
       { success: false, message: error.message },

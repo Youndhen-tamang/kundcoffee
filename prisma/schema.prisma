@@ -31,6 +31,7 @@ model TableSession {
 
   isActive Boolean  @default(true)
   payment  Payment?
+  orders   Order[]
 }
 
 model TableType {
@@ -77,8 +78,10 @@ model Category {
   image       String?
   description String?
 
-  dishes Dish[]
-  combos ComboOffer[]
+  dishes   Dish[]
+  combos   ComboOffer[]
+  subMenus SubMenu[]
+  addOns   AddOn[]
 
   createdAt DateTime @default(now())
 }
@@ -88,6 +91,9 @@ model SubMenu {
   name     String  @unique
   image    String?
   isActive Boolean @default(true)
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
 
   dishes  Dish[]
   combos  ComboOffer[]
@@ -187,12 +193,16 @@ enum MeasuringUnit {
 }
 
 model AddOn {
-  id              String             @id @default(uuid())
-  name            String
-  image           String?
-  description     String?
-  type            AddOnType
-  isAvailable     Boolean            @default(true)
+  id          String    @id @default(uuid())
+  name        String
+  image       String?
+  description String?
+  type        AddOnType
+  isAvailable Boolean   @default(true)
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
   orderItemAddOns OrderItemAddOn[]
   price           Price?
   stocks          StockConsumption[]
@@ -272,18 +282,25 @@ model ComboItem {
 }
 
 model Order {
-  id         String      @id @default(uuid())
-  tableId    String?
-  type       OrderType
-  table      Table?      @relation(fields: [tableId], references: [id])
+  id      String    @id @default(uuid())
+  tableId String?
+  type    OrderType
+  table   Table?    @relation(fields: [tableId], references: [id])
+
+  sessionId String?
+  session   TableSession? @relation(fields: [sessionId], references: [id])
+
   customerId String?
   customer   Customer?   @relation(fields: [customerId], references: [id])
   items      OrderItem[]
   total      Float
-  payment    Payment?
-  status     OrderStatus @default(PENDING)
-  createdAt  DateTime    @default(now())
-  isDeleted  Boolean     @default(false)
+
+  paymentId String?
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  isDeleted Boolean     @default(false)
 }
 
 model OrderItem {
@@ -327,8 +344,7 @@ enum OrderStatus {
 model Payment {
   id String @id @default(uuid())
 
-  orderId String? @unique
-  order   Order?  @relation(fields: [orderId], references: [id])
+  orders Order[]
 
   sessionId String?       @unique
   session   TableSession? @relation(fields: [sessionId], references: [id])
@@ -349,12 +365,14 @@ enum PaymentMethod {
   ESEWA
   QR
   BANK_TRANSFER
+  CREDIT
 }
 
 enum PaymentStatus {
   PENDING
   PAID
   FAILED
+  CREDIT
 }
 
 enum OrderType {

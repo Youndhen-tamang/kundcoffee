@@ -11,8 +11,10 @@ export async function getSpaces(): Promise<spaceType[]> {
     return [];
   }
 }
-
-export async function addSpace(name: string, description?: string): Promise<spaceType | null> {
+export async function addSpace(
+  name: string,
+  description?: string
+): Promise<ApiResponse<spaceType>> {
   try {
     const res = await fetch('/api/spaces', {
       method: 'POST',
@@ -20,25 +22,29 @@ export async function addSpace(name: string, description?: string): Promise<spac
       body: JSON.stringify({ name, description }),
     });
 
-    const data = await res.json();
-    return data.success ? data.data : null;
+    const data: ApiResponse<spaceType> = await res.json();
+    return data;
   } catch (error) {
-    console.error("Error adding space:", error);
-    return null;
+    return {
+      success: false,
+      message: "Network error. Please try again.",
+    };
   }
 }
 
 
-export async function updateSpace(data:Partial<Space>) {
+
+export async function updateSpace(data:Partial<Space>):Promise<ApiResponse<Space>> {
   if (!data.id) return { success: false, message: "ID required" };
   try {
-    const  res = await fetch("/api/spaces",{
+    const  res = await fetch(`/api/spaces/${data.id}`,{
       method:"PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     })
-    const updateSpace  =  await res.json()
-    return {success:true,data:updateSpace}  as ApiResponse;
+
+    const updatedSpace:ApiResponse<spaceType> = await res.json();
+    return updatedSpace;
   } catch (error) {
     console.error("Failed to update combo:", error);
     return { success: false, message: "Network error" };

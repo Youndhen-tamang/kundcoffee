@@ -7,7 +7,9 @@ import {
   updateAddOn,
   deleteAddOn,
   getStocks,
+  getCategories,
 } from "@/services/menu";
+import { toast } from "sonner";
 import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
@@ -39,18 +41,26 @@ export default function AddonsPage() {
   const [imageFile, setImageFile] = useState<File | string | null>(null);
   const [type, setType] = useState<"EXTRA" | "ADDON">("EXTRA");
   const [isAvailable, setIsAvailable] = useState(true);
+  const [categoryId, setCategoryId] = useState("");
+  const [categories, setCategories] = useState<any[]>([]);
 
   const [price, setPrice] = useState<Partial<Price>>({});
   const [stockConsumption, setStockConsumption] = useState<
     { stockId: string; quantity: number }[]
   >([]);
   const [uploading, setUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
-    const [aData, sData] = await Promise.all([getAddOns(), getStocks()]);
+    const [aData, sData, catData] = await Promise.all([
+      getAddOns(),
+      getStocks(),
+      getCategories(),
+    ]);
     setAddons(aData);
     setStocks(sData);
+    setCategories(catData);
     setLoading(false);
   };
 
@@ -70,6 +80,7 @@ export default function AddonsPage() {
     setImageFile(null);
     setType("EXTRA");
     setIsAvailable(true);
+    setCategoryId("");
     setPrice({});
     setStockConsumption([]);
     setIsPanelOpen(true);
@@ -83,6 +94,7 @@ export default function AddonsPage() {
     setImageFile(a.image || null);
     setType(a.type);
     setIsAvailable(a.isAvailable);
+    setCategoryId(a.categoryId || "");
     setPrice(a.price || {});
     setStockConsumption(
       a.stocks?.map((s) => ({ stockId: s.stockId, quantity: s.quantity })) ||
@@ -93,6 +105,7 @@ export default function AddonsPage() {
 
   const handleSubmit = async () => {
     if (!name) return;
+    setIsSaving(true);
 
     let imageUrl = typeof imageFile === "string" ? imageFile : undefined;
 
@@ -120,6 +133,7 @@ export default function AddonsPage() {
       image: imageUrl,
       type,
       isAvailable,
+      categoryId: categoryId || undefined,
       price: {
         actualPrice: price.actualPrice || 0,
         listedPrice: price.listedPrice || 0,
@@ -133,17 +147,27 @@ export default function AddonsPage() {
       ),
     };
 
-    let res;
-    if (isEditing && selectedId) {
-      res = await updateAddOn({ ...payload, id: selectedId });
-    } else {
-      res = await addAddOn(payload);
-    }
+    try {
+      let res;
+      if (isEditing && selectedId) {
+        res = await updateAddOn({ ...payload, id: selectedId });
+      } else {
+        res = await addAddOn(payload);
+      }
 
-    if (res?.success) {
-      refresh();
-      setIsPanelOpen(false);
-      router.refresh();
+      if (res?.success) {
+        toast.success(isEditing ? "Add-on updated" : "Add-on created");
+        refresh();
+        setIsPanelOpen(false);
+        router.refresh();
+      } else {
+        toast.error(res?.message || "Failed to save add-on");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -191,6 +215,9 @@ export default function AddonsPage() {
           <thead className="bg-slate-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-4 font-semibold text-gray-700">Name</th>
+              <th className="px-6 py-4 font-semibold text-gray-700">
+                Category
+              </th>
               <th className="px-6 py-4 font-semibold text-gray-700">Type</th>
               <th className="px-6 py-4 font-semibold text-gray-700">Price</th>
               <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
@@ -221,6 +248,9 @@ export default function AddonsPage() {
                   </div>
                   {a.name}
                 </td>
+                <td className="px-6 py-4 font-medium text-gray-500">
+                  {categories.find((c) => c.id === a.categoryId)?.name || "-"}
+                </td>
                 <td className="px-6 py-4">
                   <span
                     className={`px-2 py-1 rounded text-xs font-medium ${a.type === "EXTRA" ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"}`}
@@ -247,7 +277,7 @@ export default function AddonsPage() {
             ))}
             {filtered.length === 0 && !loading && (
               <tr>
-                <td colSpan={5} className="text-center py-12 text-gray-400">
+                <td colSpan={6} className="text-center py-12 text-gray-400">
                   <div className="flex flex-col items-center gap-2">
                     <Puzzle size={24} className="opacity-20" />
                     <p>No add-ons found.</p>
@@ -280,6 +310,24 @@ export default function AddonsPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-2">
+                Category
+              </label>
+              <select
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all outline-none"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+              >
+                <option value="">Select Category</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -348,16 +396,20 @@ export default function AddonsPage() {
             onClick={() => setIsPanelOpen(false)}
             variant="secondary"
             className="flex-1"
-            disabled={uploading}
+            disabled={isSaving || uploading}
           >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             className="flex-1 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
-            disabled={!name || uploading}
+            disabled={!name || isSaving || uploading}
           >
-            {uploading ? "Saving..." : isEditing ? "Update" : "Create"}
+            {isSaving || uploading
+              ? "Saving..."
+              : isEditing
+                ? "Update"
+                : "Create"}
           </Button>
         </div>
       </SidePanel>

@@ -2,19 +2,21 @@ import { ApiResponse, Table, TableType } from "@/lib/types";
 import { TableSession } from "@prisma/client";
 import { NextResponse } from "next/server";
 
-export async function addTableType(name: string): Promise<TableType | null> {
+export async function addTableType(name: string): Promise<ApiResponse <TableType>> {
   try {
     const res = await fetch("/api/tables/type", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
-    const data = await res.json();
-    return data.success ? data.data : null;
+    const data:ApiResponse<TableType> = await res.json();
+    return  data
   } catch (error) {
     console.error("Error adding table type:", error);
-    return null;
-  }
+    return {
+      success: false,
+      message: "Network error. Please try again.",
+    };  }
 }
 export async function getOccupiedTable() {
   try {
@@ -35,18 +37,20 @@ export async function addTable(
   capacity: number,
   spaceId?: string,
   tableTypeId?: string,
-): Promise<Table | null> {
+): Promise<ApiResponse<Table>> {
   try {
     const res = await fetch("/api/tables", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, capacity, spaceId, tableTypeId }),
     });
-    const data = await res.json();
-    return data.success ? data.data : null;
+    const data:ApiResponse<Table> = await res.json();
+    return data
   } catch (error) {
-    console.error("Error adding table:", error);
-    return null;
+    return {
+      success: false,
+      message: "Network error. Please try again.",
+    };
   }
 }
 
@@ -80,10 +84,10 @@ export async function getTableTypes(): Promise<TableType[]> {
 }
 
 
-
-export async function updateTable(data: Partial<Table>): Promise<ApiResponse> {
+export async function updateTable(
+  data: Partial<Table>
+): Promise<ApiResponse<Table>> {
   const { id, ...updates } = data;
-  console.log("ythis is id ",id)
   if (!id) return { success: false, message: "ID required" };
 
   try {
@@ -93,17 +97,19 @@ export async function updateTable(data: Partial<Table>): Promise<ApiResponse> {
       body: JSON.stringify(updates),
     });
 
-    if (!res.ok) {
-        return { success: false, message: "Failed to update table" };
-    }
+    const json: ApiResponse<Table> = await res.json();
 
-    const updatedTable = await res.json();
-    return { success: true, data: updatedTable };
+    // Backend may return success: false
+    if (!json.success) return { success: false, message: json.message };
+
+    return json;
   } catch (error) {
     console.error("Failed to update table:", error);
     return { success: false, message: "Network error" };
   }
 }
+
+
 
 export async function deleteTable(id: string): Promise<ApiResponse> {
   if (!id) return { success: false, message: "ID required" };

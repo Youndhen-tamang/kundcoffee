@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse,NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +12,21 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+
+    const existingCategoryName = await prisma.category.findFirst({
+      where: {
+        name,
+      },
+    });
+
+    if (existingCategoryName)
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Category "${name}" already exists`,
+        },
+        { status: 400 },
+      );
 
     const category = await prisma.category.create({
       data: {

@@ -11,6 +11,7 @@ import {
   getAddOns,
   getStocks,
 } from "@/services/menu";
+import { toast } from "sonner";
 import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
@@ -128,8 +129,8 @@ export default function DishesPage() {
     setKotType(d.kotType);
 
     // Ensure price is an object, even if null from backend
-    setPrice(d.price || {}); 
-    
+    setPrice(d.price || {});
+
     setStockConsumption(
       d.stocks?.map((s) => ({ stockId: s.stockId, quantity: s.quantity })) ||
         [],
@@ -151,9 +152,11 @@ export default function DishesPage() {
     const newState = { ...price, ...newPartialPrice };
 
     // 2. Extract and ensure numeric types (use 0 for missing/invalid)
-    const actualPrice = parseFloat(newState.actualPrice?.toString() || '0') || 0;
-    const discountPrice = parseFloat(newState.discountPrice?.toString() || '0') || 0;
-    const cogs = parseFloat(newState.cogs?.toString() || '0') || 0;
+    const actualPrice =
+      parseFloat(newState.actualPrice?.toString() || "0") || 0;
+    const discountPrice =
+      parseFloat(newState.discountPrice?.toString() || "0") || 0;
+    const cogs = parseFloat(newState.cogs?.toString() || "0") || 0;
 
     // 3. Auto-calculate listedPrice: listedPrice = actualPrice - discountPrice
     const listedPrice = Math.max(0, actualPrice - discountPrice);
@@ -174,7 +177,7 @@ export default function DishesPage() {
 
   const handleSubmit = async () => {
     if (!name || !categoryId || !prepTime) {
-      alert("Please fill required fields (Name, Category, Prep Time)");
+      toast.error("Please fill required fields (Name, Category, Prep Time)");
       return;
     }
 
@@ -231,10 +234,13 @@ export default function DishesPage() {
     }
 
     if (res?.success) {
+      toast.success(isEditing ? "Dish updated" : "Dish created");
       await refresh();
       setIsPanelOpen(false);
       resetForm();
       router.refresh();
+    } else {
+      toast.error(res?.message || "Failed to save dish");
     }
   };
 

@@ -29,10 +29,10 @@ export type Table = {
 };
 
 export type Space = {
-  id:string;
-  name:string;
-  description?: string
-} 
+  id: string;
+  name: string;
+  description?: string;
+};
 export type QRCode = {
   id: string;
   tableId: string;
@@ -103,6 +103,7 @@ export type SubMenu = {
   name: string;
   image?: string | null;
   isActive: boolean;
+  categoryId?: string | null;
   dishes?: Dish[];
   createdAt: Date;
 };
@@ -114,6 +115,7 @@ export type AddOn = {
   description?: string | null;
   type: "EXTRA" | "ADDON";
   isAvailable: boolean;
+  categoryId?: string | null;
   price?: Price | null;
   stocks?: StockConsumption[];
   createdAt: Date;
@@ -258,7 +260,12 @@ export type TableSession = {
   isActive: boolean;
 };
 
-export type PaymentMethod = "CASH" | "ESEWA" | "QR" | "BANK_TRANSFER";
+export type PaymentMethod =
+  | "CASH"
+  | "ESEWA"
+  | "QR"
+  | "BANK_TRANSFER"
+  | "CREDIT";
 
 export type ReturnPaymentStatus = "PAID" | "UNPAID" | "CREDIT";
 
@@ -297,5 +304,3 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
 }
-
-

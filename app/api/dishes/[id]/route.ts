@@ -1,86 +1,77 @@
 import { prisma } from "@/lib/prisma";
 import { Params } from "@/lib/types";
-import { NextResponse ,NextRequest} from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-
-export async function GET(req:NextRequest,context:{params:Params}) {
+export async function GET(req: NextRequest, context: { params: Params }) {
   try {
-    const {id} = await context.params;
-    if(!id) return NextResponse.json({
-      success:false,message:"Dish not found"
-    })
+    const { id } = await context.params;
+    if (!id)
+      return NextResponse.json({
+        success: false,
+        message: "Dish not found",
+      });
 
     const dish = await prisma.dish.findUnique({
-        where:{id},
-        include:{
-          price:true,
-          subMenu:true,
-          category:true,
-        }
-      })
-      if (!dish) {
-        return NextResponse.json(
-          { success: false, message: "Dish not found" },
-          { status: 404 }
-        );
-      }
-  
+      where: { id },
+      include: {
+        price: true,
+        subMenu: true,
+        category: true,
+      },
+    });
+    if (!dish) {
       return NextResponse.json(
-        { success: true, data: dish },
-        { status: 200 }
+        { success: false, message: "Dish not found" },
+        { status: 404 },
       );
+    }
+
+    return NextResponse.json({ success: true, data: dish }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
       { success: false, message: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-
-
-
 const calculatePriceFields = (currentPrice: any, newPrice: any) => {
-    const mergedPrice = {
-        actualPrice: currentPrice?.actualPrice || 0,
-        discountPrice: currentPrice?.discountPrice || 0,
-        cogs: currentPrice?.cogs || 0,
-        ...newPrice,
-    };
+  const mergedPrice = {
+    actualPrice: currentPrice?.actualPrice || 0,
+    discountPrice: currentPrice?.discountPrice || 0,
+    cogs: currentPrice?.cogs || 0,
+    ...newPrice,
+  };
 
-    const actualPrice = parseFloat(mergedPrice.actualPrice || 0);
-    const discountAmount = parseFloat(mergedPrice.discountPrice || 0);
-    const cogs = parseFloat(mergedPrice.cogs || 0);
+  const actualPrice = parseFloat(mergedPrice.actualPrice || 0);
+  const discountAmount = parseFloat(mergedPrice.discountPrice || 0);
+  const cogs = parseFloat(mergedPrice.cogs || 0);
 
-    const listedPrice = Math.max(0, actualPrice - discountAmount);
+  const listedPrice = Math.max(0, actualPrice - discountAmount);
 
-    const grossProfit = listedPrice - cogs;
+  const grossProfit = listedPrice - cogs;
 
-    return {
-        actualPrice,
-        discountPrice: discountAmount,
-        cogs,
-        listedPrice,
-        grossProfit,
-    };
+  return {
+    actualPrice,
+    discountPrice: discountAmount,
+    cogs,
+    listedPrice,
+    grossProfit,
+  };
 };
 
-
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Params }
-) {
+export async function PATCH(request: NextRequest, context: { params: Params }) {
   try {
-    const {id} =await  context.params; 
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
         { success: false, message: "Dish ID is missing from URL" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     const body = await request.json();
     const {
       name,
@@ -97,19 +88,54 @@ export async function PATCH(
       addOnIds, // Array for add-on updates
     } = body;
 
+    const currentDish = await prisma.dish.findUnique({ where: { id } });
+    if (!currentDish)
+      return NextResponse.json(
+        { success: false, message: "Dish not found" },
+        { status: 404 },
+      );
+
+    if (name || categoryId || subMenuId) {
+      const existingDish = await prisma.dish.findFirst({
+        where: {
+          name: name || currentDish.name,
+          OR: [
+            { categoryId: categoryId || currentDish.categoryId },
+            {
+              subMenuId:
+                subMenuId !== undefined
+                  ? subMenuId || null
+                  : currentDish.subMenuId,
+            },
+          ],
+          id: { not: id },
+        },
+      });
+
+      if (existingDish) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Dish "${name || currentDish.name}" already exists in the target category or sub-menu`,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
-      
       const dishUpdateData: any = {};
       if (name !== undefined) dishUpdateData.name = name;
       if (hscode !== undefined) dishUpdateData.hscode = hscode;
       if (image !== undefined) dishUpdateData.image = image;
-      if (preparationTime !== undefined) dishUpdateData.preparationTime = preparationTime;
+      if (preparationTime !== undefined)
+        dishUpdateData.preparationTime = preparationTime;
       if (description !== undefined) dishUpdateData.description = description;
       if (categoryId !== undefined) dishUpdateData.categoryId = categoryId;
       if (subMenuId !== undefined) dishUpdateData.subMenuId = subMenuId;
       if (type !== undefined) dishUpdateData.type = type;
       if (kotType !== undefined) dishUpdateData.kotType = kotType;
-      
+
       // Perform the dish update
       if (Object.keys(dishUpdateData).length > 0) {
         await tx.dish.update({
@@ -118,11 +144,10 @@ export async function PATCH(
         });
       }
 
-
       // 4. Price Update Logic (with auto-calculation)
       if (price) {
         let currentPrice = await tx.price.findFirst({ where: { dishId: id } });
-        
+
         const calculatedPrice = calculatePriceFields(currentPrice, price);
 
         if (currentPrice) {
@@ -183,37 +208,38 @@ export async function PATCH(
   }
 }
 
-
-export async function DELETE(req:NextRequest,context:{params:Params}) {
+export async function DELETE(req: NextRequest, context: { params: Params }) {
   try {
-    const {id} = await context.params;
-    if(!id) return NextResponse.json({
-      success:false,message:"Dish not found"
-    });
+    const { id } = await context.params;
+    if (!id)
+      return NextResponse.json({
+        success: false,
+        message: "Dish not found",
+      });
 
     const dish = await prisma.dish.findUnique({
-      where:{id}
-    })
+      where: { id },
+    });
     if (!dish) {
       return NextResponse.json(
         { success: false, message: "Dish not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     await prisma.dish.delete({
-        where:{id}
-    })
+      where: { id },
+    });
 
     return NextResponse.json(
       { success: true, message: "Deleted successfully" },
-      { status: 400 }
+      { status: 400 },
     );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
       { success: false, message: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

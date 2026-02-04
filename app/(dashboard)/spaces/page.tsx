@@ -8,6 +8,7 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { SidePanel } from "@/components/ui/SidePanel";
+import { toast } from "sonner";
 
 export default function SpacesPage() {
   const router = useRouter();
@@ -60,40 +61,55 @@ export default function SpacesPage() {
     setIsPanelOpen(true);
   };
 
-  // Unified Submit Handler
   const handleSubmit = async () => {
     if (!name) return;
+  
     setIsLoading(true);
-
+  
     try {
+      let res;
+  
       if (isEditing && selectedId) {
         const data = {
           id: selectedId,
-          name: name,
-          description: description
+          name,
+          description,
         };
-        
-        await updateSpace(data);
+  
+        res = await updateSpace(data);
       } else {
-        await addSpace(name, description);
+        res = await addSpace(name, description);
       }
-
+  
+      // 🔴 Handle API failure
+      if (!res.success || !res.data) {
+        toast.error(res.message ?? "Failed to save space");
+        return;
+      }
+  
+      toast.success(
+        res.message ?? (isEditing ? "Space updated" : "Space created")
+      );
+  
       // Refresh data
       const updated = await getSpaces();
       setSpaces(updated);
+  
       setIsPanelOpen(false);
-      
+  
       // Reset form
       setName("");
       setDescription("");
+  
       router.refresh();
     } catch (error) {
       console.error("Failed to save space", error);
+      toast.error("Unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   const handleExport = () => {
     const headers = ["Name", "Description", "Table Count"];
     const csvContent = [

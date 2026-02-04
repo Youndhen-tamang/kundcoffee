@@ -1,50 +1,87 @@
-import { NextRequest, NextResponse } from "next/server"
-import { Params } from "@/lib/types"
+import { NextRequest, NextResponse } from "next/server";
+import { Params } from "@/lib/types";
 import { prisma } from "@/lib/prisma";
 
-export async function PATCH(req:NextRequest,context:{params:Params}) {
+export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
-    const {id} = await context.params;
-    if(!id){
-      return NextResponse.json({
-        success:false,message:"Item not Found"
-      },{status:400})
+    const { id } = await context.params;
+    if (!id) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Item not Found",
+        },
+        { status: 400 },
+      );
     }
 
     const body = await req.json();
-    const {image,name,actualPrice,items} = await body;
-    
-    const comboItem =  await prisma.comboOffer.findUnique({
-      where:{
-        id 
+    const { image, name, actualPrice, items } = await body;
+
+    const comboItem = await prisma.comboOffer.findUnique({
+      where: {
+        id,
+      },
+    });
+    if (!comboItem)
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Item not found",
+        },
+        { status: 400 },
+      );
+
+    if (name) {
+      const existingCombo = await prisma.comboOffer.findFirst({
+        where: {
+          name,
+          categoryId: comboItem.categoryId,
+          id: { not: id },
+        },
+      });
+
+      if (existingCombo) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Combo "${name}" already exists in this category`,
+          },
+          { status: 400 },
+        );
       }
-    })
-    if(!comboItem) return NextResponse.json({
-      success:false,message:"Item not found"
-    },{status:400})
+    }
 
     await prisma.comboOffer.update({
-      where:{id},
-      data:{
+      where: { id },
+      data: {
         image,
         name,
-        price:{
-          update:{
+        price: {
+          update: {
             actualPrice,
-            listedPrice :actualPrice
-          }
+            listedPrice: actualPrice,
+          },
         },
-        items
-      }
-    })
+        items,
+      },
+    });
 
-    return NextResponse.json({
-      success:true,message:"Successfully updated"
-    },{status:200})
-  } catch (error:any) {
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Successfully updated",
+      },
+      { status: 200 },
+    );
+  } catch (error: any) {
     console.log(error.message);
-    return NextResponse.json({
-      success:false,message:"Something went wrong"
-    },{status:500})
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Something went wrong",
+      },
+      { status: 500 },
+    );
   }
 }

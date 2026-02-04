@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       description,
       type,
       isAvailable,
+      categoryId,
       price,
       stockConsumption,
     } = body;
@@ -40,6 +41,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const existingAddon = await prisma.addOn.findFirst({
+      where: {
+        name,
+        categoryId: categoryId || null,
+      },
+    });
+
+    if (existingAddon) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Add-on "${name}" already exists in this category`,
+        },
+        { status: 400 },
+      );
+    }
+
     const newAddon = await prisma.addOn.create({
       data: {
         name,
@@ -47,6 +65,7 @@ export async function POST(req: NextRequest) {
         description,
         type: type || "EXTRA",
         isAvailable: isAvailable ?? true,
+        categoryId,
         price: {
           create: {
             actualPrice: parseFloat(price?.actualPrice || 0),
@@ -74,124 +93,6 @@ export async function POST(req: NextRequest) {
     console.error("Error creating addon:", error);
     return NextResponse.json(
       { success: false, message: "Failed to create addon" },
-      { status: 500 },
-    );
-  }
-}
-
-export async function PUT(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const {
-      id,
-      name,
-      image,
-      description,
-      type,
-      isAvailable,
-      price,
-      stockConsumption,
-    } = body;
-
-    if (!id) {
-      return NextResponse.json(
-        { success: false, message: "ID Required" },
-        { status: 400 },
-      );
-    }
-
-    await prisma.$transaction(async (tx) => {
-      // 1. Update basic info
-      await tx.addOn.update({
-        where: { id },
-        data: {
-          name,
-          image,
-          description,
-          type,
-          isAvailable,
-        },
-      });
-
-      // 2. Update Price
-      if (price) {
-        const existingPrice = await tx.price.findFirst({
-          where: { addOnId: id },
-        });
-        if (existingPrice) {
-          await tx.price.update({
-            where: { id: existingPrice.id },
-            data: {
-              actualPrice: parseFloat(price.actualPrice),
-              discountPrice: parseFloat(price.discountPrice),
-              listedPrice: parseFloat(price.listedPrice),
-              cogs: parseFloat(price.cogs),
-              grossProfit: parseFloat(price.grossProfit),
-            },
-          });
-        } else {
-          await tx.price.create({
-            data: {
-              addOnId: id,
-              actualPrice: parseFloat(price.actualPrice),
-              discountPrice: parseFloat(price.discountPrice),
-              listedPrice: parseFloat(price.listedPrice),
-              cogs: parseFloat(price.cogs),
-              grossProfit: parseFloat(price.grossProfit),
-            },
-          });
-        }
-      }
-
-      // 3. Update Stocks
-      if (stockConsumption) {
-        await tx.stockConsumption.deleteMany({ where: { addOnId: id } });
-        if (stockConsumption.length > 0) {
-          await tx.stockConsumption.createMany({
-            data: stockConsumption.map((s: any) => ({
-              addOnId: id,
-              stockId: s.stockId,
-              quantity: parseFloat(s.quantity),
-            })),
-          });
-        }
-      }
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Addon updated successfully",
-    });
-  } catch (error) {
-    console.error("Error updating addon:", error);
-    return NextResponse.json(
-      { success: false, message: "Failed to update addon" },
-      { status: 500 },
-    );
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json(
-        { success: false, message: "ID Required" },
-        { status: 400 },
-      );
-    }
-
-    await prisma.addOn.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ success: true, message: "Addon deleted" });
-  } catch (error) {
-    console.error("Error deleting addon:", error);
-    return NextResponse.json(
-      { success: false, message: "Failed to delete addon" },
       { status: 500 },
     );
   }

@@ -1,4 +1,4 @@
-import { NextResponse,NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Params } from "@/lib/types";
 
@@ -46,6 +46,23 @@ export async function POST(req: NextRequest) {
     if (!name || !categoryId) {
       return NextResponse.json(
         { success: false, message: "Name and Category are required" },
+        { status: 400 },
+      );
+    }
+
+    const existingCombo = await prisma.comboOffer.findFirst({
+      where: {
+        name,
+        categoryId,
+      },
+    });
+
+    if (existingCombo) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Combo "${name}" already exists in this category`,
+        },
         { status: 400 },
       );
     }
@@ -241,5 +258,3 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
-
-

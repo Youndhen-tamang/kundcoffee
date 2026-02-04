@@ -13,110 +13,130 @@ export async function POST(req: NextRequest) {
       tableTypeId,
       tableTypeName,
       spaceName,
-      spaceDescription
+      spaceDescription,
     } = body;
 
     if (!name || !capacity) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Name, and capacity are required",
-        },
+        { success: false, message: "Name and capacity are required" },
         { status: 400 }
       );
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // --- Handle TableType ---
       let finalTableTypeId = tableTypeId;
 
-      if (!tableTypeId && tableTypeName) {
-        const existing = await tx.tableType.findUnique({
-          where: {
-            name: tableTypeName,
-          },
+      if (!finalTableTypeId && tableTypeName) {
+        const existingType = await tx.tableType.findUnique({
+          where: { name: tableTypeName },
         });
 
-        if (existing) {
-          finalTableTypeId = existing.id;
+        if (existingType) {
+          finalTableTypeId = existingType.id;
         } else {
           const newType = await tx.tableType.create({
-            data: {
-              name: tableTypeName,
-            },
+            data: { name: tableTypeName },
           });
           finalTableTypeId = newType.id;
         }
       }
 
       if (!finalTableTypeId) {
-        return NextResponse.json({
-          success: false,
-          message: "Type is required",
-        });
+        throw new Error("TABLE_TYPE_REQUIRED");
       }
 
+      // --- Handle Space ---
       let finalSpaceId = spaceId;
 
-      if (!spaceId && spaceName) {
-        const existing = await tx.space.findFirst({
-          where: {
-            name: spaceName,
-          },
+      if (!finalSpaceId && spaceName) {
+        const existingSpace = await tx.space.findFirst({
+          where: { name: spaceName },
         });
-        if(existing){
-          finalSpaceId = existing.id;
-        }else{
-          const newSpace =  await tx.space.create({
-            data:{
-              name:spaceName,
-              description:spaceDescription
-            }
-          })
-          finalSpaceId = newSpace.id
+
+        if (existingSpace) {
+          finalSpaceId = existingSpace.id;
+        } else {
+          const newSpace = await tx.space.create({
+            data: { name: spaceName, description: spaceDescription },
+          });
+          finalSpaceId = newSpace.id;
         }
       }
-      
 
-      const table = await tx.table.create({
-        data: {
+      if (!finalSpaceId) {
+        throw new Error("SPACE_REQUIRED");
+      }
+
+      // --- Check for duplicate table in the same space ---
+      const existingTable = await tx.table.findFirst({
+        where: {
           name,
-          tableTypeId: finalTableTypeId,
-          capacity,
-          status,
-          spaceId:finalSpaceId,
-        },
-        include: {
-          tableType: true,
+          spaceId: finalSpaceId,
         },
       });
 
-      await tx.qRCode.create({
+      if (existingTable) {
+        throw new Error(`DUPLICATE_TABLE:${name}`);
+      }
+
+      // --- Create Table ---
+      const table = await tx.table.create({
         data: {
-          tableId: table.id,
-          value: randomUUID(),
-          assigned: true,
+          name,
+          capacity,
+          status,
+          spaceId: finalSpaceId,
+          tableTypeId: finalTableTypeId,
         },
+        include: { tableType: true },
+      });
+
+      // --- Create QR Code ---
+      await tx.qRCode.create({
+        data: { tableId: table.id, value: randomUUID(), assigned: true },
       });
 
       return table;
     });
 
     return NextResponse.json(
-      {
-        success: true,
-        message: "Table created successfully",
-        data: result,
-      },
+      { success: true, message: "Table created successfully", data: result },
       { status: 201 }
     );
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error("Table creation error:", error);
+
+    if (error.message?.startsWith("DUPLICATE_TABLE:")) {
+      const tableName = error.message.split(":")[1];
+      return NextResponse.json(
+        { success: false, message: `Table "${tableName}" already exists in this space` },
+        { status: 400 }
+      );
+    }
+
+    if (error.message === "TABLE_TYPE_REQUIRED") {
+      return NextResponse.json(
+        { success: false, message: "Table type is required" },
+        { status: 400 }
+      );
+    }
+
+    if (error.message === "SPACE_REQUIRED") {
+      return NextResponse.json(
+        { success: false, message: "Space is required" },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { success: false, error: "Something went wrong" },
+      { success: false, message: "Something went wrong" },
       { status: 500 }
     );
   }
 }
+
+
 
 export async function GET() {
   try {

@@ -15,6 +15,7 @@ import {
   UserPlus,
   ArrowRight,
   Loader2,
+  CreditCard,
 } from "lucide-react";
 
 interface CheckoutModalProps {
@@ -93,18 +94,19 @@ export function CheckoutModal({
     setStep(3);
   };
 
-  const handleFinalize = async (method: "CASH" | "QR") => {
+  const handleFinalize = async (method: "CASH" | "QR" | "CREDIT") => {
     try {
       setLoading(true);
       await processCheckout({
         tableId: table.id,
         sessionId: checkoutData.sessionId,
-        paymentMethod: method === "QR" ? "QR" : "CASH",
+        paymentMethod: method,
         amount: checkoutData.summary.grandTotal,
         customerId: selectedCustomerId,
         subtotal: checkoutData.summary.subtotal,
         tax: checkoutData.summary.tax,
         serviceCharge: checkoutData.summary.serviceCharge,
+        discount: checkoutData.summary.discount || 0,
       });
       onSuccess();
       onClose();
@@ -344,6 +346,27 @@ export function CheckoutModal({
                 </div>
                 <span className="font-black text-zinc-900 text-xs uppercase tracking-widest">
                   QR Payment
+                </span>
+              </button>
+
+              <button
+                onClick={() => handleFinalize("CREDIT")}
+                disabled={loading || !selectedCustomerId}
+                className={`flex flex-col items-center justify-center p-8 bg-white border-2 border-zinc-100 rounded-3xl transition-all group shadow-sm active:scale-95 ${!selectedCustomerId ? "opacity-50 cursor-not-allowed" : "hover:border-red-500 hover:bg-red-50"}`}
+                title={
+                  !selectedCustomerId
+                    ? "Please select a customer for credit payment"
+                    : ""
+                }
+              >
+                <div className="w-16 h-16 rounded-2xl bg-zinc-50 flex items-center justify-center mb-4 group-hover:bg-red-100 transition-colors">
+                  <CreditCard
+                    size={32}
+                    className="text-zinc-400 group-hover:text-red-600"
+                  />
+                </div>
+                <span className="font-black text-zinc-900 text-xs uppercase tracking-widest">
+                  Credit
                 </span>
               </button>
             </div>

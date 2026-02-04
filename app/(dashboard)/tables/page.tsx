@@ -1,27 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Table, TableType, spaceType } from "@/lib/types";
+import { ApiResponse, Table, TableType, spaceType } from "@/lib/types";
 import {
   getTables,
   getTableTypes,
   addTable,
   addTableType,
-  updateTable, 
+  updateTable,
   deleteTable, // Assuming you have a deleteTable service function
 } from "@/services/table";
-import { getSpaces, addSpace } from "@/services/space"; 
+import { getSpaces, addSpace } from "@/services/space";
 import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
-import { Modal } from "@/components/ui/Modal"; 
-import { SidePanel } from "@/components/ui/SidePanel"; 
+import { Modal } from "@/components/ui/Modal";
+import { SidePanel } from "@/components/ui/SidePanel";
 import { useRouter } from "next/navigation";
-import { Trash2, Pencil } from 'lucide-react'; // <-- Imported Lucide React icons
+import { Trash2, Pencil } from "lucide-react"; // <-- Imported Lucide React icons
+import { toast } from "sonner";
 
 export default function TablesPage() {
   const router = useRouter();
-  
+
   // --- Data States ---
   const [tables, setTables] = useState<Table[]>([]);
   const [tableTypes, setTableTypes] = useState<TableType[]>([]);
@@ -41,8 +42,12 @@ export default function TablesPage() {
   // --- Form Input States (Renamed for consistency: name, capacity, etc.) ---
   const [tableName, setTableName] = useState("");
   const [tableCapacity, setTableCapacity] = useState("");
-  const [selectedSpaceId, setSelectedSpaceId] = useState<string | undefined>(undefined);
-  const [selectedTypeId, setSelectedTypeId] = useState<string | undefined>(undefined);
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | undefined>(
+    undefined,
+  );
+  const [selectedTypeId, setSelectedTypeId] = useState<string | undefined>(
+    undefined,
+  );
 
   // --- Nested Form States (New Space/Type) ---
   const [newSpaceName, setNewSpaceName] = useState("");
@@ -105,17 +110,22 @@ export default function TablesPage() {
     setIsPanelOpen(true); // Use isPanelOpen for the main form
   };
 
-  // Unified Submit Handler (Create OR Update) - Logic matches your SpacesPage structure
-  const handleSubmit = async () => {
-    // Check required fields
-    if (!tableName || !tableCapacity || !selectedSpaceId || !selectedTypeId) return;
-    
-    setIsLoading(true);
 
+  const handleSubmit = async () => {
+  
+    if (!tableName || !tableCapacity || !selectedSpaceId || !selectedTypeId) {
+      toast.error("All fields are required");
+      return;
+    }
+  
+    setIsLoading(true);
+  
     try {
+      let res: ApiResponse<Table>;
+  
       if (isEditing && editingId) {
         // --- UPDATE LOGIC ---
-        await updateTable({
+        res = await updateTable({
           id: editingId,
           name: tableName,
           capacity: parseInt(tableCapacity),
@@ -124,68 +134,101 @@ export default function TablesPage() {
         });
       } else {
         // --- CREATE LOGIC ---
-        await addTable(
+        res = await addTable(
           tableName,
           parseInt(tableCapacity),
           selectedSpaceId,
-          selectedTypeId,
+          selectedTypeId
         );
       }
-
-      // Refresh Data
+  
+      if (!res.success || !res.data) {
+        toast.error(res.message ?? "Failed to save table");
+        return;
+      }
+  
+      toast.success(res.message ?? (isEditing ? "Table updated" : "Table created"));
+  
       const updatedTables = await getTables();
       setTables(updatedTables);
-      
+  
       // Close & Reset
       closePanel();
       router.refresh();
+  
     } catch (error) {
       console.error("Failed to save table", error);
+      toast.error("Network error. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Delete Handler
+  // Delete Handler
+  const handleDelete = async () => {
+    if (
+      !editingId ||
+      !confirm(`Are you sure you want to delete table ${tableName}?`)
+    )
+      return;
+
+    setIsLoading(true);
+    try {
+      console.log("thsi is id for tabel", editingId);
+      await deleteTable(editingId);
+
+      const updatedTables = await getTables();
+      setTables(updatedTables);
+      closePanel();
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to delete table", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Delete Handler
-// Delete Handler
-const handleDelete = async () => {
-  if (!editingId || !confirm(`Are you sure you want to delete table ${tableName}?`)) return;
-  
-  setIsLoading(true);
-  try {
-    console.log("thsi is id for tabel",editingId)
-    await deleteTable(editingId); 
-    
-    const updatedTables = await getTables();
-    setTables(updatedTables);
-    closePanel();
-    router.refresh();
-  } catch (error) {
-    console.error("Failed to delete table", error);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-  // Handlers for Nested Modals (Space/Type)
   const handleCreateSpace = async () => {
-    if (!newSpaceName) return;
-    const res = await addSpace(newSpaceName, newSpaceDesc);
-    if (res) {
-      setSpaces([...spaces, res]);
-      setSelectedSpaceId(res.id);
-      setIsSpaceModalOpen(false);
-      setNewSpaceName("");
-      setNewSpaceDesc("");
+    if (!newSpaceName) {
+      toast.error("Space name is required");
+      return;
     }
+  
+    const res = await addSpace(newSpaceName, newSpaceDesc);
+  
+    if (!res.success || !res.data) {
+      toast.error(res.message ?? "Failed to create space");
+      return;
+    }
+  
+    const space = res.data;
+  
+    // Add the new space to state
+    setSpaces([...spaces, space]);
+    setSelectedSpaceId(space.id);
+    setIsSpaceModalOpen(false);
+    setNewSpaceName("");
+    setNewSpaceDesc("");
+  
+    toast.success(`Space "${space.name}" created successfully`);
   };
+  
 
   const handleCreateType = async () => {
     if (!newTypeName) return;
+
+
     const res = await addTableType(newTypeName);
+    if (!res.success || !res.data) {
+      toast.error(res.message ?? "Failed to create space");
+      return;
+    }
+    
+    const tableType  =res.data
     if (res) {
-      setTableTypes([...tableTypes, res]);
-      setSelectedTypeId(res.id);
+      setTableTypes([...tableTypes, tableType]);
+      setSelectedTypeId(tableType.id);
       setIsTypeModalOpen(false);
       setNewTypeName("");
     }
@@ -196,7 +239,13 @@ const handleDelete = async () => {
     const csvContent = [
       headers.join(","),
       ...filteredTables.map((t) =>
-        [t.name, t.tableType?.name || "", t.space?.name || "", t.capacity, t.status].join(","),
+        [
+          t.name,
+          t.tableType?.name || "",
+          t.space?.name || "",
+          t.capacity,
+          t.status,
+        ].join(","),
       ),
     ].join("\n");
 
@@ -224,7 +273,7 @@ const handleDelete = async () => {
         onExport={handleExport}
         actionButton={
           <Button
-            onClick={openCreate} 
+            onClick={openCreate}
             className="bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm"
           >
             <span className="flex items-center gap-2">Add Table</span>
@@ -245,12 +294,24 @@ const handleDelete = async () => {
         <table className="w-full text-left text-sm text-zinc-600">
           <thead className="bg-zinc-50 border-b border-zinc-200">
             <tr>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">Name</th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">Type</th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">Space</th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">Cap.</th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">Status</th>
-              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest text-right">Edit</th>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                Name
+              </th>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                Type
+              </th>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                Space
+              </th>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                Cap.
+              </th>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                Status
+              </th>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest text-right">
+                Edit
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
@@ -260,18 +321,26 @@ const handleDelete = async () => {
                 className="hover:bg-zinc-50 transition-colors cursor-pointer group"
                 onClick={() => openEdit(table)} // Row click opens Edit Panel
               >
-                <td className="px-6 py-4 font-medium text-zinc-900">{table.name}</td>
-                <td className="px-6 py-4 font-bold text-zinc-600 uppercase text-[10px]">{table.tableType?.name || "-"}</td>
-                <td className="px-6 py-4 text-zinc-600 font-medium">{table.space?.name || "-"}</td>
-                <td className="px-6 py-4 text-zinc-900 font-bold">{table.capacity}</td>
+                <td className="px-6 py-4 font-medium text-zinc-900">
+                  {table.name}
+                </td>
+                <td className="px-6 py-4 font-bold text-zinc-600 uppercase text-[10px]">
+                  {table.tableType?.name || "-"}
+                </td>
+                <td className="px-6 py-4 text-zinc-600 font-medium">
+                  {table.space?.name || "-"}
+                </td>
+                <td className="px-6 py-4 text-zinc-900 font-bold">
+                  {table.capacity}
+                </td>
                 <td className="px-6 py-4">
                   <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border ${
                       table.status === "ACTIVE"
                         ? "bg-zinc-50 text-zinc-600 border-zinc-100"
                         : table.status === "OCCUPIED"
-                          ? "bg-red-50 text-red-600 border-red-100"
-                          : "bg-amber-50 text-amber-600 border-amber-100"
+                        ? "bg-red-50 text-red-600 border-red-100"
+                        : "bg-amber-50 text-amber-600 border-amber-100"
                     }`}
                   >
                     {table.status}
@@ -279,17 +348,24 @@ const handleDelete = async () => {
                 </td>
                 <td className="px-6 py-4 text-right">
                   {/* EDIT BUTTON - Explicit click for clarity */}
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); openEdit(table); }}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEdit(table);
+                    }}
                     className="p-2 text-gray-400 hover:text-zinc-900 transition-colors"
                   >
-                     <Pencil size={20} /> {/* Lucide Icon */}
+                    <Pencil size={20} /> {/* Lucide Icon */}
                   </button>
                 </td>
               </tr>
             ))}
             {filteredTables.length === 0 && (
-              <tr><td colSpan={6} className="px-6 py-8 text-center text-zinc-400">No tables found.</td></tr>
+              <tr>
+                <td colSpan={6} className="px-6 py-8 text-center text-zinc-400">
+                  No tables found.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
@@ -373,14 +449,24 @@ const handleDelete = async () => {
           >
             Cancel
           </Button>
-          
+
           {/* Save/Update Button */}
           <Button
             onClick={handleSubmit}
             className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white"
-            disabled={!tableName || !tableCapacity || !selectedSpaceId || !selectedTypeId || isLoading}
+            disabled={
+              !tableName ||
+              !tableCapacity ||
+              !selectedSpaceId ||
+              !selectedTypeId ||
+              isLoading
+            }
           >
-            {isLoading ? "Saving..." : isEditing ? "Update Table" : "Create Table"}
+            {isLoading
+              ? "Saving..."
+              : isEditing
+              ? "Update Table"
+              : "Create Table"}
           </Button>
         </div>
       </SidePanel>
@@ -393,18 +479,23 @@ const handleDelete = async () => {
       >
         <div className="flex flex-col gap-4 p-2">
           <input
-             className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:outline-none"
-             placeholder="Space Name"
-             value={newSpaceName}
-             onChange={(e) => setNewSpaceName(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:outline-none"
+            placeholder="Space Name"
+            value={newSpaceName}
+            onChange={(e) => setNewSpaceName(e.target.value)}
           />
           <textarea
-             className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:outline-none"
-             placeholder="Description"
-             value={newSpaceDesc}
-             onChange={(e) => setNewSpaceDesc(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:outline-none"
+            placeholder="Description"
+            value={newSpaceDesc}
+            onChange={(e) => setNewSpaceDesc(e.target.value)}
           />
-          <Button onClick={handleCreateSpace} className="w-full bg-zinc-900 text-white uppercase font-bold text-[10px] tracking-widest">Save Space</Button>
+          <Button
+            onClick={handleCreateSpace}
+            className="w-full bg-zinc-900 text-white uppercase font-bold text-[10px] tracking-widest"
+          >
+            Save Space
+          </Button>
         </div>
       </Modal>
 
@@ -415,12 +506,17 @@ const handleDelete = async () => {
       >
         <div className="flex flex-col gap-4 p-2">
           <input
-             className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:outline-none"
-             placeholder="Type Name"
-             value={newTypeName}
-             onChange={(e) => setNewTypeName(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:outline-none"
+            placeholder="Type Name"
+            value={newTypeName}
+            onChange={(e) => setNewTypeName(e.target.value)}
           />
-          <Button onClick={handleCreateType} className="w-full bg-zinc-900 text-white uppercase font-bold text-[10px] tracking-widest">Save Type</Button>
+          <Button
+            onClick={handleCreateType}
+            className="w-full bg-zinc-900 text-white uppercase font-bold text-[10px] tracking-widest"
+          >
+            Save Type
+          </Button>
         </div>
       </Modal>
     </div>

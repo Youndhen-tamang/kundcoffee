@@ -1,19 +1,19 @@
 "use client";
+import { Button } from "@/components/ui/Button";
+import { MetricCard } from "@/components/ui/MetricCard";
+import { SidePanel } from "@/components/ui/SidePanel";
+import { ImageUpload } from "@/components/ui/ImageUpload";
+import { Plus, Search, Edit2, Trash2, Layers } from "lucide-react";
 import { useEffect, useState } from "react";
-import { SubMenu } from "@/lib/types";
+import { useRouter } from "next/navigation";
 import {
   getSubMenus,
   addSubMenu,
   updateSubMenu,
-  deleteSubMenu,
+  getCategories,
 } from "@/services/menu";
-import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
-import { MetricCard } from "@/components/ui/MetricCard";
-import { Button } from "@/components/ui/Button";
-import { SidePanel } from "@/components/ui/SidePanel";
-import { useRouter } from "next/navigation";
-import { ImageUpload } from "@/components/ui/ImageUpload";
-import { Trash2, Edit2, Plus, Layers, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+import { SubMenu } from "@/lib/types";
 
 export default function SubMenusPage() {
   const router = useRouter();
@@ -28,15 +28,22 @@ export default function SubMenusPage() {
 
   // Form State
   const [name, setName] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [imageFile, setImageFile] = useState<File | string | null>(null);
   const [isActive, setIsActive] = useState(true);
+  const [categories, setCategories] = useState<any[]>([]);
 
   const [uploading, setUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
-    const data = await getSubMenus();
-    setSubMenus(data);
+    const [smData, catData] = await Promise.all([
+      getSubMenus(),
+      getCategories(),
+    ]);
+    setSubMenus(smData);
+    setCategories(catData);
     setLoading(false);
   };
 
@@ -52,6 +59,7 @@ export default function SubMenusPage() {
     setIsEditing(false);
     setSelectedId(null);
     setName("");
+    setCategoryId("");
     setImageFile(null);
     setIsActive(true);
     setIsPanelOpen(true);
@@ -61,6 +69,7 @@ export default function SubMenusPage() {
     setIsEditing(true);
     setSelectedId(s.id);
     setName(s.name);
+    setCategoryId(s.categoryId || "");
     setImageFile(s.image || null);
     setIsActive(s.isActive);
     setIsPanelOpen(true);
@@ -68,6 +77,7 @@ export default function SubMenusPage() {
 
   const handleSubmit = async () => {
     if (!name) return;
+    setIsSaving(true);
 
     let imageUrl = typeof imageFile === "string" ? imageFile : undefined;
 
@@ -93,19 +103,31 @@ export default function SubMenusPage() {
       name,
       image: imageUrl,
       isActive,
+      categoryId: categoryId || undefined,
     };
 
-    let res;
-    if (isEditing && selectedId) {
-      res = await updateSubMenu({ ...payload, id: selectedId });
-    } else {
-      res = await addSubMenu(payload);
-    }
+    try {
+      let res;
+      if (isEditing && selectedId) {
+        res = await updateSubMenu({ ...payload, id: selectedId });
+      } else {
+        res = await addSubMenu(payload);
+      }
 
-    if (res?.success) {
-      refresh();
-      setIsPanelOpen(false);
-      router.refresh();
+      if (res?.id || res?.success) {
+        // addSubMenu returns data directly? Wait, check service.
+        toast.success(isEditing ? "Sub menu updated" : "Sub menu created");
+        refresh();
+        setIsPanelOpen(false);
+        router.refresh();
+      } else {
+        toast.error(res?.message || "Failed to save sub menu");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -137,7 +159,7 @@ export default function SubMenusPage() {
         <MetricCard
           title="Total Dishes Linked"
           value={subMenus.reduce(
-            (acc, curr) => (acc + (curr.dishes?.length || 0)) as any,
+            (acc, curr) => acc + (curr.dishes?.length || 0),
             0,
           )}
           subValue="Across all sub-menus"
@@ -157,6 +179,9 @@ export default function SubMenusPage() {
           <thead className="bg-slate-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-4 font-semibold text-gray-700">Name</th>
+              <th className="px-6 py-4 font-semibold text-gray-700">
+                Category
+              </th>
               <th className="px-6 py-4 font-semibold text-gray-700">
                 Dishes Count
               </th>
@@ -189,6 +214,11 @@ export default function SubMenusPage() {
                   {s.name}
                 </td>
                 <td className="px-6 py-4">
+                  <span className="text-gray-500 font-medium">
+                    {categories.find((c) => c.id === s.categoryId)?.name || "-"}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
                   <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-semibold">
                     {/* @ts-ignore */}
                     {s._count?.dishes || 0} Dishes
@@ -212,7 +242,7 @@ export default function SubMenusPage() {
             ))}
             {filtered.length === 0 && !loading && (
               <tr>
-                <td colSpan={4} className="text-center py-12 text-gray-400">
+                <td colSpan={5} className="text-center py-12 text-gray-400">
                   <div className="flex flex-col items-center gap-2">
                     <Layers size={24} className="opacity-20" />
                     <p>No sub-menus found.</p>
@@ -247,6 +277,24 @@ export default function SubMenusPage() {
               />
             </div>
 
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-2">
+                Category
+              </label>
+              <select
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all outline-none"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+              >
+                <option value="">Select Category</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex items-center py-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -274,16 +322,20 @@ export default function SubMenusPage() {
             onClick={() => setIsPanelOpen(false)}
             variant="secondary"
             className="flex-1"
-            disabled={uploading}
+            disabled={isSaving || uploading}
           >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             className="flex-1 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
-            disabled={!name || uploading}
+            disabled={!name || isSaving || uploading}
           >
-            {uploading ? "Saving..." : isEditing ? "Update" : "Create"}
+            {isSaving || uploading
+              ? "Saving..."
+              : isEditing
+                ? "Update"
+                : "Create"}
           </Button>
         </div>
       </SidePanel>

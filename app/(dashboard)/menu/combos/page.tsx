@@ -11,6 +11,7 @@ import {
   getStocks,
   getSubMenus,
 } from "@/services/menu";
+import { toast } from "sonner";
 import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
@@ -185,9 +186,12 @@ export default function CombosPage() {
     }
 
     if (res?.success) {
+      toast.success(isEditing ? "Combo updated" : "Combo created");
       refresh();
       setIsPanelOpen(false);
       router.refresh();
+    } else {
+      toast.error(res?.message || "Failed to save combo");
     }
   };
 

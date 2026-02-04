@@ -64,9 +64,9 @@ export default function DashboardClient({
   // Handlers
   const handleAddSpace = async () => {
     if (!newSpaceName) return;
-    const newSpace = await addSpace(newSpaceName, newSpaceDesc);
-    if (newSpace) {
-      setSpaces([...spaces, newSpace]);
+    const res = await addSpace(newSpaceName, newSpaceDesc);
+    if (res.success && res.data) {
+      setSpaces([...spaces, res.data]);
       setNewSpaceName("");
       setNewSpaceDesc("");
       setIsSpacePopoverOpen(false);
@@ -76,10 +76,10 @@ export default function DashboardClient({
 
   const handleAddTableType = async () => {
     if (!newTypeName) return;
-    const newType = await addTableType(newTypeName);
-    if (newType) {
-      setTableTypes([...tableTypes, newType]);
-      setSelectedTypeId(newType.id);
+    const res = await addTableType(newTypeName);
+    if (res.success && res.data) {
+      setTableTypes([...tableTypes, res.data]);
+      setSelectedTypeId(res.data.id);
       setNewTypeName("");
       setIsTypeModalOpen(false);
     }
@@ -93,14 +93,14 @@ export default function DashboardClient({
       !selectedTypeId
     )
       return;
-    const newTable = await addTable(
+    const res = await addTable(
       newTableName,
       parseInt(newTableCapacity),
       selectedSpaceId,
       selectedTypeId,
     );
-    if (newTable) {
-      setTables([...tables, newTable]);
+    if (res.success && res.data) {
+      setTables([...tables, res.data]);
       setNewTableName("");
       setNewTableCapacity("");
       setSelectedSpaceId(undefined);

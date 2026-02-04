@@ -7,6 +7,7 @@ import {
   deleteCategory,
   updateCategory,
 } from "@/services/menu";
+import { toast } from "sonner";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { SidePanel } from "@/components/ui/SidePanel";
@@ -109,9 +110,12 @@ export default function CategoriesPage() {
     }
 
     if (res?.success) {
+      toast.success(isEditing ? "Category updated" : "Category created");
       setIsPanelOpen(false);
       refresh();
       router.refresh();
+    } else {
+      toast.error(res?.message || "Failed to save category");
     }
   };
 
