@@ -1,0 +1,9 @@
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  return NextResponse.json({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "NOT SET",
+    api_key: process.env.CLOUDINARY_API_KEY ? "SET" : "NOT SET",
+    api_secret: process.env.api_secret ? "SET" : "NOT SET",
+  });
+}
