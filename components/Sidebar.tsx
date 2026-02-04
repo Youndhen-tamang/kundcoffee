@@ -128,15 +128,8 @@ export default function Sidebar() {
             <div className="space-y-1">
               <NavItem href="/" icon={LayoutDashboard} label="Dashboard" />
               <NavItem href="/orders" icon={Package} label="Orders" />
-              <NavItem href="/finance" icon={Database} label="Finance" />
 
-              <AccordionItem id="core" label="Tables" icon={Database}>
-                <NavItem href="/spaces" icon={Map} label="Spaces" />
-                <NavItem href="/tables" icon={Table2} label="Tables" />
-                <NavItem href="/qrcodes" icon={QrCode} label="QR Codes" />
-              </AccordionItem>
-
-              <AccordionItem id="menu" label="Inventory" icon={UtensilsCrossed}>
+              <AccordionItem id="menu" label="Menu" icon={UtensilsCrossed}>
                 <NavItem
                   href="/menu/categories"
                   icon={Tag}
@@ -162,7 +155,14 @@ export default function Sidebar() {
                 {/* <NavItem href="/menu/sets" icon={Coffee} label="Menu Sets" /> */}
               </AccordionItem>
 
+              <AccordionItem id="core" label="Tables" icon={Database}>
+                <NavItem href="/spaces" icon={Map} label="Spaces" />
+                <NavItem href="/tables" icon={Table2} label="Tables" />
+                <NavItem href="/qrcodes" icon={QrCode} label="QR Codes" />
+              </AccordionItem>
+
               <NavItem href="/customers" icon={Users} label="Customers" />
+              <NavItem href="/finance" icon={Database} label="Finance" />
             </div>
           </div>
 
