@@ -38,7 +38,7 @@ export default function CustomerProfilePage() {
   };
 
   return (
-    <div className="flex gap-6 min-h-[calc(100vh-120px)]">
+    <div className="flex gap-6 min-h-[calc(100vh-120px)] py-10 pr-6">
       {/* Left Sidebar */}
       <div className="w-80 flex flex-col gap-6">
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">

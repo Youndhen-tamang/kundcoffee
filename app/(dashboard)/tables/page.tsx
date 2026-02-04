@@ -265,7 +265,7 @@ export default function TablesPage() {
   const occupiedTables = tables.filter((t) => t.status === "OCCUPIED").length;
 
   return (
-    <div>
+    <div className="px-6 py-10">
       <PageHeaderAction
         title="Tables"
         description="Manage all your restaurant tables"

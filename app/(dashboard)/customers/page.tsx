@@ -110,7 +110,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div>
+    <div className="px-6 py-10">
       <PageHeaderAction
         title="Customers"
         description="Manage your customer base and loyalty"

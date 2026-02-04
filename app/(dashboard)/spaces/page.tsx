@@ -130,7 +130,7 @@ export default function SpacesPage() {
   };
 
   return (
-    <div>
+    <div className="px-6 py-10">
       <PageHeaderAction
         title="Spaces"
         description="Manage dining areas"
