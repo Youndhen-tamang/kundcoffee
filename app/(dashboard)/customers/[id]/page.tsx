@@ -261,7 +261,11 @@ export default function CustomerProfilePage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {customer.orders.map((order: any, index: number) => {
-                    const paid = order.payment ? order.payment.amount : 0;
+                    const isCredit =
+                      order.payment?.status === "CREDIT" ||
+                      order.payment?.method === "CREDIT";
+                    const paid =
+                      order.payment && !isCredit ? order.payment.amount : 0;
                     const unpaid = order.total - paid;
                     return (
                       <tr

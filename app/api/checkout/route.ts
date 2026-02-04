@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { finalizeSessionTransaction } from "@/lib/checkout-helper";
+import { PaymentStatus } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -135,7 +136,10 @@ export async function POST(req: NextRequest) {
           data: {
             method: paymentMethod,
             amount,
-            status: paymentMethod === "CREDIT" ? "CREDIT" : "PAID",
+            status:
+              paymentMethod === "CREDIT"
+                ? PaymentStatus.CREDIT
+                : PaymentStatus.PAID,
             transactionUuid: null,
             esewaRefId: null,
           },
@@ -147,7 +151,10 @@ export async function POST(req: NextRequest) {
             session: { connect: { id: activeSessionId } },
             method: paymentMethod,
             amount,
-            status: paymentMethod === "CREDIT" ? "CREDIT" : "PAID",
+            status:
+              paymentMethod === "CREDIT"
+                ? PaymentStatus.CREDIT
+                : PaymentStatus.PAID,
           },
         });
       }

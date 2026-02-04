@@ -32,6 +32,8 @@ model TableSession {
   isActive Boolean  @default(true)
   payment  Payment?
   orders   Order[]
+
+  @@index([tableId])
 }
 
 model TableType {
@@ -55,6 +57,9 @@ model Table {
   createdAt    DateTime       @default(now())
   isDeleted    Boolean        @default(false)
   Order        Order[]
+
+  @@index([spaceId])
+  @@index([tableTypeId])
 }
 
 model QRCode {
@@ -100,6 +105,8 @@ model SubMenu {
   menuSet MenuSetSubMenu[]
 
   createdAt DateTime @default(now())
+
+  @@index([categoryId])
 }
 
 model Price {
@@ -117,6 +124,10 @@ model Price {
   dish  Dish?       @relation(fields: [dishId], references: [id])
   addOn AddOn?      @relation(fields: [addOnId], references: [id])
   combo ComboOffer? @relation(fields: [comboId], references: [id])
+
+  @@index([dishId])
+  @@index([addOnId])
+  @@index([comboId])
 }
 
 model Stock {
@@ -142,6 +153,11 @@ model StockConsumption {
   dish  Dish?       @relation(fields: [dishId], references: [id])
   addOn AddOn?      @relation(fields: [addOnId], references: [id])
   combo ComboOffer? @relation(fields: [comboId], references: [id])
+
+  @@index([stockId])
+  @@index([dishId])
+  @@index([addOnId])
+  @@index([comboId])
 }
 
 model Dish {
@@ -167,6 +183,9 @@ model Dish {
   addOns      DishAddOn[]
   comboItems  ComboItem[]
   createdAt   DateTime           @default(now())
+
+  @@index([categoryId])
+  @@index([subMenuId])
 }
 
 enum DishType {
@@ -209,6 +228,8 @@ model AddOn {
   usedIn          DishAddOn[]
 
   createdAt DateTime @default(now())
+
+  @@index([categoryId])
 }
 
 enum AddOnType {
@@ -223,6 +244,9 @@ model DishAddOn {
 
   dish  Dish  @relation(fields: [dishId], references: [id])
   addOn AddOn @relation(fields: [addOnId], references: [id])
+
+  @@index([dishId])
+  @@index([addOnId])
 }
 
 model MenuSet {
@@ -243,6 +267,9 @@ model MenuSetSubMenu {
 
   menuSet MenuSet @relation(fields: [menuSetId], references: [id])
   subMenu SubMenu @relation(fields: [subMenuId], references: [id])
+
+  @@index([menuSetId])
+  @@index([subMenuId])
 }
 
 model ComboOffer {
@@ -267,6 +294,9 @@ model ComboOffer {
   stocks      StockConsumption[]
 
   createdAt DateTime @default(now())
+
+  @@index([categoryId])
+  @@index([subMenuId])
 }
 
 model ComboItem {
@@ -279,6 +309,9 @@ model ComboItem {
 
   combo ComboOffer @relation(fields: [comboId], references: [id])
   dish  Dish       @relation(fields: [dishId], references: [id])
+
+  @@index([comboId])
+  @@index([dishId])
 }
 
 model Order {
@@ -301,6 +334,11 @@ model Order {
   status    OrderStatus @default(PENDING)
   createdAt DateTime    @default(now())
   isDeleted Boolean     @default(false)
+
+  @@index([tableId])
+  @@index([sessionId])
+  @@index([customerId])
+  @@index([paymentId])
 }
 
 model OrderItem {
@@ -318,6 +356,10 @@ model OrderItem {
   selectedAddOns OrderItemAddOn[]
   status         OrderStatus      @default(PENDING)
   remarks        String?
+
+  @@index([orderId])
+  @@index([dishId])
+  @@index([comboId])
 }
 
 model OrderItemAddOn {
@@ -330,6 +372,9 @@ model OrderItemAddOn {
 
   quantity  Int   @default(1)
   unitPrice Float
+
+  @@index([orderItemId])
+  @@index([addOnId])
 }
 
 enum OrderStatus {
@@ -358,6 +403,8 @@ model Payment {
 
   createdAt DateTime @default(now())
   isDeleted Boolean  @default(false)
+
+  @@index([sessionId])
 }
 
 enum PaymentMethod {
@@ -426,6 +473,8 @@ model CustomerLedger {
   remarks     String?
 
   createdAt DateTime @default(now())
+
+  @@index([customerId])
 }
 
 enum LedgerType {
@@ -454,6 +503,9 @@ model Reservation {
   guests    Int
   status    ReservationStatus @default(PENDING)
   createdAt DateTime          @default(now())
+
+  @@index([customerId])
+  @@index([tableId])
 }
 
 model ReservationTime {
@@ -463,6 +515,8 @@ model ReservationTime {
   date          DateTime
   startTime     DateTime
   endTime       DateTime
+
+  @@index([reservationId])
 }
 
 enum ReservationStatus {
@@ -495,6 +549,8 @@ model SalesReturn {
 
   createdAt DateTime @default(now())
   isDeleted Boolean  @default(false)
+
+  @@index([customerId])
 }
 
 model SalesReturnItem {
@@ -505,6 +561,8 @@ model SalesReturnItem {
   quantity      Int
   rate          Float
   amount        Float
+
+  @@index([salesReturnId])
 }
 
 enum ReturnPaymentStatus {
