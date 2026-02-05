@@ -6,10 +6,13 @@ import { Popover } from "@/components/ui/Popover";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import { Modal } from "@/components/ui/Modal";
 import { MetricCard } from "@/components/ui/MetricCard";
+import DashboardMetrics from "@/components/dashboard/DashboardMetrics";
+import TopPerformers from "@/components/dashboard/TopPerformers";
 import { spaceType, Table, TableType } from "@/lib/types";
 import { addSpace } from "@/services/space";
 import { addTable, addTableType } from "@/services/table";
 import { useRouter } from "next/navigation";
+import SalesLineChart from "@/components/dashboard/analytics/SalesLineChart";
 
 interface DashboardClientProps {
   initialSpaces: spaceType[];
@@ -35,6 +38,7 @@ export default function DashboardClient({
   const [isTablePopoverOpen, setIsTablePopoverOpen] = useState(false);
   const [isQRPopoverOpen, setIsQRPopoverOpen] = useState(false);
   const [isCustomerPopoverOpen, setIsCustomerPopoverOpen] = useState(false);
+  const [isStaffPopoverOpen, setIsStaffPopoverOpen] = useState(false);
 
   // Modal States
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
@@ -59,6 +63,13 @@ export default function DashboardClient({
     phone: "",
     email: "",
     openingBalance: 0,
+  });
+
+  const [newStaff, setNewStaff] = useState({
+    name: "",
+    role: "Waiter",
+    phone: "",
+    email: "",
   });
 
   // Handlers
@@ -128,6 +139,25 @@ export default function DashboardClient({
       });
       setIsCustomerPopoverOpen(false);
       router.refresh();
+    }
+  };
+
+  const handleAddStaff = async () => {
+    if (!newStaff.name) return;
+    try {
+      const res = await fetch("/api/staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newStaff),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNewStaff({ name: "", role: "Waiter", phone: "", email: "" });
+        setIsStaffPopoverOpen(false);
+        router.refresh();
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -298,6 +328,61 @@ export default function DashboardClient({
     </div>
   );
 
+  const StaffPopoverContent = (
+    <div className="flex flex-col gap-4 p-2">
+      <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
+        Add New Staff
+      </h3>
+      <div className="space-y-4">
+        <div>
+          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+            Name
+          </label>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+            placeholder="e.g. Alice Smith"
+            value={newStaff.name}
+            onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+            Role
+          </label>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+            placeholder="e.g. Waiter"
+            value={newStaff.role}
+            onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+            Phone
+          </label>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+            placeholder="Phone Number"
+            value={newStaff.phone}
+            onChange={(e) =>
+              setNewStaff({ ...newStaff, phone: e.target.value })
+            }
+          />
+        </div>
+        <Button
+          size="sm"
+          onClick={handleAddStaff}
+          className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
+        >
+          Add Staff
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-full">
       {/* Top Action Bar */}
@@ -311,6 +396,20 @@ export default function DashboardClient({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Popover
+            trigger={
+              <Button
+                variant="secondary"
+                className="bg-white hover:bg-gray-50 border-gray-200"
+              >
+                Add Staff
+              </Button>
+            }
+            content={StaffPopoverContent}
+            isOpen={isStaffPopoverOpen}
+            setIsOpen={setIsStaffPopoverOpen}
+            align="right"
+          />
           <Popover
             trigger={
               <Button
@@ -370,15 +469,27 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard title="Total Customers" value={customers.length} />
-        <MetricCard title="Total Spaces" value={spaces.length} />
-        <MetricCard title="Total Tables" value={tables.length} />
-        <MetricCard
-          title="Active Tables"
-          value={tables.filter((t) => t.status === "ACTIVE").length}
-        />
+      {/* Metrics Section */}
+      <DashboardMetrics />
+
+      {/* Top Performers Section */}
+      <TopPerformers />
+
+      <SalesLineChart/>
+
+      {/* Original Quick Metrics (Tables/Spaces) - Maybe keep or move? */}
+      {/* Moving below as secondary information */}
+      <div className="pt-8 border-t border-gray-200">
+        <h2 className="text-lg font-bold text-gray-800 mb-4">Floor Overview</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard title="Total Customers" value={customers.length} />
+          <MetricCard title="Total Spaces" value={spaces.length} />
+          <MetricCard title="Total Tables" value={tables.length} />
+          <MetricCard
+            title="Active Tables"
+            value={tables.filter((t) => t.status === "ACTIVE").length}
+          />
+        </div>
       </div>
 
       {/* Add Table Type Modal */}

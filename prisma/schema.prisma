@@ -331,6 +331,9 @@ model Order {
   paymentId String?
   payment   Payment? @relation(fields: [paymentId], references: [id])
 
+  staffId String?
+  staff   Staff?  @relation(fields: [staffId], references: [id])
+
   status    OrderStatus @default(PENDING)
   createdAt DateTime    @default(now())
   isDeleted Boolean     @default(false)
@@ -534,6 +537,8 @@ model SalesReturn {
   txnDate         DateTime          @default(now())
   billReference   String
   salesStaff      String?
+  staffId         String? // Link to actual Staff ID if available
+  staff           Staff?            @relation(fields: [staffId], references: [id])
   items           SalesReturnItem[]
 
   taxableAmount Float
@@ -569,4 +574,37 @@ enum ReturnPaymentStatus {
   PAID
   UNPAID
   CREDIT
+}
+
+model Staff {
+  id           String        @id @default(uuid())
+  name         String
+  role         String        @default("Staff") // e.g. "Waiter", "Manager", "Chef"
+  phone        String?
+  email        String?
+  isActive     Boolean       @default(true)
+  orders       Order[]
+  image        String?
+  salesReturns SalesReturn[]
+  createdAt    DateTime      @default(now())
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  title       String
+  amount      Float
+  category    String? // e.g. "Rent", "Utilities", "Salary"
+  date        DateTime @default(now())
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model Purchase {
+  id        String   @id @default(uuid())
+  item      String
+  quantity  Int
+  amount    Float
+  vendor    String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
 }

@@ -304,3 +304,9 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
 }
+
+
+export type Sale={
+  date:string;
+  total:string
+}
