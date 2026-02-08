@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "AddOn" ADD COLUMN     "sortOrder" INTEGER NOT NULL DEFAULT 0;

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, image, categoryId } = await req.json();
+    const { name, image, categoryId, sortOrder, isActive } = await req.json();
 
     if (!name)
       return NextResponse.json(
@@ -28,11 +28,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 2. Include sortOrder and isActive in the creation data
     const subMenu = await prisma.subMenu.create({
       data: {
         name,
-        categoryId,
-        ...(image && { image }),
+        categoryId: categoryId || null,
+        image: image || null,
+        // Ensure sortOrder is a number
+        sortOrder: sortOrder ? parseInt(sortOrder.toString()) : 0,
+        isActive: isActive !== undefined ? isActive : true,
       },
     });
 
@@ -44,11 +48,10 @@ export async function POST(req: NextRequest) {
     console.log(error);
     return NextResponse.json(
       { success: false, message: "Something went wrong" },
-      { status: 400 },
+      { status: 500 }, 
     );
   }
 }
-
 export async function GET() {
   try {
     const submenu = await prisma.subMenu.findMany();

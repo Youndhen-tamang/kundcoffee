@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       categoryId,
       price,
       stockConsumption,
+      sortOrder, // <--- ADD THIS
     } = body;
 
     if (!name) {
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest) {
         type: type || "EXTRA",
         isAvailable: isAvailable ?? true,
         categoryId,
+        sortOrder: sortOrder ? parseInt(sortOrder) : 0, // <--- ADD THIS
         price: {
           create: {
             actualPrice: parseFloat(price?.actualPrice || 0),
@@ -82,8 +84,8 @@ export async function POST(req: NextRequest) {
               quantity: parseFloat(s.quantity),
             })) || [],
         },
-      },
-      include: {
+        // stocks logic remains same...
+      }, include: {
         price: true,
       },
     });
@@ -94,6 +96,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { success: false, message: "Failed to create addon" },
       { status: 500 },
-    );
-  }
+    );  }
 }

@@ -122,6 +122,7 @@ export type AddOn = {
   isAvailable: boolean;
   categoryId?: string | null;
   price?: Price | null;
+  sortOrder?: number;
   stocks?: StockConsumption[];
   createdAt: Date;
 };
@@ -139,6 +140,7 @@ export type ComboOffer = {
   id: string;
   name: string;
   image: string[];
+  sortOrder?:number;
   hscode?: string | null;
   preparationTime: number;
   description?: string | null;

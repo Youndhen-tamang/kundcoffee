@@ -160,15 +160,16 @@ export async function getSubMenus(): Promise<SubMenu[]> {
   }
 }
 
-export async function addSubMenu(data: Partial<SubMenu>) {
+export async function addSubMenu(data: Partial<SubMenu> & { sortOrder?: number }) {
   try {
     const res = await fetch("/api/sub-menu", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    const submenu = await res.json();
-    return submenu.data;
+    
+    // 3. Return the full JSON response so the UI can check res.success
+    return await res.json();
   } catch (error) {
     console.error("Failed to add sub menu:", error);
     return { success: false, message: "Network error" };
@@ -216,7 +217,7 @@ export async function getAddOns(): Promise<AddOn[]> {
   }
 }
 
-export async function addAddOn(data: Partial<AddOn>) {
+export async function addAddOn(data: any) { 
   try {
     const res = await fetch("/api/addons", {
       method: "POST",
@@ -225,12 +226,11 @@ export async function addAddOn(data: Partial<AddOn>) {
     });
     return await res.json();
   } catch (error) {
-    console.error("Failed to add addon:", error);
     return { success: false, message: "Network error" };
   }
 }
 
-export async function updateAddOn(data: Partial<AddOn>) {
+export async function updateAddOn(data: any) {
   if (!data.id) return { success: false, message: "ID required" };
   const { id, ...updates } = data;
   try {
@@ -241,7 +241,6 @@ export async function updateAddOn(data: Partial<AddOn>) {
     });
     return await res.json();
   } catch (error) {
-    console.error("Failed to update addon:", error);
     return { success: false, message: "Network error" };
   }
 }
@@ -325,13 +324,17 @@ export async function getCombos(): Promise<ComboOffer[]> {
   }
 }
 
-export async function addCombo(data: Partial<ComboOffer>) {
+
+export async function addCombo(
+  data: Partial<ComboOffer>
+): Promise<ApiResponse<ComboOffer>> {
   try {
     const res = await fetch("/api/combos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+
     return await res.json();
   } catch (error) {
     console.error("Failed to add combo:", error);
@@ -339,30 +342,35 @@ export async function addCombo(data: Partial<ComboOffer>) {
   }
 }
 
-export async function updateCombo(data: Partial<ComboOffer>) {
-  if (!data.id) return { success: false, message: "ID required" };
+/**
+ * Updates an existing combo.
+ */
+export async function updateCombo(
+  data: Partial<ComboOffer>
+): Promise<ApiResponse<ComboOffer>> {
   const { id, ...updates } = data;
+  if (!id) return { success: false, message: "ID required" };
+
   try {
     const res = await fetch(`/api/combos/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
+      body: JSON.stringify(updates), // This includes items, price, etc.
     });
     return await res.json();
   } catch (error) {
-    console.error("Failed to update combo:", error);
     return { success: false, message: "Network error" };
   }
 }
 
-export async function deleteCombo(id: string) {
+export async function deleteCombo(id: string): Promise<ApiResponse<null>> {
   try {
-    const res = await fetch(`/api/combos?id=${id}`, {
+    // Calling /api/combos/123 with DELETE method
+    const res = await fetch(`/api/combos/${id}`, {
       method: "DELETE",
     });
     return await res.json();
   } catch (error) {
-    console.error("Failed to delete combo:", error);
     return { success: false, message: "Network error" };
   }
 }

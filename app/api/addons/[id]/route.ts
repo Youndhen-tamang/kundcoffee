@@ -5,12 +5,7 @@ import { NextResponse, NextRequest } from "next/server";
 export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
     const { id } = await context.params;
-    if (!id) {
-      return NextResponse.json(
-        { success: false, message: "ID is required" },
-        { status: 400 },
-      );
-    }
+    if (!id) return NextResponse.json({ success: false, message: "ID required" }, { status: 400 });
 
     const {
       name,
@@ -21,14 +16,11 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       categoryId,
       price,
       stockConsumption,
+      sortOrder, // <--- ADD THIS
     } = await req.json();
 
     const currentAddon = await prisma.addOn.findUnique({ where: { id } });
-    if (!currentAddon)
-      return NextResponse.json(
-        { success: false, message: "Addon not found" },
-        { status: 404 },
-      );
+    if (!currentAddon) return NextResponse.json({ success: false, message: "Addon not found" }, { status: 404 });
 
     if (name || categoryId) {
       const existingAddon = await prisma.addOn.findFirst({
@@ -49,7 +41,6 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         );
       }
     }
-
     const updatedAddon = await prisma.$transaction(async (tx) => {
       // 1. Update basic info
       const addon = await tx.addOn.update({
@@ -61,10 +52,11 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
           type,
           isAvailable,
           categoryId,
+          // PERSIST SORT ORDER
+          sortOrder: sortOrder !== undefined ? parseInt(sortOrder) : undefined,
         },
       });
 
-      // 2. Update Price
       if (price) {
         await tx.price.upsert({
           where: { addOnId: id },
@@ -98,22 +90,18 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
             })),
           });
         }
-      }
+      }    
 
       return addon;
     });
 
-    return NextResponse.json(
-      { success: true, message: "Updated Successfully", data: updatedAddon },
-      { status: 200 },
-    );
+    return NextResponse.json({ success: true, message: "Updated Successfully", data: updatedAddon });
   } catch (error: any) {
     console.error("Update Error:", error.message);
     return NextResponse.json(
       { success: false, message: "Something went wrong" },
       { status: 500 },
-    );
-  }
+    );  }
 }
 
 export async function DELETE(req: NextRequest, context: { params: Params }) {

@@ -223,9 +223,9 @@ model AddOn {
   description String?
   type        AddOnType
   isAvailable Boolean   @default(true)
-
-  categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id])
+  sortOrder   Int       @default(0)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
 
   orderItemAddOns OrderItemAddOn[]
   price           Price?
@@ -289,9 +289,9 @@ model ComboOffer {
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
-  subMenuId String?
-  subMenu   SubMenu? @relation(fields: [subMenuId], references: [id])
-
+  subMenuId   String?
+  subMenu     SubMenu?           @relation(fields: [subMenuId], references: [id])
+  sortOrder   Int                @default(0)
   kotType     KOTType
   isAvailable Boolean            @default(true)
   orderItems  OrderItem[]
