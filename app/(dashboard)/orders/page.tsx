@@ -58,6 +58,9 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrderType, setSelectedOrderType] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ACTIVE");
+  const [spaceSortOrder, setSpaceSortOrder] = useState<"custom" | "alphabetical" | "tableCount">("custom");
+  const [tableLayout, setTableLayout] = useState<"compact" | "default" | "spacious">("default");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<"active" | "all">("active");
   const [occupiedTable, setOccupiedTable] = useState<TableSession[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [checkoutOrder, setCheckoutOrder] = useState<Order | null>(null);
@@ -193,7 +196,7 @@ export default function OrdersPage() {
     const matchesSearch =
       searchQuery === "" ||
       o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.table?.name.toLowerCase().includes(searchQuery.toLowerCase());
+      (o.table?.name || "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType =
       selectedOrderType === "ALL" || o.type === selectedOrderType;
     return matchesSearch && matchesType;
@@ -231,16 +234,38 @@ export default function OrdersPage() {
     return kots;
   };
 
-  const groupedTables = spaces
-    .map((space) => ({
-      ...space,
-      tables: tables.filter(
-        (t) =>
-          t.spaceId === space.id &&
-          t.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
-    }))
-    .filter((s) => s.tables.length > 0);
+  const groupedTables = (() => {
+    const groups = spaces
+      .map((space) => ({
+        ...space,
+        tables: tables
+          .filter(
+            (t) =>
+              t.spaceId === space.id &&
+              t.name.toLowerCase().includes(searchQuery.toLowerCase()),
+          )
+          .sort((a, b) => {
+            const orderA = (a as Table & { sortOrder?: number }).sortOrder ?? 0;
+            const orderB = (b as Table & { sortOrder?: number }).sortOrder ?? 0;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.name.localeCompare(b.name);
+          }),
+      }))
+      .filter((s) => s.tables.length > 0);
+
+    if (spaceSortOrder === "alphabetical") {
+      return [...groups].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    if (spaceSortOrder === "tableCount") {
+      return [...groups].sort((a, b) => b.tables.length - a.tables.length);
+    }
+    return [...groups].sort((a, b) => {
+      const orderA = (a as spaceType & { sortOrder?: number }).sortOrder ?? 0;
+      const orderB = (b as spaceType & { sortOrder?: number }).sortOrder ?? 0;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.name.localeCompare(b.name);
+    });
+  })();
 
   // Handlers for Order Actions
   const handlePrintOrder = (order: Order) => {
@@ -515,10 +540,23 @@ export default function OrdersPage() {
       {/* Tab Contents */}
       <div className="min-h-[60vh]">
         {activeTab === "ORDERS" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredOrders
-              .filter((i) => i.status !== "COMPLETED")
-              .map((order) => (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Show:</span>
+              <select
+                value={orderStatusFilter}
+                onChange={(e) => setOrderStatusFilter(e.target.value as "active" | "all")}
+                className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 bg-white focus:border-red-500 outline-none"
+              >
+                <option value="active">Active only (exclude completed)</option>
+                <option value="all">All orders</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {(orderStatusFilter === "active"
+              ? filteredOrders.filter((i) => i.status !== "COMPLETED")
+              : filteredOrders
+            ).map((order) => (
                 <OrderCard
                   key={order.id}
                   order={order}
@@ -529,11 +567,47 @@ export default function OrdersPage() {
                   onAddItems={(o) => setExistingOrderForAdding(o)}
                 />
               ))}
+            </div>
+            {(orderStatusFilter === "active"
+              ? filteredOrders.filter((i) => i.status !== "COMPLETED")
+              : filteredOrders
+            ).length === 0 && (
+              <div className="text-center py-16 text-zinc-500">
+                <p className="font-medium">No orders found</p>
+                <p className="text-sm mt-1">Try changing the filter or create a new order</p>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === "TABLES" && (
           <div className="space-y-10">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Space order:</span>
+                <select
+                  value={spaceSortOrder}
+                  onChange={(e) => setSpaceSortOrder(e.target.value as "custom" | "alphabetical" | "tableCount")}
+                  className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 bg-white focus:border-red-500 outline-none"
+                >
+                  <option value="custom">Custom (sort order)</option>
+                  <option value="alphabetical">Alphabetical</option>
+                  <option value="tableCount">By table count</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Layout:</span>
+                <select
+                  value={tableLayout}
+                  onChange={(e) => setTableLayout(e.target.value as "compact" | "default" | "spacious")}
+                  className="text-xs border border-zinc-200 rounded-lg px-3 py-1.5 bg-white focus:border-red-500 outline-none"
+                >
+                  <option value="compact">Compact</option>
+                  <option value="default">Default</option>
+                  <option value="spacious">Spacious</option>
+                </select>
+              </div>
+            </div>
             {groupedTables.map((space) => (
               <div key={space.id} className="space-y-4">
                 <div className="flex items-center justify-between border-b-2 border-zinc-100 pb-2">
@@ -544,7 +618,15 @@ export default function OrdersPage() {
                     {space.tables.length} Tables
                   </span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                <div
+                  className={`grid gap-4 ${
+                    tableLayout === "compact"
+                      ? "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3"
+                      : tableLayout === "spacious"
+                        ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                        : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
+                  }`}
+                >
                   {space.tables.map((table) => {
                     const session = occupiedTable.find(
                       (o) => o.tableId === table.id,

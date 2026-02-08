@@ -61,13 +61,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       );
     }
 
-    const { name, image, categoryId } = await req.json();
-    if (!name && !image && !categoryId) {
-      return NextResponse.json(
-        { success: false, message: "Nothing to update" },
-        { status: 400 },
-      );
-    }
+    const { name, image, categoryId, sortOrder, isActive } = await req.json();
 
     if (name || categoryId) {
       const existingSubMenu = await prisma.subMenu.findFirst({
@@ -92,9 +86,12 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     const updatedSubmenu = await prisma.subMenu.update({
       where: { id },
       data: {
-        ...(name && { name }),
-        ...(image && { image }),
-        ...(categoryId && { categoryId }),
+        ...(name !== undefined && { name }),
+        ...(image !== undefined && { image }),
+        ...(categoryId !== undefined && { categoryId }),
+        ...(isActive !== undefined && { isActive }),
+        // ADD THIS LINE
+        sortOrder: sortOrder !== undefined ? parseInt(sortOrder) : undefined,
       },
     });
 

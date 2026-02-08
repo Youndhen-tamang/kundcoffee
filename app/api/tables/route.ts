@@ -145,6 +145,7 @@ export async function GET() {
         tableType: true,
         space: true,
       },
+      orderBy: { name: "asc" },
     });
     return NextResponse.json({ success: true, data: tables });
   } catch (error) {

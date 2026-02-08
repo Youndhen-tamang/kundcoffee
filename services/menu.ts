@@ -48,8 +48,7 @@ export async function addCategory(data: Partial<Category>) {
     return { success: false, message: "Network error" };
   }
 }
-
-export async function updateCategory(data: Partial<Category>) {
+export async function updateCategory(data: Partial<Category> & { sortOrder?: number }) {
   if (!data.id) {
     return { success: false, message: "ID required" };
   }
@@ -62,13 +61,14 @@ export async function updateCategory(data: Partial<Category>) {
         name: data.name,
         description: data.description,
         image: data.image,
+        sortOrder: data.sortOrder, // <--- ADD THIS LINE
       }),
     });
 
     if (!res.ok) {
-      const data = await res.json();
-      console.error("Update category failed:", data);
-      return { success: false };
+      const errorData = await res.json();
+      console.error("Update category failed:", errorData);
+      return { success: false, message: errorData.message || "Update failed" };
     }
 
     return await res.json();
@@ -175,17 +175,16 @@ export async function addSubMenu(data: Partial<SubMenu>) {
   }
 }
 
-export async function updateSubMenu(data: Partial<SubMenu>) {
+export async function updateSubMenu(data: Partial<SubMenu> & { sortOrder?: number }) {
   if (!data.id) return { success: false, message: "ID required" };
   try {
     const res = await fetch(`/api/sub-menu/${data.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify(data), 
     });
 
-    const submenu = await res.json();
-    return submenu.data;
+    return await res.json(); 
   } catch (error) {
     console.error("Failed to update sub menu:", error);
     return { success: false, message: "Network error" };

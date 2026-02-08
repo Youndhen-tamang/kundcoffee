@@ -7,7 +7,7 @@ import {
   addTable,
   addTableType,
   updateTable,
-  deleteTable, // Assuming you have a deleteTable service function
+  deleteTable,
 } from "@/services/table";
 import { getSpaces, addSpace } from "@/services/space";
 import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
@@ -17,7 +17,7 @@ import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import { Modal } from "@/components/ui/Modal";
 import { SidePanel } from "@/components/ui/SidePanel";
 import { useRouter } from "next/navigation";
-import { Trash2, Pencil } from "lucide-react"; // <-- Imported Lucide React icons
+import { Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 export default function TablesPage() {
@@ -27,8 +27,14 @@ export default function TablesPage() {
   const [tables, setTables] = useState<Table[]>([]);
   const [tableTypes, setTableTypes] = useState<TableType[]>([]);
   const [spaces, setSpaces] = useState<spaceType[]>([]);
+  
+  // Filtering & Sorting State
   const [filteredTables, setFilteredTables] = useState<Table[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<
+    "name" | "type" | "space" | "capacity" | "status"
+  >("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   // --- UI & Logic States ---
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -39,17 +45,18 @@ export default function TablesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // --- Form Input States (Renamed for consistency: name, capacity, etc.) ---
+  // --- Form Input States ---
   const [tableName, setTableName] = useState("");
   const [tableCapacity, setTableCapacity] = useState("");
-  const [selectedSpaceId, setSelectedSpaceId] = useState<string | undefined>(
-    undefined,
-  );
-  const [selectedTypeId, setSelectedTypeId] = useState<string | undefined>(
-    undefined,
-  );
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | undefined>(undefined);
+  const [selectedTypeId, setSelectedTypeId] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState(0);
 
-  // --- Nested Form States (New Space/Type) ---
+  // --- Inline Editing State (Row #) ---
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<number>(0);
+
+  // --- Nested Form States ---
   const [newSpaceName, setNewSpaceName] = useState("");
   const [newSpaceDesc, setNewSpaceDesc] = useState("");
   const [newTypeName, setNewTypeName] = useState("");
@@ -70,17 +77,69 @@ export default function TablesPage() {
     fetchData();
   }, []);
 
-  // Search Filter
+  // --- Search & Sort Logic (Matches SpacesPage) ---
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
-    const filtered = tables.filter(
+    
+    // 1. Filter
+    let filtered = tables.filter(
       (t) =>
         t.name.toLowerCase().includes(lowerQuery) ||
         t.space?.name.toLowerCase().includes(lowerQuery) ||
-        t.tableType?.name.toLowerCase().includes(lowerQuery),
+        t.tableType?.name.toLowerCase().includes(lowerQuery)
     );
+
+    // 2. Sort
+    filtered = [...filtered].sort((a, b) => {
+      // Cast to any to safely access sortOrder if strictly typed
+      const aSortOrder = (a as any).sortOrder ?? 0;
+      const bSortOrder = (b as any).sortOrder ?? 0;
+
+      // Primary Sort: Sort Order (Ascending)
+      if (aSortOrder !== bSortOrder) {
+        return aSortOrder - bSortOrder;
+      }
+
+      // Secondary Sort: Selected Column
+      const mult = sortDir === "asc" ? 1 : -1;
+      let va: string | number = "";
+      let vb: string | number = "";
+
+      switch (sortBy) {
+        case "name":
+          va = a.name;
+          vb = b.name;
+          break;
+        case "type":
+          va = a.tableType?.name || "";
+          vb = b.tableType?.name || "";
+          break;
+        case "space":
+          va = a.space?.name || "";
+          vb = b.space?.name || "";
+          break;
+        case "capacity":
+          va = a.capacity;
+          vb = b.capacity;
+          break;
+        case "status":
+          va = a.status;
+          vb = b.status;
+          break;
+        default:
+          va = a.name;
+          vb = b.name;
+      }
+
+      // String vs Number Comparison
+      if (typeof va === "string") {
+        return mult * String(va).localeCompare(String(vb));
+      }
+      return mult * (Number(va) - Number(vb));
+    });
+
     setFilteredTables(filtered);
-  }, [searchQuery, tables]);
+  }, [searchQuery, tables, sortBy, sortDir]);
 
   // --- Handlers ---
 
@@ -88,7 +147,6 @@ export default function TablesPage() {
     setIsPanelOpen(false);
   };
 
-  // Open Panel for CREATING (Button Click)
   const openCreate = () => {
     setIsEditing(false);
     setEditingId(null);
@@ -96,10 +154,10 @@ export default function TablesPage() {
     setTableCapacity("");
     setSelectedSpaceId(undefined);
     setSelectedTypeId(undefined);
-    setIsPanelOpen(true); // Use isPanelOpen for the main form
+    setSortOrder(0);
+    setIsPanelOpen(true);
   };
 
-  // Open Panel for EDITING (Row Click)
   const openEdit = (table: Table) => {
     setIsEditing(true);
     setEditingId(table.id);
@@ -107,33 +165,88 @@ export default function TablesPage() {
     setTableCapacity(table.capacity.toString());
     setSelectedSpaceId(table.spaceId || table.space?.id);
     setSelectedTypeId(table.tableTypeId || table.tableType?.id);
-    setIsPanelOpen(true); // Use isPanelOpen for the main form
+    setSortOrder((table as any).sortOrder ?? 0);
+    setIsPanelOpen(true);
   };
 
+  // --- Inline Sort Order Logic ---
+  
+  const handleSortOrderClick = (table: Table, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingRowId(table.id);
+    setEditingValue((table as any).sortOrder ?? 0);
+  };
+
+  const handleSortOrderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingValue(parseInt(e.target.value) || 0);
+  };
+
+  const handleSortOrderKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, tableId: string) => {
+    if (e.key === "Enter") {
+      e.currentTarget.blur();
+    } else if (e.key === "Escape") {
+      setEditingRowId(null);
+    }
+  };
+
+  const handleSortOrderBlur = async (tableId: string) => {
+    // Only update if value actually changed
+    const currentTable = tables.find(t => t.id === tableId);
+    if(currentTable && (currentTable as any).sortOrder === editingValue) {
+        setEditingRowId(null);
+        return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Assuming updateTable service accepts partial updates including sortOrder
+      const res = await updateTable({ id: tableId, sortOrder: editingValue });
+      
+      if (res.success) {
+        // Force refresh to ensure sort logic picks up new values
+        const updated = await fetch("/api/tables?t=" + Date.now(), {
+          cache: "no-store",
+        })
+          .then((r) => r.json())
+          .then((data) => (data.success ? data.data : []));
+
+        setTables(updated);
+        toast.success("Sort order updated");
+      } else {
+        toast.error(res.message ?? "Failed to update sort order");
+      }
+    } catch (error) {
+      console.error("Failed to update sort order:", error);
+      toast.error("Failed to update sort order");
+    } finally {
+      setEditingRowId(null);
+      setIsLoading(false);
+    }
+  };
+
+  // --- CRUD Handlers ---
 
   const handleSubmit = async () => {
-  
     if (!tableName || !tableCapacity || !selectedSpaceId || !selectedTypeId) {
       toast.error("All fields are required");
       return;
     }
-  
+
     setIsLoading(true);
-  
+
     try {
       let res: ApiResponse<Table>;
-  
+
       if (isEditing && editingId) {
-        // --- UPDATE LOGIC ---
         res = await updateTable({
           id: editingId,
           name: tableName,
           capacity: parseInt(tableCapacity),
           spaceId: selectedSpaceId,
           tableTypeId: selectedTypeId,
+          // sortOrder is preserved or updated if your API supports it in this call
         });
       } else {
-        // --- CREATE LOGIC ---
         res = await addTable(
           tableName,
           parseInt(tableCapacity),
@@ -141,21 +254,20 @@ export default function TablesPage() {
           selectedTypeId
         );
       }
-  
+
       if (!res.success || !res.data) {
         toast.error(res.message ?? "Failed to save table");
         return;
       }
-  
+
       toast.success(res.message ?? (isEditing ? "Table updated" : "Table created"));
-  
+      
+      // Refresh list
       const updatedTables = await getTables();
       setTables(updatedTables);
-  
-      // Close & Reset
+      
       closePanel();
       router.refresh();
-  
     } catch (error) {
       console.error("Failed to save table", error);
       toast.error("Network error. Please try again.");
@@ -163,83 +275,73 @@ export default function TablesPage() {
       setIsLoading(false);
     }
   };
-  
-  // Delete Handler
-  // Delete Handler
+
   const handleDelete = async () => {
-    if (
-      !editingId ||
-      !confirm(`Are you sure you want to delete table ${tableName}?`)
-    )
-      return;
+    if (!editingId || !confirm(`Are you sure you want to delete table ${tableName}?`)) return;
 
     setIsLoading(true);
     try {
-      console.log("thsi is id for tabel", editingId);
-      await deleteTable(editingId);
-
-      const updatedTables = await getTables();
-      setTables(updatedTables);
-      closePanel();
-      router.refresh();
+      const res = await deleteTable(editingId);
+      if (res.success) {
+        toast.success("Table deleted");
+        const updatedTables = await getTables();
+        setTables(updatedTables);
+        closePanel();
+        router.refresh();
+      } else {
+        toast.error(res.message ?? "Failed to delete table");
+      }
     } catch (error) {
       console.error("Failed to delete table", error);
+      toast.error("Failed to delete table");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // --- Nested Modal Handlers ---
 
   const handleCreateSpace = async () => {
     if (!newSpaceName) {
       toast.error("Space name is required");
       return;
     }
-  
     const res = await addSpace(newSpaceName, newSpaceDesc);
-  
     if (!res.success || !res.data) {
       toast.error(res.message ?? "Failed to create space");
       return;
     }
-  
     const space = res.data;
-  
-    // Add the new space to state
     setSpaces([...spaces, space]);
     setSelectedSpaceId(space.id);
     setIsSpaceModalOpen(false);
     setNewSpaceName("");
     setNewSpaceDesc("");
-  
-    toast.success(`Space "${space.name}" created successfully`);
+    toast.success(`Space "${space.name}" created`);
   };
-  
 
   const handleCreateType = async () => {
     if (!newTypeName) return;
-
-
     const res = await addTableType(newTypeName);
     if (!res.success || !res.data) {
-      toast.error(res.message ?? "Failed to create space");
+      toast.error(res.message ?? "Failed to create type");
       return;
     }
-    
-    const tableType  =res.data
-    if (res) {
-      setTableTypes([...tableTypes, tableType]);
-      setSelectedTypeId(tableType.id);
-      setIsTypeModalOpen(false);
-      setNewTypeName("");
-    }
+    const tableType = res.data;
+    setTableTypes([...tableTypes, tableType]);
+    setSelectedTypeId(tableType.id);
+    setIsTypeModalOpen(false);
+    setNewTypeName("");
+    toast.success(`Type "${tableType.name}" created`);
   };
 
   const handleExport = () => {
-    const headers = ["Name", "Type", "Space", "Capacity", "Status"];
+    const headers = ["Row #", "Name", "Type", "Space", "Capacity", "Status"];
     const csvContent = [
       headers.join(","),
       ...filteredTables.map((t) =>
         [
+          (t as any).sortOrder ?? 0,
           t.name,
           t.tableType?.name || "",
           t.space?.name || "",
@@ -281,7 +383,6 @@ export default function TablesPage() {
         }
       />
 
-      {/* Metrics */}
       <div className="grid grid-cols-4 gap-6 mb-8">
         <MetricCard title="Total Tables" value={totalTables} />
         <MetricCard title="Active Tables" value={activeTables} />
@@ -289,11 +390,37 @@ export default function TablesPage() {
         <MetricCard title="Table Types" value={tableTypes.length} />
       </div>
 
-      {/* Table List */}
       <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
+        {/* Sort Controls */}
+        <div className="p-4 border-b border-zinc-100 flex items-center gap-4 bg-white">
+          <span className="text-xs font-medium text-zinc-500">Sort by:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="text-sm border border-zinc-200 rounded-lg px-3 py-1.5 bg-white focus:border-zinc-900 outline-none"
+          >
+            <option value="name">Name</option>
+            <option value="type">Type</option>
+            <option value="space">Space</option>
+            <option value="capacity">Capacity</option>
+            <option value="status">Status</option>
+          </select>
+          <select
+            value={sortDir}
+            onChange={(e) => setSortDir(e.target.value as "asc" | "desc")}
+            className="text-sm border border-zinc-200 rounded-lg px-3 py-1.5 bg-white focus:border-zinc-900 outline-none"
+          >
+            <option value="asc">A → Z</option>
+            <option value="desc">Z → A</option>
+          </select>
+        </div>
+
         <table className="w-full text-left text-sm text-zinc-600">
           <thead className="bg-zinc-50 border-b border-zinc-200">
             <tr>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest w-24">
+                Row #
+              </th>
               <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
                 Name
               </th>
@@ -318,9 +445,30 @@ export default function TablesPage() {
             {filteredTables.map((table) => (
               <tr
                 key={table.id}
+                onClick={() => openEdit(table)}
                 className="hover:bg-zinc-50 transition-colors cursor-pointer group"
-                onClick={() => openEdit(table)} // Row click opens Edit Panel
               >
+                <td
+                  className="px-6 py-4"
+                  onClick={(e) => handleSortOrderClick(table, e)}
+                >
+                  {editingRowId === table.id ? (
+                    <input
+                      type="number"
+                      value={editingValue}
+                      onChange={handleSortOrderChange}
+                      onBlur={() => handleSortOrderBlur(table.id)}
+                      onKeyDown={(e) => handleSortOrderKeyDown(e, table.id)}
+                      className="w-16 px-2 py-1 text-sm border border-zinc-300 rounded focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono"
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <span className="text-zinc-500 font-mono text-sm hover:text-zinc-900 cursor-text">
+                      {(table as any).sortOrder ?? 0}
+                    </span>
+                  )}
+                </td>
                 <td className="px-6 py-4 font-medium text-zinc-900">
                   {table.name}
                 </td>
@@ -347,7 +495,6 @@ export default function TablesPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  {/* EDIT BUTTON - Explicit click for clarity */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -355,14 +502,14 @@ export default function TablesPage() {
                     }}
                     className="p-2 text-gray-400 hover:text-zinc-900 transition-colors"
                   >
-                    <Pencil size={20} /> {/* Lucide Icon */}
+                    <Pencil size={20} />
                   </button>
                 </td>
               </tr>
             ))}
             {filteredTables.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-zinc-400">
+                <td colSpan={7} className="px-6 py-8 text-center text-zinc-400">
                   No tables found.
                 </td>
               </tr>
@@ -371,7 +518,6 @@ export default function TablesPage() {
         </table>
       </div>
 
-      {/* --- SIDE PANEL: ADD / EDIT / DELETE TABLE FORM --- */}
       <SidePanel
         isOpen={isPanelOpen}
         onClose={closePanel}
@@ -426,9 +572,7 @@ export default function TablesPage() {
           </div>
         </div>
 
-        {/* Footer Actions (Close, Delete, Save/Update) */}
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex items-center gap-3">
-          {/* Delete Button (Only visible in Edit mode) */}
           {isEditing && (
             <Button
               onClick={handleDelete}
@@ -436,11 +580,9 @@ export default function TablesPage() {
               className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
               disabled={isLoading}
             >
-              <Trash2 size={20} /> {/* Lucide Icon */}
+              <Trash2 size={20} />
             </Button>
           )}
-
-          {/* Cancel/Close Button */}
           <Button
             onClick={closePanel}
             variant="secondary"
@@ -449,8 +591,6 @@ export default function TablesPage() {
           >
             Cancel
           </Button>
-
-          {/* Save/Update Button */}
           <Button
             onClick={handleSubmit}
             className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white"
@@ -462,16 +602,12 @@ export default function TablesPage() {
               isLoading
             }
           >
-            {isLoading
-              ? "Saving..."
-              : isEditing
-              ? "Update Table"
-              : "Create Table"}
+            {isLoading ? "Saving..." : isEditing ? "Update Table" : "Create Table"}
           </Button>
         </div>
       </SidePanel>
 
-      {/* --- NESTED MODALS (Space & Type) --- */}
+      {/* --- NESTED MODALS --- */}
       <Modal
         isOpen={isSpaceModalOpen}
         onClose={() => setIsSpaceModalOpen(false)}

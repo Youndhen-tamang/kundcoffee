@@ -11,6 +11,7 @@ model Space {
   id          String   @id @default(uuid())
   name        String
   description String?
+  sortOrder   Int      @default(0)
   tables      Table[]
   createdAt   DateTime @default(now())
 }
@@ -49,6 +50,7 @@ model Table {
   tableType    TableType?     @relation(fields: [tableTypeId], references: [id])
   capacity     Int
   status       TableStatus    @default(ACTIVE)
+  sortOrder    Int            @default(0)
   spaceId      String?
   space        Space?         @relation(fields: [spaceId], references: [id])
   qrCode       QRCode?
@@ -82,6 +84,7 @@ model Category {
   name        String  @unique
   image       String?
   description String?
+  sortOrder   Int     @default(0)
 
   dishes   Dish[]
   combos   ComboOffer[]
@@ -92,10 +95,11 @@ model Category {
 }
 
 model SubMenu {
-  id       String  @id @default(uuid())
-  name     String  @unique
-  image    String?
-  isActive Boolean @default(true)
+  id        String  @id @default(uuid())
+  name      String  @unique
+  image     String?
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
 
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id])
@@ -167,6 +171,7 @@ model Dish {
   image           String[]
   preparationTime Int
   description     String?
+  sortOrder       Int      @default(0)
 
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
@@ -250,10 +255,11 @@ model DishAddOn {
 }
 
 model MenuSet {
-  id       String  @id @default(uuid())
-  name     String
-  service  String
-  isActive Boolean @default(true)
+  id        String  @id @default(uuid())
+  name      String
+  service   String
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
 
   subMenus MenuSetSubMenu[]
 

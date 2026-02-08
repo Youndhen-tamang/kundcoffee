@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { SidePanel } from "@/components/ui/SidePanel";
 import { useRouter } from "next/navigation";
 import { Trash2, Edit2, Plus, Users, Folder } from "lucide-react";
+import { toast } from "sonner";
 
 export default function MenuSetsPage() {
   const router = useRouter();
@@ -21,6 +22,8 @@ export default function MenuSetsPage() {
   const [subMenus, setSubMenus] = useState<SubMenu[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<"name" | "service" | "status">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   // Side Panel
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -47,9 +50,22 @@ export default function MenuSetsPage() {
     refresh();
   }, []);
 
-  const filtered = menuSets.filter((s) =>
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filtered = (() => {
+    let f = menuSets.filter((s) =>
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+    const mult = sortDir === "asc" ? 1 : -1;
+    f = [...f].sort((a, b) => {
+      let va: string | number = "";
+      let vb: string | number = "";
+      if (sortBy === "name") { va = a.name; vb = b.name; }
+      else if (sortBy === "service") { va = a.service; vb = b.service; }
+      else { va = a.isActive ? 1 : 0; vb = b.isActive ? 1 : 0; }
+      if (typeof va === "string") return mult * String(va).localeCompare(String(vb));
+      return mult * (Number(va) - Number(vb));
+    });
+    return f;
+  })();
 
   const openCreate = () => {
     setIsEditing(false);
@@ -93,9 +109,35 @@ export default function MenuSetsPage() {
     setUploading(false);
 
     if (res?.success) {
+      toast.success(isEditing ? "Menu set updated" : "Menu set created");
       refresh();
       setIsPanelOpen(false);
       router.refresh();
+    } else {
+      toast.error(res?.message ?? "Failed to save");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedId || !confirm(`Are you sure you want to delete menu set "${name}"?`))
+      return;
+
+    setUploading(true);
+    try {
+      const res = await deleteMenuSet(selectedId);
+      if (res?.success) {
+        toast.success("Menu set deleted");
+        refresh();
+        setIsPanelOpen(false);
+        router.refresh();
+      } else {
+        toast.error(res?.message ?? "Failed to delete menu set");
+      }
+    } catch (error) {
+      console.error("Delete failed", error);
+      toast.error("Failed to delete menu set");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -127,26 +169,42 @@ export default function MenuSetsPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm sticky top-0">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-4 bg-white/50 backdrop-blur-sm sticky top-0 flex-wrap">
           <input
             placeholder="Search menu sets..."
             className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 w-full max-w-sm transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500">Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white"
+            >
+              <option value="name">Name</option>
+              <option value="service">Service</option>
+              <option value="status">Status</option>
+            </select>
+            <select
+              value={sortDir}
+              onChange={(e) => setSortDir(e.target.value as "asc" | "desc")}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white"
+            >
+              <option value="asc">A → Z</option>
+              <option value="desc">Z → A</option>
+            </select>
+          </div>
         </div>
         <table className="w-full text-left text-sm text-gray-600">
           <thead className="bg-slate-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-4 font-semibold text-gray-700">Name</th>
               <th className="px-6 py-4 font-semibold text-gray-700">Service</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">
-                Sub Menus
-              </th>
+              <th className="px-6 py-4 font-semibold text-gray-700">Sub Menus</th>
               <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
-              <th className="px-6 py-4 font-semibold text-gray-700 text-right">
-                Actions
-              </th>
+              <th className="px-6 py-4 font-semibold text-gray-700 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -302,6 +360,16 @@ export default function MenuSetsPage() {
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex items-center gap-3 z-10">
+          {isEditing && selectedId && (
+            <Button
+              onClick={handleDelete}
+              variant="secondary"
+              className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
+              disabled={uploading}
+            >
+              <Trash2 size={18} />
+            </Button>
+          )}
           <Button
             onClick={() => setIsPanelOpen(false)}
             variant="secondary"

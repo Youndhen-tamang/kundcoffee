@@ -1,12 +1,24 @@
 import { ApiResponse, Order, OrderStatus } from "@/lib/types";
 
 export const getOrders = async (): Promise<Order[]> => {
-  const res = await fetch("/api/order");
-  const data = await res.json();
-  if (data.success) {
-    return data.data;
+  try {
+    const res = await fetch("/api/order", {
+      cache: "no-store",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      console.error("Orders fetch failed:", res.status);
+      return [];
+    }
+    const data = await res.json();
+    if (data.success && Array.isArray(data.data)) {
+      return data.data;
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    return [];
   }
-  return [];
 };
 
 export const updateOrderStatus = async (

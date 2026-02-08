@@ -37,12 +37,13 @@ export async function addTable(
   capacity: number,
   spaceId?: string,
   tableTypeId?: string,
+  sortOrder?: number,
 ): Promise<ApiResponse<Table>> {
   try {
     const res = await fetch("/api/tables", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, capacity, spaceId, tableTypeId }),
+      body: JSON.stringify({ name, capacity, spaceId, tableTypeId, sortOrder }),
     });
     const data:ApiResponse<Table> = await res.json();
     return data

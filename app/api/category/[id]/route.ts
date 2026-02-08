@@ -68,14 +68,9 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       );
     }
 
-    const { name, description } = await req.json();
-    if (!name && !description) {
-      return NextResponse.json(
-        { success: false, message: "Nothing to update" },
-        { status: 400 },
-      );
-    }
-
+    // ADD sortOrder HERE
+    const { name, description, sortOrder, image } = await req.json();
+    
     if (name) {
       const existingCategory = await prisma.category.findFirst({
         where: {
@@ -97,6 +92,9 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       data: {
         ...(name && { name }),
         ...(description && { description }),
+        ...(image && { image }),
+        // ADD THIS LINE
+        sortOrder: sortOrder !== undefined ? parseInt(sortOrder) : undefined,
       },
     });
 

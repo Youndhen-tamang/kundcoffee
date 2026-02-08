@@ -34,6 +34,23 @@ export async function addSpace(
 
 
 
+export async function deleteSpace(id: string): Promise<ApiResponse<void>> {
+  if (!id) return { success: false, message: "ID required" };
+  try {
+    const res = await fetch(`/api/spaces/${id}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, message: data.message || "Failed to delete space" };
+    }
+    return { success: true, message: data.message };
+  } catch (error) {
+    console.error("Failed to delete space:", error);
+    return { success: false, message: "Network error" };
+  }
+}
+
 export async function updateSpace(data:Partial<Space>):Promise<ApiResponse<Space>> {
   if (!data.id) return { success: false, message: "ID required" };
   try {

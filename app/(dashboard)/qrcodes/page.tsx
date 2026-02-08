@@ -21,6 +21,8 @@ export default function QRCodesPage() {
   const [filteredQrs, setFilteredQrs] = useState<QRItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<"value" | "table" | "status">("table");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     // Fetch logic needs to be client side to match other pages pattern
@@ -41,14 +43,23 @@ export default function QRCodesPage() {
 
   useEffect(() => {
     const lower = searchQuery.toLowerCase();
-    setFilteredQrs(
-      qrs.filter(
-        (q) =>
-          q.table?.name.toLowerCase().includes(lower) ||
-          q.value.toLowerCase().includes(lower),
-      ),
+    let f = qrs.filter(
+      (q) =>
+        q.table?.name?.toLowerCase().includes(lower) ||
+        q.value.toLowerCase().includes(lower),
     );
-  }, [searchQuery, qrs]);
+    const mult = sortDir === "asc" ? 1 : -1;
+    f = [...f].sort((a, b) => {
+      let va: string | number = "";
+      let vb: string | number = "";
+      if (sortBy === "value") { va = a.value; vb = b.value; }
+      else if (sortBy === "table") { va = a.table?.name || ""; vb = b.table?.name || ""; }
+      else { va = a.assigned ? 1 : 0; vb = b.assigned ? 1 : 0; }
+      if (typeof va === "string") return mult * String(va).localeCompare(String(vb));
+      return mult * (Number(va) - Number(vb));
+    });
+    setFilteredQrs(f);
+  }, [searchQuery, qrs, sortBy, sortDir]);
 
   const handleExport = () => {
     const headers = ["Value", "Assigned", "Table"];
@@ -107,13 +118,33 @@ export default function QRCodesPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white/50 backdrop-blur-sm sticky top-0">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-4 bg-white/50 backdrop-blur-sm sticky top-0 flex-wrap">
           <input
             placeholder="Search QR codes..."
             className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 w-full max-w-sm transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500">Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white"
+            >
+              <option value="value">QR Code</option>
+              <option value="table">Table</option>
+              <option value="status">Status</option>
+            </select>
+            <select
+              value={sortDir}
+              onChange={(e) => setSortDir(e.target.value as "asc" | "desc")}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white"
+            >
+              <option value="asc">A → Z</option>
+              <option value="desc">Z → A</option>
+            </select>
+          </div>
         </div>
         <table className="w-full text-left text-sm text-gray-600">
           <thead className="bg-slate-50 border-b border-gray-200">

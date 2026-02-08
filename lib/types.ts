@@ -3,7 +3,8 @@ import { Space } from "lucide-react";
 export type spaceType = {
   id: string;
   name: string;
-  description: string;
+  sortOrder?: number;
+  description?: string;
   tables: Table[];
   createdAt: Date;
 };
@@ -17,6 +18,7 @@ export type TableType = {
 export type Table = {
   id: string;
   name: string;
+  sortOrder?: number;
   tableTypeId: string;
   tableType?: TableType | null;
   capacity: number;
@@ -32,6 +34,7 @@ export type Space = {
   id: string;
   name: string;
   description?: string;
+  sortOrder?: number;
 };
 export type QRCode = {
   id: string;
@@ -53,6 +56,7 @@ export type Category = {
   dishes?: Dish[];
   combos?: any[]; // Replace with Combo type when defined
   createdAt?: Date;
+  sortOrder?:number
 };
 
 export type Dish = {
@@ -60,6 +64,7 @@ export type Dish = {
   name: string;
   hscode?: string | null;
   image: string[];
+  sortOrder:number
   preparationTime: number;
   description?: string | null;
   categoryId: string;

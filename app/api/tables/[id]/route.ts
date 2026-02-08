@@ -2,11 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 
 import { Params } from "@/lib/types";
-
-export async function PATCH(req: NextRequest, context: { params: Params }) {
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Params } // Next.js 15+ params are promises
+) {
   try {
     const { id } = await context.params;
     const body = await req.json();
+    
+    // 1. EXTRACT sortOrder FROM BODY
     const {
       name,
       capacity,
@@ -15,20 +19,31 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       tableTypeName,
       spaceName,
       spaceDescription,
+      sortOrder, // <--- ADD THIS
     } = body;
 
     if (!id) {
       return NextResponse.json(
         { success: false, message: "Table ID is missing" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
+    const currentTable = await prisma.table.findUnique({ where: { id } });
+    if (!currentTable) {
+      return NextResponse.json(
+        { success: false, message: "Table not found" },
+        { status: 404 }
+      );
+    }
+
+    // Start Transaction
     const updatedTable = await prisma.$transaction(async (tx) => {
       // --- Handle TableType ---
-      let finalTableTypeId = tableTypeId;
+      let finalTableTypeId = tableTypeId ?? currentTable.tableTypeId;
 
-      if (!finalTableTypeId && tableTypeName) {
+      // Only look for/create type if name is provided and ID is not
+      if (!tableTypeId && tableTypeName) {
         const existingType = await tx.tableType.findUnique({
           where: { name: tableTypeName },
         });
@@ -43,14 +58,11 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         }
       }
 
-      if (!finalTableTypeId) {
-        throw new Error("TABLE_TYPE_REQUIRED");
-      }
-
       // --- Handle Space ---
-      let finalSpaceId = spaceId;
+      let finalSpaceId = spaceId ?? currentTable.spaceId;
 
-      if (!finalSpaceId && spaceName) {
+      // Only look for/create space if name is provided and ID is not
+      if (!spaceId && spaceName) {
         const existingSpace = await tx.space.findFirst({
           where: { name: spaceName },
         });
@@ -65,33 +77,42 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         }
       }
 
-      if (!finalSpaceId) {
-        throw new Error("SPACE_REQUIRED");
+      // --- Check for Duplicate Name ---
+      const tableNameToCheck = name ?? currentTable.name;
+      const spaceIdToCheck = finalSpaceId ?? currentTable.spaceId; 
+
+      if (tableNameToCheck && spaceIdToCheck) {
+        const duplicateTable = await tx.table.findFirst({
+          where: {
+            name: tableNameToCheck,
+            spaceId: spaceIdToCheck,
+            id: { not: id },
+          },
+        });
+
+        if (duplicateTable) {
+          throw new Error(`DUPLICATE_TABLE:${tableNameToCheck}`);
+        }
       }
 
-      // --- Check for duplicate table name in the same space ---
-      const duplicateTable = await tx.table.findFirst({
-        where: {
-          name,
-          spaceId: finalSpaceId,
-          NOT: { id }, // ignore the table being updated
-        },
-      });
+      // 2. INCLUDE sortOrder IN UPDATE DATA
+      const updateData: any = {
+        name: name ?? currentTable.name,
+        // If capacity is sent, parse it; otherwise keep current
+        capacity: capacity !== undefined ? parseInt(capacity) : currentTable.capacity,
+        spaceId: finalSpaceId,
+        tableTypeId: finalTableTypeId,
+        // If sortOrder is sent, parse it; otherwise keep current
+        sortOrder: sortOrder !== undefined ? parseInt(sortOrder) : currentTable.sortOrder, // <--- ADD THIS
+      };
 
-      if (duplicateTable) {
-        throw new Error(`DUPLICATE_TABLE:${name}`);
-      }
-
-      // --- Update the table ---
       const table = await tx.table.update({
         where: { id },
-        data: {
-          name,
-          capacity: capacity !== undefined ? parseInt(capacity) : undefined,
-          spaceId: finalSpaceId,
-          tableTypeId: finalTableTypeId,
+        data: updateData,
+        include: {
+          tableType: true,
+          space: true,
         },
-        include: { tableType: true },
       });
 
       return table;
@@ -103,12 +124,11 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         message: "Table updated successfully",
         data: updatedTable,
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error: any) {
     console.error("Update Table Error:", error.message);
 
-    // --- Custom errors ---
     if (error.message?.startsWith("DUPLICATE_TABLE:")) {
       const tableName = error.message.split(":")[1];
       return NextResponse.json(
@@ -116,34 +136,20 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
           success: false,
           message: `Table "${tableName}" already exists in this space`,
         },
-        { status: 400 },
-      );
-    }
-
-    if (error.message === "TABLE_TYPE_REQUIRED") {
-      return NextResponse.json(
-        { success: false, message: "Table type is required" },
-        { status: 400 },
-      );
-    }
-
-    if (error.message === "SPACE_REQUIRED") {
-      return NextResponse.json(
-        { success: false, message: "Space is required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (error.code === "P2025") {
       return NextResponse.json(
         { success: false, message: "Table not found" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
     return NextResponse.json(
       { success: false, message: "Something went wrong" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

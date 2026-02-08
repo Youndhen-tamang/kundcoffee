@@ -1,0 +1,17 @@
+-- AlterTable
+ALTER TABLE "Space" ADD COLUMN "sortOrder" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Table" ADD COLUMN "sortOrder" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Category" ADD COLUMN "sortOrder" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "SubMenu" ADD COLUMN "sortOrder" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Dish" ADD COLUMN "sortOrder" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "MenuSet" ADD COLUMN "sortOrder" INTEGER NOT NULL DEFAULT 0;
