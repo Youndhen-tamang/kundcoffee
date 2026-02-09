@@ -357,15 +357,15 @@ model OrderItem {
   dishId  String?
   dish    Dish?   @relation(fields: [dishId], references: [id])
 
-  comboId        String?
-  combo          ComboOffer?      @relation(fields: [comboId], references: [id])
-  quantity       Int
-  unitPrice      Float
-  totalPrice     Float
-  complimentaryQuantity Int @default(0)
-  selectedAddOns OrderItemAddOn[]
-  status         OrderStatus      @default(PENDING)
-  remarks        String?
+  comboId               String?
+  combo                 ComboOffer?      @relation(fields: [comboId], references: [id])
+  quantity              Int
+  unitPrice             Float
+  totalPrice            Float
+  complimentaryQuantity Int              @default(0)
+  selectedAddOns        OrderItemAddOn[]
+  status                OrderStatus      @default(PENDING)
+  remarks               String?
 
   @@index([orderId])
   @@index([dishId])
