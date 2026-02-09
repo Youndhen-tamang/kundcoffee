@@ -20,13 +20,22 @@ import {
   Gift,
   Tag,
   Loader2,
+  PlusCircle,
+  LayoutGrid,
 } from "lucide-react";
+import {
+  getCategories,
+  getDishes,
+  getAddOns,
+  getCombos,
+} from "@/services/menu";
 import { CustomDropdown } from "../ui/CustomDropdown";
 import {
   addCustomer,
   getCustomers,
   getCustomerSummary,
 } from "@/services/customer";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -43,6 +52,7 @@ export function CheckoutModal({
   order,
   onCheckoutComplete,
 }: CheckoutModalProps) {
+  const { settings } = useSettings();
   const [step, setStep] = useState<Step>("PREPARE");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     order.customer || null,
@@ -61,14 +71,24 @@ export function CheckoutModal({
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Complimentary items mapping (itemId -> boolean)
+  // Complimentary items mapping (itemId -> quantity)
   const [complimentaryItems, setComplimentaryItems] = useState<
-    Record<string, boolean>
+    Record<string, number>
   >({});
   const [discountValue, setDiscountValue] = useState<number>(0);
   const [discountType, setDiscountType] = useState<"PERCENT" | "AMOUNT">(
     "PERCENT",
   );
+  const [customTaxes, setCustomTaxes] = useState<
+    { name: string; percentage: number }[]
+  >([]);
+  const [newTaxName, setNewTaxName] = useState("");
+  const [newTaxPercent, setNewTaxPercent] = useState("");
+  const [isAddingTax, setIsAddingTax] = useState(false);
+  const [isSelectingFreeItems, setIsSelectingFreeItems] = useState(false);
+  const [availableItems, setAvailableItems] = useState<any[]>([]);
+  const [extraFreeItems, setExtraFreeItems] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [metrics, setMetrics] = useState({
@@ -95,6 +115,31 @@ export function CheckoutModal({
       setMetrics(res.metrics);
     }
   };
+
+  const fetchMenuData = async () => {
+    try {
+      const [catData, dishData, addonData, comboData] = await Promise.all([
+        getCategories(),
+        getDishes(),
+        getAddOns(),
+        getCombos(),
+      ]);
+      setCategories(catData);
+      setAvailableItems([
+        ...dishData.map((d: any) => ({ ...d, type: "DISH" })),
+        ...addonData.map((a: any) => ({ ...a, type: "ADDON" })),
+        ...comboData.map((c: any) => ({ ...c, type: "COMBO" })),
+      ]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (isSelectingFreeItems) {
+      fetchMenuData();
+    }
+  }, [isSelectingFreeItems]);
   const handleCreateCustomer = async () => {
     if (!formData.fullName) return;
     const res = await addCustomer(formData);
@@ -118,8 +163,9 @@ export function CheckoutModal({
   // Calculations
   const calculatedSubtotal = useMemo(() => {
     return order.items.reduce((sum, item) => {
-      const isComplimentary = complimentaryItems[item.id];
-      return sum + (isComplimentary ? 0 : item.totalPrice);
+      const compQty = complimentaryItems[item.id] || 0;
+      const paidQty = Math.max(0, item.quantity - compQty);
+      return sum + paidQty * item.unitPrice;
     }, 0);
   }, [order.items, complimentaryItems]);
 
@@ -143,6 +189,11 @@ export function CheckoutModal({
 
   const subtotalAfterDiscount = calculatedSubtotal - totalDiscount;
 
+  const extraFreeValue = extraFreeItems.reduce(
+    (sum, item) => sum + item.quantity * item.unitPrice,
+    0,
+  );
+
   // const discountAmount = useMemo(() => {
   //   let totalDiscount = 0;
 
@@ -165,11 +216,27 @@ export function CheckoutModal({
   const serviceChargeRate = 0.1;
 
   const taxAmount = includeTax ? subtotalAfterDiscount * taxRate : 0;
+  const customTaxesTotal = customTaxes.reduce(
+    (sum, tax) => sum + subtotalAfterDiscount * (tax.percentage / 100),
+    0,
+  );
   const serviceChargeAmount = includeServiceCharge
     ? subtotalAfterDiscount * serviceChargeRate
     : 0;
 
-  const grandTotal = subtotalAfterDiscount + taxAmount + serviceChargeAmount;
+  const grandTotal =
+    subtotalAfterDiscount + taxAmount + serviceChargeAmount + customTaxesTotal;
+
+  const handleAddTax = () => {
+    if (!newTaxName || !newTaxPercent) return;
+    setCustomTaxes([
+      ...customTaxes,
+      { name: newTaxName, percentage: parseFloat(newTaxPercent) },
+    ]);
+    setNewTaxName("");
+    setNewTaxPercent("");
+    setIsAddingTax(false);
+  };
 
   const handlePrint = () => {
     window.print();
@@ -225,10 +292,16 @@ export function CheckoutModal({
           paymentMethod, // This will be "QR", "CASH", or "CARD"
           amount: grandTotal,
           customerId: selectedCustomer?.id,
-          subtotal: calculatedSubtotal,
-          tax: taxAmount,
+          subtotal: calculatedSubtotal, // This is net subtotal after complimentary
+          tax: taxAmount + customTaxesTotal,
           serviceCharge: serviceChargeAmount,
           discount: totalDiscount,
+          complimentaryItems,
+          extraFreeItems: extraFreeItems.map((i) => ({
+            name: i.name,
+            unitPrice: i.unitPrice,
+            quantity: i.quantity,
+          })),
         }),
       });
 
@@ -254,11 +327,33 @@ export function CheckoutModal({
     }
   };
 
-  const toggleComplimentary = (itemId: string) => {
-    setComplimentaryItems((prev) => ({
-      ...prev,
-      [itemId]: !prev[itemId],
-    }));
+  const setCompQty = (itemId: string, qty: number, maxQty: number) => {
+    const safeQty = Math.max(0, Math.min(qty, maxQty));
+    setComplimentaryItems((prev) => ({ ...prev, [itemId]: safeQty }));
+  };
+
+  const addFreeItem = (menuItem: any) => {
+    setExtraFreeItems((prev) => {
+      const existing = prev.find((i) => i.id === menuItem.id);
+      if (existing) {
+        return prev.map((i) =>
+          i.id === menuItem.id ? { ...i, quantity: i.quantity + 1 } : i,
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: menuItem.id,
+          name: menuItem.name,
+          unitPrice: menuItem.price?.listedPrice || 0,
+          quantity: 1,
+        },
+      ];
+    });
+  };
+
+  const removeFreeItem = (itemId: string) => {
+    setExtraFreeItems((prev) => prev.filter((i) => i.id !== itemId));
   };
 
   const handleAddNewCustomer = async () => {
@@ -295,66 +390,133 @@ export function CheckoutModal({
     <div className="space-y-6">
       {/* Items Table */}
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
+        <div className="flex justify-between items-center p-4 border-b border-zinc-100 bg-zinc-50/50">
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+            Order Items
+          </h3>
+          <Button
+            onClick={() => setIsSelectingFreeItems(true)}
+            variant="secondary"
+            className="h-8 px-3 text-[10px] font-black uppercase tracking-widest border-2 border-emerald-100 text-emerald-600 hover:bg-emerald-50"
+          >
+            <PlusCircle size={14} className="mr-1.5" /> Select Free Items
+          </Button>
+        </div>
         <table className="w-full text-left text-xs">
           <thead className="bg-zinc-50 border-b border-zinc-200 uppercase tracking-widest text-[10px] text-zinc-400 font-black">
             <tr>
               <th className="px-4 py-3 font-black">Item</th>
               <th className="px-4 py-3 font-black text-center">Qty</th>
+              <th className="px-4 py-3 font-black text-center w-28">
+                Comp Qty
+              </th>
               <th className="px-4 py-3 font-black text-right">Rate</th>
               <th className="px-4 py-3 font-black text-right">Total</th>
-              <th className="px-4 py-3 font-black text-center w-24">Action</th>
+              <th className="px-4 py-3 font-black text-center w-12"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
             {order.items.map((item) => {
-              const isComplimentary = complimentaryItems[item.id];
+              const compQty = complimentaryItems[item.id] || 0;
               return (
                 <tr
                   key={item.id}
-                  className={`${isComplimentary ? "bg-emerald-50/30" : ""}`}
+                  className={`${compQty > 0 ? "bg-emerald-50/30" : ""}`}
                 >
                   <td className="px-4 py-4">
                     <p className="font-bold text-zinc-900">
                       {item.dish?.name || item.combo?.name || "Dish"}
                     </p>
-                    {isComplimentary && (
+                    {compQty > 0 && (
                       <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-1 mt-1">
-                        <Gift size={10} /> Complimentary
+                        <Gift size={10} /> {compQty} complimentary
                       </span>
                     )}
                   </td>
                   <td className="px-4 py-4 text-center font-medium text-zinc-600">
                     {item.quantity}
                   </td>
+                  <td className="px-4 py-4 flex justify-center">
+                    <input
+                      type="number"
+                      min="0"
+                      max={item.quantity}
+                      value={compQty}
+                      onChange={(e) =>
+                        setCompQty(
+                          item.id,
+                          parseInt(e.target.value) || 0,
+                          item.quantity,
+                        )
+                      }
+                      className="w-16 h-8 bg-white border border-zinc-200 rounded-lg text-center text-xs font-bold focus:ring-1 ring-emerald-500 outline-none"
+                    />
+                  </td>
                   <td className="px-4 py-4 text-right font-medium text-zinc-600">
-                    Rs. {item.unitPrice.toFixed(2)}
+                    {settings.currency} {item.unitPrice.toFixed(2)}
                   </td>
                   <td className="px-4 py-4 text-right font-bold text-zinc-900">
                     <span
                       className={
-                        isComplimentary
+                        compQty >= item.quantity
                           ? "line-through text-zinc-400 decoration-2"
                           : ""
                       }
                     >
-                      Rs. {item.totalPrice.toFixed(2)}
+                      {settings.currency}{" "}
+                      {(item.quantity * item.unitPrice).toFixed(2)}
                     </span>
-                    {isComplimentary && (
-                      <span className="ml-2 text-emerald-600">Rs. 0.00</span>
+                    {compQty > 0 && (
+                      <span className="ml-2 text-emerald-600">
+                        {settings.currency}{" "}
+                        {(
+                          Math.max(0, item.quantity - compQty) * item.unitPrice
+                        ).toFixed(2)}
+                      </span>
                     )}
                   </td>
-                  <td className="px-4 py-4 text-center">
-                    <button
-                      onClick={() => toggleComplimentary(item.id)}
-                      className={`p-2 rounded-lg transition-all ${isComplimentary ? "bg-emerald-500 text-white" : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200"}`}
-                      title="Set as Complimentary"
-                    >
-                      <Gift size={14} />
-                    </button>
-                  </td>
+                  <td className="px-4 py-4"></td>
                 </tr>
               );
             })}
+
+            {extraFreeItems.map((item) => (
+              <tr key={item.id} className="bg-emerald-50/50">
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2">
+                    <Gift size={14} className="text-emerald-500" />
+                    <p className="font-black text-emerald-700 uppercase tracking-tight">
+                      {item.name}
+                    </p>
+                  </div>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600/70">
+                    Extra Free Item
+                  </span>
+                </td>
+                <td className="px-4 py-4 text-center font-black text-emerald-700">
+                  {item.quantity}
+                </td>
+                <td className="px-4 py-4 text-center">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">
+                    Free
+                  </span>
+                </td>
+                <td className="px-4 py-4 text-right font-medium text-emerald-600/60">
+                  {settings.currency} {item.unitPrice.toFixed(2)}
+                </td>
+                <td className="px-4 py-4 text-right font-black text-emerald-600">
+                  {settings.currency} 0.00
+                </td>
+                <td className="px-4 py-4 text-center">
+                  <button
+                    onClick={() => removeFreeItem(item.id)}
+                    className="p-1 text-zinc-300 hover:text-red-500 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -427,6 +589,74 @@ export function CheckoutModal({
                   />
                 </button>
               </div>
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                Custom Taxes
+              </h4>
+              {!isAddingTax ? (
+                <button
+                  onClick={() => setIsAddingTax(true)}
+                  className="text-[10px] font-bold text-red-600 uppercase tracking-wider hover:text-red-700"
+                >
+                  + Add
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsAddingTax(false)}
+                  className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+
+            {isAddingTax && (
+              <div className="flex gap-2 items-center bg-white p-2 rounded-lg animate-in slide-in-from-top-2 border border-zinc-200">
+                <input
+                  placeholder="Tax Name"
+                  className="text-[10px] p-2 rounded border bg-zinc-50 flex-1 outline-none focus:border-zinc-900"
+                  value={newTaxName}
+                  onChange={(e) => setNewTaxName(e.target.value)}
+                />
+                <input
+                  placeholder="%"
+                  type="number"
+                  className="text-[10px] p-2 rounded border bg-zinc-50 w-14 outline-none focus:border-zinc-900"
+                  value={newTaxPercent}
+                  onChange={(e) => setNewTaxPercent(e.target.value)}
+                />
+                <button
+                  onClick={handleAddTax}
+                  className="bg-zinc-900 text-white p-2 rounded shadow-sm hover:bg-zinc-800"
+                >
+                  <CheckCircle2 size={14} />
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {customTaxes.map((tax, idx) => (
+                <div
+                  key={idx}
+                  className="flex justify-between items-center text-[10px] font-bold text-zinc-600 bg-white p-2 rounded border border-zinc-100"
+                >
+                  <span>
+                    {tax.name} ({tax.percentage}%)
+                  </span>
+                  <button
+                    onClick={() =>
+                      setCustomTaxes(customTaxes.filter((_, i) => i !== idx))
+                    }
+                    className="text-zinc-300 hover:text-red-500"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -534,36 +764,56 @@ export function CheckoutModal({
             <div className="flex justify-between text-xs text-zinc-400 uppercase tracking-widest font-black">
               <span>Subtotal</span>
               <span className="text-white">
-                Rs. {calculatedSubtotal.toFixed(2)}
+                {settings.currency} {calculatedSubtotal.toFixed(2)}
               </span>
             </div>
             {loyaltyDiscountAmount > 0 && (
               <div className="flex justify-between text-xs text-red-400 uppercase tracking-widest font-black">
                 <span>Loyalty ({loyaltyDiscountPercent}%)</span>
-                <span>- Rs. {loyaltyDiscountAmount.toFixed(2)}</span>
+                <span>
+                  - {settings.currency} {loyaltyDiscountAmount.toFixed(2)}
+                </span>
               </div>
             )}
             {manualDiscountAmount > 0 && (
               <div className="flex justify-between text-xs text-emerald-400 uppercase tracking-widest font-black">
                 <span>Discount</span>
-                <span>- Rs. {manualDiscountAmount.toFixed(2)}</span>
+                <span>
+                  - {settings.currency} {manualDiscountAmount.toFixed(2)}
+                </span>
               </div>
             )}
 
             {includeTax && (
               <div className="flex justify-between text-xs text-zinc-400 uppercase tracking-widest font-black">
                 <span>Tax (13%)</span>
-                <span className="text-white">Rs. {taxAmount.toFixed(2)}</span>
+                <span className="text-white">
+                  {settings.currency} {taxAmount.toFixed(2)}
+                </span>
               </div>
             )}
             {includeServiceCharge && (
               <div className="flex justify-between text-xs text-zinc-400 uppercase tracking-widest font-black">
                 <span>Service Charge (10%)</span>
                 <span className="text-white">
-                  Rs. {serviceChargeAmount.toFixed(2)}
+                  {settings.currency} {serviceChargeAmount.toFixed(2)}
                 </span>
               </div>
             )}
+            {customTaxes.map((tax, idx) => (
+              <div
+                key={idx}
+                className="flex justify-between text-xs text-zinc-400 uppercase tracking-widest font-black"
+              >
+                <span>
+                  {tax.name} ({tax.percentage}%)
+                </span>
+                <span className="text-white">
+                  {settings.currency}{" "}
+                  {(subtotalAfterDiscount * (tax.percentage / 100)).toFixed(2)}
+                </span>
+              </div>
+            ))}
           </div>
           <div className="pt-4 border-t border-zinc-800">
             <div className="flex justify-between items-baseline mb-6">
@@ -571,7 +821,7 @@ export function CheckoutModal({
                 Grand Total
               </span>
               <span className="text-4xl font-black">
-                Rs. {grandTotal.toFixed(2)}
+                {settings.currency} {grandTotal.toFixed(2)}
               </span>
             </div>
             <Button
@@ -636,9 +886,9 @@ export function CheckoutModal({
                 <div className="flex-1">
                   <p className="font-bold text-zinc-900 tracking-tight">
                     {item.dish?.name || item.combo?.name || "Dish"}
-                    {isComplimentary && (
+                    {complimentaryItems[item.id] > 0 && (
                       <span className="ml-1 text-emerald-600 text-[9px] font-black italic">
-                        (Complimentary)
+                        ({complimentaryItems[item.id]} Complimentary)
                       </span>
                     )}
                   </p>
@@ -648,12 +898,20 @@ export function CheckoutModal({
                 </div>
                 <div className="text-right">
                   <p
-                    className={`font-bold text-zinc-900 ${isComplimentary ? "line-through text-zinc-300" : ""}`}
+                    className={`font-bold text-zinc-900 ${complimentaryItems[item.id] >= item.quantity ? "line-through text-zinc-300" : ""}`}
                   >
                     Rs. {item.totalPrice.toFixed(2)}
                   </p>
-                  {isComplimentary && (
-                    <p className="font-bold text-emerald-600">Rs. 0.00</p>
+                  {complimentaryItems[item.id] > 0 && (
+                    <p className="font-bold text-emerald-600">
+                      Rs.{" "}
+                      {(
+                        Math.max(
+                          0,
+                          item.quantity - (complimentaryItems[item.id] || 0),
+                        ) * item.unitPrice
+                      ).toFixed(2)}
+                    </p>
                   )}
                 </div>
               </div>
@@ -695,6 +953,21 @@ export function CheckoutModal({
               <span>Rs. {serviceChargeAmount.toFixed(2)}</span>
             </div>
           )}
+
+          {customTaxes.map((tax, idx) => (
+            <div
+              key={idx}
+              className="flex justify-between font-black uppercase tracking-widest text-zinc-500"
+            >
+              <span>
+                {tax.name} ({tax.percentage}%)
+              </span>
+              <span>
+                Rs.{" "}
+                {(subtotalAfterDiscount * (tax.percentage / 100)).toFixed(2)}
+              </span>
+            </div>
+          ))}
 
           {/* Grand Total */}
           <div className="flex justify-between font-black text-zinc-900 text-2xl pt-2 border-t border-zinc-900 mt-2">
@@ -804,7 +1077,7 @@ export function CheckoutModal({
     <div className="space-y-8 max-w-2xl mx-auto py-4">
       <div className="text-center space-y-2">
         <h3 className="text-3xl font-black text-zinc-900 tracking-tight">
-          Rs. {grandTotal.toFixed(2)}
+          {settings.currency} {grandTotal.toFixed(2)}
         </h3>
         <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">
           {showQrImage ? "Scan & Verify" : "Select Payment Method to Finalize"}
@@ -831,7 +1104,7 @@ export function CheckoutModal({
             <p className="text-[10px] text-zinc-500">
               Ask customer to pay{" "}
               <span className="text-emerald-600 font-black">
-                Rs. {grandTotal.toFixed(2)}
+                {settings.currency} {grandTotal.toFixed(2)}
               </span>
             </p>
           </div>
@@ -961,9 +1234,96 @@ export function CheckoutModal({
         isOpen={isOpen}
         onClose={onClose}
         title={step !== "SUCCESS" ? "Secure Checkout Process" : ""}
-        size={step === "PREPARE" ? "5xl" : "2xl"}
+        size={step === "PREPARE" ? "xl" : "lg"}
       >
         <div className="p-4">
+          <Modal
+            isOpen={isSelectingFreeItems}
+            onClose={() => setIsSelectingFreeItems(false)}
+            title="Add Complimentary Items"
+            size="lg"
+          >
+            <div className="flex flex-col gap-6 p-2 max-h-[70vh]">
+              <div className="relative group">
+                <Search
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-red-500 transition-colors"
+                  size={16}
+                />
+                <input
+                  type="text"
+                  placeholder="Search dishes, addons, combos..."
+                  className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:border-red-500 outline-none transition-all"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {availableItems
+                    .filter((item) =>
+                      item.name
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()),
+                    )
+                    .map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          addFreeItem(item);
+                        }}
+                        className="group bg-white border border-zinc-100 rounded-xl p-3 shadow-sm hover:border-emerald-500 hover:shadow-md transition-all flex flex-col items-start gap-2 text-left active:scale-[0.98]"
+                      >
+                        <div className="w-full aspect-square bg-zinc-50 rounded-lg overflow-hidden border border-zinc-50 flex items-center justify-center relative">
+                          {item.image?.[0] ? (
+                            <img
+                              src={item.image[0]}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                            />
+                          ) : (
+                            <LayoutGrid size={24} className="text-zinc-200" />
+                          )}
+                          <div className="absolute top-1 right-1 bg-white/80 backdrop-blur-md px-1.5 py-0.5 rounded text-[7px] font-black border border-zinc-100 uppercase tracking-widest text-zinc-500">
+                            {item.type}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="text-[11px] font-bold text-zinc-900 group-hover:text-emerald-700 transition-colors truncate w-full">
+                            {item.name}
+                          </h4>
+                          <p className="text-[10px] font-black text-emerald-600">
+                            {settings.currency} 0.00{" "}
+                            <span className="text-[8px] text-zinc-300 line-through ml-1">
+                              {settings.currency}{" "}
+                              {(item.price?.listedPrice || 0).toFixed(2)}
+                            </span>
+                          </p>
+                        </div>
+                        <div className="mt-auto pt-2 border-t border-zinc-50 w-full flex items-center justify-between">
+                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">
+                            Add Free
+                          </span>
+                          <PlusCircle
+                            size={14}
+                            className="text-zinc-300 group-hover:text-emerald-500"
+                          />
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-zinc-100 flex justify-end">
+                <Button
+                  onClick={() => setIsSelectingFreeItems(false)}
+                  className="bg-zinc-900 text-white uppercase tracking-widest text-[10px] h-10 px-8"
+                >
+                  Done
+                </Button>
+              </div>
+            </div>
+          </Modal>
+
           <style jsx global>{`
             @media print {
               body * {

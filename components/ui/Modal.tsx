@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string; 
+  title?: string;
   children: ReactNode;
   size?:
     | "sm"
@@ -49,11 +49,10 @@ export const Modal: FC<ModalProps> = ({
     "6xl": "w-[96vw] max-w-[1800px]",
     full: "w-[98vw] h-[96vh]",
   };
-  
 
   return createPortal(
     <div
-    className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
       style={{
         zIndex:
           60 +
@@ -65,9 +64,9 @@ export const Modal: FC<ModalProps> = ({
         onClick={onClose}
       />
       <div
-        className={`relative transform rounded-2xl bg-white p-6 text-left shadow-2xl transition-all duration-300 ease-out ${sizeClasses[size]} sm:scale-100 opacity-100 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 overflow-visible`}
+        className={`relative transform rounded-2xl bg-white p-6 text-left shadow-2xl transition-all duration-300 ease-out ${sizeClasses[size]} sm:scale-100 opacity-100 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95 flex flex-col max-h-[92vh]`}
       >
-        <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4 shrink-0">
           <h3 className="text-xl font-bold leading-6 text-gray-900 tracking-tight">
             {title}
           </h3>
@@ -91,7 +90,9 @@ export const Modal: FC<ModalProps> = ({
             </svg>
           </button>
         </div>
-        <div>{children}</div>
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 -mr-2">
+          {children}
+        </div>
       </div>
     </div>,
     document.body,

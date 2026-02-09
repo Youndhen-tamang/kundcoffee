@@ -8,7 +8,10 @@ interface PriceFormProps {
   onChange: (value: Partial<Price>) => void;
 }
 
+import { useSettings } from "@/components/providers/SettingsProvider";
+
 export function PriceForm({ value, onChange }: PriceFormProps) {
+  const { settings } = useSettings();
   const handleChange = (field: keyof Price, val: string) => {
     const num = parseFloat(val) || 0;
     onChange({ ...value, [field]: num });
@@ -16,11 +19,13 @@ export function PriceForm({ value, onChange }: PriceFormProps) {
 
   return (
     <div className="space-y-4 border p-4 rounded-lg bg-gray-50">
-      <h3 className="font-semibold text-gray-700">Pricing & Cost</h3>
+      <h3 className="font-semibold text-gray-700">
+        Pricing & Cost ({settings.currency})
+      </h3>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
           <label className="block text-xs font-medium text-gray-500">
-            Actual Price
+            Actual Price ({settings.currency})
           </label>
           <input
             type="number"
@@ -31,7 +36,7 @@ export function PriceForm({ value, onChange }: PriceFormProps) {
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-500">
-            Discount Price
+            Discount Price ({settings.currency})
           </label>
           <input
             type="number"
@@ -42,7 +47,7 @@ export function PriceForm({ value, onChange }: PriceFormProps) {
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-500">
-            Listed Price (Display)
+            Listed Price ({settings.currency})
           </label>
           <input
             type="number"
@@ -53,7 +58,7 @@ export function PriceForm({ value, onChange }: PriceFormProps) {
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-500">
-            COGS
+            COGS ({settings.currency})
           </label>
           <input
             type="number"
@@ -64,7 +69,7 @@ export function PriceForm({ value, onChange }: PriceFormProps) {
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-500">
-            Gross Profit
+            Gross Profit ({settings.currency})
           </label>
           <input
             type="number"

@@ -7,8 +7,10 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { useRouter } from "next/navigation";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 export default function CustomersPage() {
+  const { settings } = useSettings();
   const router = useRouter();
   const [customers, setCustomers] = useState<any[]>([]);
   const [metrics, setMetrics] = useState({
@@ -129,15 +131,15 @@ export default function CustomersPage() {
       <div className="grid grid-cols-3 gap-6 mb-8">
         <MetricCard
           title="To Receive"
-          value={`Rs. ${metrics.toReceive.toLocaleString()}`}
+          value={`${settings.currency} ${metrics.toReceive.toLocaleString()}`}
         />
         <MetricCard
           title="To Pay"
-          value={`Rs. ${metrics.toPay.toLocaleString()}`}
+          value={`${settings.currency} ${metrics.toPay.toLocaleString()}`}
         />
         <MetricCard
           title="Net To Receive"
-          value={`Rs. ${metrics.netToReceive.toLocaleString()}`}
+          value={`${settings.currency} ${metrics.netToReceive.toLocaleString()}`}
         />
       </div>
 
@@ -182,7 +184,7 @@ export default function CustomersPage() {
                 <td
                   className={`px-6 py-4 text-right font-semibold ${customer.dueAmount > 0 ? "text-red-600" : customer.dueAmount < 0 ? "text-green-600" : "text-gray-900"}`}
                 >
-                  Rs. {customer.dueAmount.toLocaleString()}
+                  {settings.currency} {customer.dueAmount.toLocaleString()}
                 </td>
               </tr>
             ))}

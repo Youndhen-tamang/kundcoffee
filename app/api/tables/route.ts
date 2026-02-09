@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
-import { NextResponse,NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,12 +14,13 @@ export async function POST(req: NextRequest) {
       tableTypeName,
       spaceName,
       spaceDescription,
+      sortOrder,
     } = body;
 
     if (!name || !capacity) {
       return NextResponse.json(
         { success: false, message: "Name and capacity are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -80,14 +81,26 @@ export async function POST(req: NextRequest) {
         throw new Error(`DUPLICATE_TABLE:${name}`);
       }
 
+      // --- Calculate the next sortOrder if not provided ---
+      let finalSortOrder = parseInt(String(sortOrder));
+      if (!finalSortOrder) {
+        const lastTable = await tx.table.findFirst({
+          where: { spaceId: finalSpaceId },
+          orderBy: { sortOrder: "desc" },
+          select: { sortOrder: true },
+        });
+        finalSortOrder = lastTable ? lastTable.sortOrder + 1 : 1;
+      }
+
       // --- Create Table ---
       const table = await tx.table.create({
         data: {
           name,
-          capacity,
-          status,
+          capacity: parseInt(String(capacity)),
+          status: status || "ACTIVE",
           spaceId: finalSpaceId,
           tableTypeId: finalTableTypeId,
+          sortOrder: finalSortOrder,
         },
         include: { tableType: true },
       });
@@ -102,7 +115,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { success: true, message: "Table created successfully", data: result },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     console.error("Table creation error:", error);
@@ -110,33 +123,34 @@ export async function POST(req: NextRequest) {
     if (error.message?.startsWith("DUPLICATE_TABLE:")) {
       const tableName = error.message.split(":")[1];
       return NextResponse.json(
-        { success: false, message: `Table "${tableName}" already exists in this space` },
-        { status: 400 }
+        {
+          success: false,
+          message: `Table "${tableName}" already exists in this space`,
+        },
+        { status: 400 },
       );
     }
 
     if (error.message === "TABLE_TYPE_REQUIRED") {
       return NextResponse.json(
         { success: false, message: "Table type is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (error.message === "SPACE_REQUIRED") {
       return NextResponse.json(
         { success: false, message: "Space is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     return NextResponse.json(
       { success: false, message: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
 
 export async function GET() {
   try {
@@ -152,10 +166,7 @@ export async function GET() {
     console.error(error);
     return NextResponse.json(
       { success: false, error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-
-

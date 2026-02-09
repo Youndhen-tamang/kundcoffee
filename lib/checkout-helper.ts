@@ -12,6 +12,8 @@ export async function finalizeSessionTransaction(data: {
   customerId?: string;
   paymentId: string;
   paymentMethod: string;
+  complimentaryItems?: Record<string, number>;
+  extraFreeItems?: { name: string; unitPrice: number; quantity: number }[];
 }) {
   const {
     sessionId,
@@ -24,22 +26,67 @@ export async function finalizeSessionTransaction(data: {
     customerId,
     paymentId,
     paymentMethod,
+    complimentaryItems = {},
+    extraFreeItems = [],
   } = data;
 
   return await prisma.$transaction(async (tx) => {
     // 1. Update all orders in this session to COMPLETED and link them to the payment
     const orders = await tx.order.findMany({
       where: { sessionId },
+      include: { items: true },
     });
 
-    await tx.order.updateMany({
-      where: { sessionId },
-      data: {
-        status: "COMPLETED",
-        customerId: customerId || null,
-        paymentId: paymentId,
-      },
-    });
+    for (const order of orders) {
+      await tx.order.update({
+        where: { id: order.id },
+        data: {
+          status: "COMPLETED",
+          customerId: customerId || null,
+          paymentId: paymentId,
+        },
+      });
+
+      // Update OrderItems with manual complimentary quantities
+      for (const item of order.items) {
+        const compQty = complimentaryItems[item.id] || 0;
+        if (compQty > 0) {
+          await tx.orderItem.update({
+            where: { id: item.id },
+            data: {
+              complimentaryQuantity: compQty,
+              // We could also adjust totalPrice here if needed, but usually it's better to keep raw prices
+            },
+          });
+        }
+      }
+    }
+
+    // Handle extra free items - create a special "Complimentary" order for them
+    if (extraFreeItems.length > 0) {
+      await tx.order.create({
+        data: {
+          sessionId,
+          tableId,
+          type: "DINE_IN",
+          status: "COMPLETED",
+          customerId: customerId || null,
+          paymentId: paymentId,
+          total: 0,
+          items: {
+            create: extraFreeItems.map((item) => ({
+              dishId: null, // Should ideally link to dish, but for now simple
+              name: item.name,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: 0,
+              status: "SERVED",
+              complimentaryQuantity: item.quantity,
+            })),
+          },
+        },
+      });
+    }
 
     // 2. Also handle any stray orders on the table not linked to session (legacy or manual)
     await tx.order.updateMany({

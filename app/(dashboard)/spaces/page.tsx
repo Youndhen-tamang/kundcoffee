@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { SidePanel } from "@/components/ui/SidePanel";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 export default function SpacesPage() {
   const router = useRouter();
@@ -35,6 +36,9 @@ export default function SpacesPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [sortOrder, setSortOrder] = useState(0);
+
+  // Confirmation Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Inline editing state
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
@@ -179,11 +183,12 @@ export default function SpacesPage() {
           id: selectedId,
           name,
           description,
+          sortOrder,
         };
 
         res = await updateSpace(data);
       } else {
-        res = await addSpace(name, description);
+        res = await addSpace(name, description, sortOrder);
       }
 
       // 🔴 Handle API failure
@@ -216,13 +221,7 @@ export default function SpacesPage() {
   };
 
   const handleDelete = async () => {
-    if (
-      !selectedId ||
-      !confirm(
-        `Are you sure you want to delete space "${name}"? Tables in this space will need to be reassigned.`,
-      )
-    )
-      return;
+    if (!selectedId) return;
 
     setIsLoading(true);
     try {
@@ -232,6 +231,7 @@ export default function SpacesPage() {
         const updated = await getSpaces();
         setSpaces(updated);
         setIsPanelOpen(false);
+        setIsDeleteModalOpen(false);
         router.refresh();
       } else {
         toast.error(res.message ?? "Failed to delete space");
@@ -412,13 +412,30 @@ export default function SpacesPage() {
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
+
+          {/* Display Order Field */}
+          <div>
+            <label className="text-sm font-semibold text-gray-700 block mb-2">
+              Display Order (Row #)
+            </label>
+            <input
+              type="number"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-mono"
+              placeholder="e.g. 1"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
+            />
+            <p className="mt-1.5 text-xs text-zinc-500 italic">
+              Leave as 0 to automatically place at the end.
+            </p>
+          </div>
         </div>
 
         {/* Footer Actions */}
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex items-center gap-3">
           {isEditing && selectedId && (
             <Button
-              onClick={handleDelete}
+              onClick={() => setIsDeleteModalOpen(true)}
               variant="secondary"
               className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
               disabled={isLoading}
@@ -447,6 +464,15 @@ export default function SpacesPage() {
           </Button>
         </div>
       </SidePanel>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Space"
+        message={`Are you sure you want to delete space "${name}"? Tables in this space will need to be reassigned.`}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

@@ -8,7 +8,7 @@ export async function GET() {
         price: true,
         stocks: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { sortOrder: "asc" },
     });
     return NextResponse.json({ success: true, data: addons });
   } catch (error) {
@@ -59,6 +59,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Calculate next sortOrder if not provided
+    let finalSortOrder = parseInt(String(sortOrder));
+    if (!finalSortOrder) {
+      const lastAddon = await prisma.addOn.findFirst({
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
+      finalSortOrder = lastAddon ? lastAddon.sortOrder + 1 : 1;
+    }
+
     const newAddon = await prisma.addOn.create({
       data: {
         name,
@@ -67,7 +77,7 @@ export async function POST(req: NextRequest) {
         type: type || "EXTRA",
         isAvailable: isAvailable ?? true,
         categoryId,
-        sortOrder: sortOrder ? parseInt(sortOrder) : 0, // <--- ADD THIS
+        sortOrder: finalSortOrder,
         price: {
           create: {
             actualPrice: parseFloat(price?.actualPrice || 0),
@@ -85,7 +95,8 @@ export async function POST(req: NextRequest) {
             })) || [],
         },
         // stocks logic remains same...
-      }, include: {
+      },
+      include: {
         price: true,
       },
     });
@@ -96,5 +107,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { success: false, message: "Failed to create addon" },
       { status: 500 },
-    );  }
+    );
+  }
 }

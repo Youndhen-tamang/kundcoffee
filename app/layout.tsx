@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: "POS System for Resturants",
 };
 
+import { SettingsProvider } from "@/components/providers/SettingsProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,8 +30,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
-        <Toaster position="top-right" richColors duration={2000} /> 
+        <SettingsProvider>
+          {children}
+          <Toaster position="top-right" richColors duration={2000} />
+        </SettingsProvider>
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
-import { NextRequest,NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -11,7 +11,7 @@ export async function GET() {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { sortOrder: "asc" },
     });
     return NextResponse.json({ success: true, data: menuSets });
   } catch (error) {
@@ -25,7 +25,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, service, isActive, subMenuIds } = await req.json();
+    const { name, service, isActive, subMenuIds, sortOrder } = await req.json();
 
     if (!name || !service) {
       return NextResponse.json(
@@ -34,11 +34,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Calculate next sortOrder if not provided
+    let finalSortOrder = parseInt(String(sortOrder));
+    if (!finalSortOrder) {
+      const lastSet = await prisma.menuSet.findFirst({
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
+      finalSortOrder = lastSet ? lastSet.sortOrder + 1 : 1;
+    }
+
     const menuSet = await prisma.menuSet.create({
       data: {
         name,
         service,
         isActive: isActive ?? true,
+        sortOrder: finalSortOrder,
         subMenus: {
           create:
             subMenuIds?.map((id: string) => ({

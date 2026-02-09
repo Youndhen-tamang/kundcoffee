@@ -11,7 +11,7 @@ export async function GET() {
         stocks: true,
         addOns: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { sortOrder: "asc" },
     });
     return NextResponse.json({ success: true, data: dishes });
   } catch (error) {
@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
       price,
       stockConsumption,
       addOnIds,
+      sortOrder,
     } = body;
 
     if (!name || !categoryId) {
@@ -74,6 +75,17 @@ export async function POST(req: NextRequest) {
 
     const grossProfit = listedPrice - cogs;
 
+    // Calculate next sortOrder
+    let finalSortOrder = parseInt(String(sortOrder));
+    if (!finalSortOrder) {
+      const lastDish = await prisma.dish.findFirst({
+        where: { categoryId },
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
+      finalSortOrder = lastDish ? lastDish.sortOrder + 1 : 1;
+    }
+
     const dish = await prisma.dish.create({
       data: {
         name,
@@ -86,6 +98,7 @@ export async function POST(req: NextRequest) {
         type: type || "VEG",
         kotType: kotType || "KITCHEN",
         isAvailable: true,
+        sortOrder: finalSortOrder,
         price: {
           create: {
             actualPrice: actualPrice,

@@ -17,6 +17,8 @@ export async function POST(req: NextRequest) {
       tax,
       serviceCharge,
       discount,
+      complimentaryItems,
+      extraFreeItems,
     } = body;
 
     // --- 1. VALIDATION ---
@@ -58,7 +60,21 @@ export async function POST(req: NextRequest) {
     // === OPTION A: ESEWA GATEWAY (Only for actual ESEWA integration) ===
     // CHANGE 1: Removed `|| paymentMethod === "QR"` from here
     if (paymentMethod === "ESEWA") {
+      console.log(
+        `[Checkout] Processing ESEWA for session: ${activeSessionId}`,
+      );
       const transactionUuid = `${Date.now()}-${uuidv4()}`;
+
+      const existing = await prisma.payment.findUnique({
+        where: { sessionId: activeSessionId },
+      });
+
+      if (existing?.status === "PAID") {
+        return NextResponse.json(
+          { success: false, message: "This session is already paid." },
+          { status: 400 },
+        );
+      }
 
       const payment = await prisma.payment.upsert({
         where: {
@@ -104,6 +120,9 @@ export async function POST(req: NextRequest) {
 
     // === OPTION B: INSTANT PAYMENT (CASH / CARD / MANUAL QR / CREDIT) ===
     if (["CASH", "CARD", "QR", "CREDIT"].includes(paymentMethod)) {
+      console.log(
+        `[Checkout] Processing ${paymentMethod} payment for session: ${activeSessionId}`,
+      );
       if (paymentMethod === "CREDIT" && !customerId) {
         return NextResponse.json(
           {
@@ -171,6 +190,8 @@ export async function POST(req: NextRequest) {
         customerId,
         paymentId: payment.id,
         paymentMethod,
+        complimentaryItems,
+        extraFreeItems,
       });
 
       return NextResponse.json({

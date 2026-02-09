@@ -3,7 +3,7 @@ import { NextResponse, NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, description, image } = await req.json();
+    const { name, description, image, sortOrder } = await req.json();
     if (!name) {
       return NextResponse.json(
         {
@@ -28,10 +28,21 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
 
+    // Calculate next sortOrder
+    let finalSortOrder = parseInt(String(sortOrder));
+    if (!finalSortOrder) {
+      const lastCategory = await prisma.category.findFirst({
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
+      finalSortOrder = lastCategory ? lastCategory.sortOrder + 1 : 1;
+    }
+
     const category = await prisma.category.create({
       data: {
         name,
         description,
+        sortOrder: finalSortOrder,
         ...(image && { image }),
       },
     });
@@ -56,7 +67,7 @@ export async function GET() {
         dishes: true,
         combos: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { sortOrder: "asc" },
     });
     return NextResponse.json({ success: true, data: category });
   } catch (error) {

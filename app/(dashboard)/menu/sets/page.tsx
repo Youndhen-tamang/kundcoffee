@@ -15,6 +15,7 @@ import { SidePanel } from "@/components/ui/SidePanel";
 import { useRouter } from "next/navigation";
 import { Trash2, Edit2, Plus, Users, Folder } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 export default function MenuSetsPage() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function MenuSetsPage() {
   const [selectedSubMenuIds, setSelectedSubMenuIds] = useState<string[]>([]);
 
   const [uploading, setUploading] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -58,10 +60,18 @@ export default function MenuSetsPage() {
     f = [...f].sort((a, b) => {
       let va: string | number = "";
       let vb: string | number = "";
-      if (sortBy === "name") { va = a.name; vb = b.name; }
-      else if (sortBy === "service") { va = a.service; vb = b.service; }
-      else { va = a.isActive ? 1 : 0; vb = b.isActive ? 1 : 0; }
-      if (typeof va === "string") return mult * String(va).localeCompare(String(vb));
+      if (sortBy === "name") {
+        va = a.name;
+        vb = b.name;
+      } else if (sortBy === "service") {
+        va = a.service;
+        vb = b.service;
+      } else {
+        va = a.isActive ? 1 : 0;
+        vb = b.isActive ? 1 : 0;
+      }
+      if (typeof va === "string")
+        return mult * String(va).localeCompare(String(vb));
       return mult * (Number(va) - Number(vb));
     });
     return f;
@@ -119,8 +129,7 @@ export default function MenuSetsPage() {
   };
 
   const handleDelete = async () => {
-    if (!selectedId || !confirm(`Are you sure you want to delete menu set "${name}"?`))
-      return;
+    if (!selectedId) return;
 
     setUploading(true);
     try {
@@ -129,6 +138,7 @@ export default function MenuSetsPage() {
         toast.success("Menu set deleted");
         refresh();
         setIsPanelOpen(false);
+        setIsDeleteModalOpen(false);
         router.refresh();
       } else {
         toast.error(res?.message ?? "Failed to delete menu set");
@@ -202,9 +212,13 @@ export default function MenuSetsPage() {
             <tr>
               <th className="px-6 py-4 font-semibold text-gray-700">Name</th>
               <th className="px-6 py-4 font-semibold text-gray-700">Service</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Sub Menus</th>
+              <th className="px-6 py-4 font-semibold text-gray-700">
+                Sub Menus
+              </th>
               <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
-              <th className="px-6 py-4 font-semibold text-gray-700 text-right">Actions</th>
+              <th className="px-6 py-4 font-semibold text-gray-700 text-right">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -362,7 +376,7 @@ export default function MenuSetsPage() {
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex items-center gap-3 z-10">
           {isEditing && selectedId && (
             <Button
-              onClick={handleDelete}
+              onClick={() => setIsDeleteModalOpen(true)}
               variant="secondary"
               className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
               disabled={uploading}
@@ -387,6 +401,15 @@ export default function MenuSetsPage() {
           </Button>
         </div>
       </SidePanel>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Menu Set"
+        message={`Are you sure you want to delete menu set "${name}"?`}
+        isLoading={uploading}
+      />
     </div>
   );
 }

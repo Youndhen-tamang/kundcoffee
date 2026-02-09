@@ -91,7 +91,7 @@ export function OrderDetailView({
   const grandTotal = order.total + taxAmount;
 
   return (
-    <div className="flex flex-col m-auto h-[85vh] bg-white overflow-hidden rounded-xl border border-zinc-100">
+    <div className="flex flex-col m-auto h-[85vh] bg-white overflow-hidden rounded-xl border border-zinc-100 printable-area">
       {/* HEADER */}
       <div className="bg-white border-b border-zinc-100 p-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -383,6 +383,33 @@ export function OrderDetailView({
           />
         )}
       </Modal>
+
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .printable-area,
+          .printable-area * {
+            visibility: visible;
+          }
+          .printable-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 20px !important;
+          }
+          .no-print,
+          [role="button"],
+          button {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

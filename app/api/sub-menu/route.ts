@@ -28,14 +28,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Calculate next sortOrder if not provided
+    let finalSortOrder = parseInt(String(sortOrder));
+    if (!finalSortOrder) {
+      const lastSubMenu = await prisma.subMenu.findFirst({
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
+      finalSortOrder = lastSubMenu ? lastSubMenu.sortOrder + 1 : 1;
+    }
+
     // 2. Include sortOrder and isActive in the creation data
     const subMenu = await prisma.subMenu.create({
       data: {
         name,
         categoryId: categoryId || null,
         image: image || null,
-        // Ensure sortOrder is a number
-        sortOrder: sortOrder ? parseInt(sortOrder.toString()) : 0,
+        sortOrder: finalSortOrder,
         isActive: isActive !== undefined ? isActive : true,
       },
     });
@@ -48,13 +57,15 @@ export async function POST(req: NextRequest) {
     console.log(error);
     return NextResponse.json(
       { success: false, message: "Something went wrong" },
-      { status: 500 }, 
+      { status: 500 },
     );
   }
 }
 export async function GET() {
   try {
-    const submenu = await prisma.subMenu.findMany();
+    const submenu = await prisma.subMenu.findMany({
+      orderBy: { sortOrder: "asc" },
+    });
     if (!submenu)
       return NextResponse.json(
         {

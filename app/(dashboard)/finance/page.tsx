@@ -26,10 +26,12 @@ import { SidePanel } from "@/components/ui/SidePanel";
 import { toast } from "sonner";
 import { DateRangeSelector } from "@/components/ui/DateRangeSelector";
 import { PaymentMethod, ReturnPaymentStatus, SalesReturn } from "@/lib/types";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 type Tab = "SALES" | "RETURNS";
 
 export default function FinancePage() {
+  const { settings } = useSettings();
   const [activeTab, setActiveTab] = useState<Tab>("SALES");
   const [loading, setLoading] = useState(true);
   const [salesData, setSalesData] = useState<any>({
@@ -119,7 +121,7 @@ export default function FinancePage() {
         (it: any) => `
       <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px;">
         <span>${it.dishName} x ${it.quantity}</span>
-        <span>Rs. ${it.amount.toFixed(2)}</span>
+        <span>${settings.currency} ${it.amount.toFixed(2)}</span>
       </div>
     `,
       )
@@ -157,7 +159,7 @@ export default function FinancePage() {
           <div class="totals">
             <div style="display: flex; justify-content: space-between;">
               <span>GRAND TOTAL</span>
-              <span>Rs. ${txn.amount.toFixed(2)}</span>
+              <span>${settings.currency} ${txn.amount.toFixed(2)}</span>
             </div>
           </div>
           <div style="text-align: center; margin-top: 30px; font-size: 10px;">
@@ -252,7 +254,7 @@ export default function FinancePage() {
               />
               <MetricCard
                 title="Total Sales"
-                value={`Rs. ${salesData.metrics.totalSales || 0}`}
+                value={`${settings.currency} ${salesData.metrics.totalSales || 0}`}
                 icon={TrendingUp}
                 trend="+0%"
               />
@@ -271,7 +273,7 @@ export default function FinancePage() {
               />
               <MetricCard
                 title="Total Amount"
-                value={`Rs. ${returnsData.metrics.totalAmount || 0}`}
+                value={`${settings.currency} ${returnsData.metrics.totalAmount || 0}`}
                 icon={TrendingUp}
               />
               <MetricCard
@@ -394,7 +396,8 @@ export default function FinancePage() {
                       {activeTab === "SALES" ? txn.orderType : txn.parties}
                     </td>
                     <td className="px-6 py-4 text-xs font-bold text-zinc-900">
-                      Rs. {activeTab === "SALES" ? txn.amount : txn.txnAmount}
+                      {settings.currency}{" "}
+                      {activeTab === "SALES" ? txn.amount : txn.txnAmount}
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-[10px] font-black px-2 py-1 rounded bg-zinc-100 text-zinc-600 uppercase tracking-widest">
@@ -617,12 +620,12 @@ export default function FinancePage() {
                           {item.dishName}
                         </p>
                         <p className="text-[9px] text-zinc-400 font-bold">
-                          {item.quantity} x Rs.{" "}
+                          {item.quantity} x {settings.currency}{" "}
                           {(item.amount / item.quantity).toFixed(2)}
                         </p>
                       </div>
                       <span className="text-[11px] font-black text-zinc-900">
-                        Rs. {item.amount.toFixed(2)}
+                        {settings.currency} {item.amount.toFixed(2)}
                       </span>
                     </div>
                   ))}
@@ -633,7 +636,9 @@ export default function FinancePage() {
               <div className="pt-6 border-t border-dashed border-zinc-200 space-y-2">
                 <div className="flex justify-between text-[11px] font-bold text-zinc-600">
                   <span className="uppercase tracking-widest">Subtotal</span>
-                  <span>Rs. {selectedTxn.amount.toFixed(2)}</span>
+                  <span>
+                    {settings.currency} {selectedTxn.amount.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-[11px] font-bold text-zinc-400">
                   <span className="uppercase tracking-widest text-[9px]">
@@ -646,7 +651,7 @@ export default function FinancePage() {
                     Grand Total
                   </span>
                   <span className="text-2xl font-black text-zinc-900 tracking-tighter">
-                    Rs. {selectedTxn.amount.toFixed(2)}
+                    {settings.currency} {selectedTxn.amount.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -738,6 +743,7 @@ function SalesReturnForm({
   onCancel: () => void;
   onSuccess: () => void;
 }) {
+  const { settings } = useSettings();
   const [items, setItems] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     customerId: "",
@@ -920,7 +926,7 @@ function SalesReturnForm({
                       />
                     </td>
                     <td className="p-2 w-24 text-xs font-bold font-zinc-900">
-                      Rs. {item.amount}
+                      {settings.currency} {item.amount}
                     </td>
                     <td className="p-2 text-right">
                       <button onClick={() => removeItem(i)}>
@@ -942,18 +948,24 @@ function SalesReturnForm({
         <div className="space-y-4">
           <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-zinc-400">
             <span>Taxable Amount</span>
-            <span className="text-zinc-900">Rs. {taxableAmount}</span>
+            <span className="text-zinc-900">
+              {settings.currency} {taxableAmount}
+            </span>
           </div>
           <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-zinc-400">
             <span>Discount</span>
-            <span className="text-zinc-900">Rs. {discount}</span>
+            <span className="text-zinc-900">
+              {settings.currency} {discount}
+            </span>
           </div>
           <div className="pt-4 border-t border-zinc-200">
             <div className="flex justify-between text-lg font-normal text-zinc-900">
               <span className="text-[10px] font-black uppercase tracking-widest self-center">
                 Grand Total
               </span>
-              <span>Rs. {totalAmount}</span>
+              <span>
+                {settings.currency} {totalAmount}
+              </span>
             </div>
           </div>
         </div>

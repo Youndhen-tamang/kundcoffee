@@ -29,7 +29,6 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Update basic info
       const updatedCombo = await tx.comboOffer.update({
         where: { id },
         data: {

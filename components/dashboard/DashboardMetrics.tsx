@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 type MetricType =
   | "SALES"
@@ -21,6 +22,7 @@ type MetricType =
   | "PAYMENT_OUT";
 
 export default function DashboardMetrics() {
+  const { settings } = useSettings();
   const [metrics, setMetrics] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [activeType, setActiveType] = useState<MetricType>("SALES");
@@ -116,7 +118,8 @@ export default function DashboardMetrics() {
                 {metricConfig[activeType].label}
               </h3>
               <p className="text-4xl font-black text-zinc-900 tracking-tight">
-                Rs. {(metricConfig[activeType].value || 0).toLocaleString()}
+                {settings.currency}{" "}
+                {(metricConfig[activeType].value || 0).toLocaleString()}
               </p>
               <p className="text-xs font-bold text-zinc-400">This Month</p>
             </div>
@@ -155,7 +158,7 @@ export default function DashboardMetrics() {
                   {config.label}
                 </p>
                 <p className="text-sm font-bold text-zinc-900 mt-1">
-                  Rs. {(config.value || 0).toLocaleString()}
+                  {settings.currency} {(config.value || 0).toLocaleString()}
                 </p>
               </div>
             );

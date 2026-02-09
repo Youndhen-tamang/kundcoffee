@@ -19,6 +19,7 @@ import { SidePanel } from "@/components/ui/SidePanel";
 import { useRouter } from "next/navigation";
 import { Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 export default function TablesPage() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function TablesPage() {
   const [tables, setTables] = useState<Table[]>([]);
   const [tableTypes, setTableTypes] = useState<TableType[]>([]);
   const [spaces, setSpaces] = useState<spaceType[]>([]);
-  
+
   // Filtering & Sorting State
   const [filteredTables, setFilteredTables] = useState<Table[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,13 +49,20 @@ export default function TablesPage() {
   // --- Form Input States ---
   const [tableName, setTableName] = useState("");
   const [tableCapacity, setTableCapacity] = useState("");
-  const [selectedSpaceId, setSelectedSpaceId] = useState<string | undefined>(undefined);
-  const [selectedTypeId, setSelectedTypeId] = useState<string | undefined>(undefined);
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | undefined>(
+    undefined,
+  );
+  const [selectedTypeId, setSelectedTypeId] = useState<string | undefined>(
+    undefined,
+  );
   const [sortOrder, setSortOrder] = useState(0);
 
   // --- Inline Editing State (Row #) ---
-  const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<number>(0);
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+
+  // Confirmation Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // --- Nested Form States ---
   const [newSpaceName, setNewSpaceName] = useState("");
@@ -80,13 +88,13 @@ export default function TablesPage() {
   // --- Search & Sort Logic (Matches SpacesPage) ---
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
-    
+
     // 1. Filter
     let filtered = tables.filter(
       (t) =>
         t.name.toLowerCase().includes(lowerQuery) ||
         t.space?.name.toLowerCase().includes(lowerQuery) ||
-        t.tableType?.name.toLowerCase().includes(lowerQuery)
+        t.tableType?.name.toLowerCase().includes(lowerQuery),
     );
 
     // 2. Sort
@@ -170,7 +178,7 @@ export default function TablesPage() {
   };
 
   // --- Inline Sort Order Logic ---
-  
+
   const handleSortOrderClick = (table: Table, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingRowId(table.id);
@@ -181,7 +189,10 @@ export default function TablesPage() {
     setEditingValue(parseInt(e.target.value) || 0);
   };
 
-  const handleSortOrderKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, tableId: string) => {
+  const handleSortOrderKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    tableId: string,
+  ) => {
     if (e.key === "Enter") {
       e.currentTarget.blur();
     } else if (e.key === "Escape") {
@@ -191,17 +202,17 @@ export default function TablesPage() {
 
   const handleSortOrderBlur = async (tableId: string) => {
     // Only update if value actually changed
-    const currentTable = tables.find(t => t.id === tableId);
-    if(currentTable && (currentTable as any).sortOrder === editingValue) {
-        setEditingRowId(null);
-        return;
+    const currentTable = tables.find((t) => t.id === tableId);
+    if (currentTable && (currentTable as any).sortOrder === editingValue) {
+      setEditingRowId(null);
+      return;
     }
 
     setIsLoading(true);
     try {
       // Assuming updateTable service accepts partial updates including sortOrder
       const res = await updateTable({ id: tableId, sortOrder: editingValue });
-      
+
       if (res.success) {
         // Force refresh to ensure sort logic picks up new values
         const updated = await fetch("/api/tables?t=" + Date.now(), {
@@ -244,14 +255,15 @@ export default function TablesPage() {
           capacity: parseInt(tableCapacity),
           spaceId: selectedSpaceId,
           tableTypeId: selectedTypeId,
-          // sortOrder is preserved or updated if your API supports it in this call
+          sortOrder,
         });
       } else {
         res = await addTable(
           tableName,
           parseInt(tableCapacity),
           selectedSpaceId,
-          selectedTypeId
+          selectedTypeId,
+          sortOrder,
         );
       }
 
@@ -260,12 +272,14 @@ export default function TablesPage() {
         return;
       }
 
-      toast.success(res.message ?? (isEditing ? "Table updated" : "Table created"));
-      
+      toast.success(
+        res.message ?? (isEditing ? "Table updated" : "Table created"),
+      );
+
       // Refresh list
       const updatedTables = await getTables();
       setTables(updatedTables);
-      
+
       closePanel();
       router.refresh();
     } catch (error) {
@@ -277,7 +291,7 @@ export default function TablesPage() {
   };
 
   const handleDelete = async () => {
-    if (!editingId || !confirm(`Are you sure you want to delete table ${tableName}?`)) return;
+    if (!editingId) return;
 
     setIsLoading(true);
     try {
@@ -286,6 +300,7 @@ export default function TablesPage() {
         toast.success("Table deleted");
         const updatedTables = await getTables();
         setTables(updatedTables);
+        setIsDeleteModalOpen(false);
         closePanel();
         router.refresh();
       } else {
@@ -487,8 +502,8 @@ export default function TablesPage() {
                       table.status === "ACTIVE"
                         ? "bg-zinc-50 text-zinc-600 border-zinc-100"
                         : table.status === "OCCUPIED"
-                        ? "bg-red-50 text-red-600 border-red-100"
-                        : "bg-amber-50 text-amber-600 border-amber-100"
+                          ? "bg-red-50 text-red-600 border-red-100"
+                          : "bg-amber-50 text-amber-600 border-amber-100"
                     }`}
                   >
                     {table.status}
@@ -570,12 +585,29 @@ export default function TablesPage() {
               addNewLabel="Add New Type"
             />
           </div>
+
+          {/* Display Order Field */}
+          <div>
+            <label className="text-sm font-semibold text-gray-700 block mb-2">
+              Display Order (Row #)
+            </label>
+            <input
+              type="number"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-mono"
+              placeholder="e.g. 1"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
+            />
+            <p className="mt-1.5 text-xs text-zinc-500 italic">
+              Leave as 0 to automatically place at the end.
+            </p>
+          </div>
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex items-center gap-3">
           {isEditing && (
             <Button
-              onClick={handleDelete}
+              onClick={() => setIsDeleteModalOpen(true)}
               variant="secondary"
               className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
               disabled={isLoading}
@@ -602,7 +634,11 @@ export default function TablesPage() {
               isLoading
             }
           >
-            {isLoading ? "Saving..." : isEditing ? "Update Table" : "Create Table"}
+            {isLoading
+              ? "Saving..."
+              : isEditing
+                ? "Update Table"
+                : "Create Table"}
           </Button>
         </div>
       </SidePanel>
@@ -655,6 +691,15 @@ export default function TablesPage() {
           </Button>
         </div>
       </Modal>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Table"
+        message={`Are you sure you want to delete table "${tableName}"?`}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

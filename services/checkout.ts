@@ -17,6 +17,8 @@ export const processCheckout = async (payload: {
   tax: number;
   serviceCharge: number;
   discount: number;
+  complimentaryItems?: Record<string, number>;
+  extraFreeItems?: { name: string; unitPrice: number; quantity: number }[];
 }) => {
   const res = await fetch("/api/checkout", {
     method: "POST",

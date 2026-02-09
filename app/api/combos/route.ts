@@ -14,7 +14,7 @@ export async function GET() {
         price: true,
         stocks: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { sortOrder: "asc" },
     });
     return NextResponse.json({ success: true, data: combos });
   } catch (error) {
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       items, // Array of { dishId, quantity, unitPrice }
       price,
       stockConsumption,
+      sortOrder,
     } = body;
 
     if (!name || !categoryId) {
@@ -67,6 +68,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Calculate next sortOrder if not provided
+    let finalSortOrder = parseInt(String(sortOrder));
+    if (!finalSortOrder) {
+      const lastCombo = await prisma.comboOffer.findFirst({
+        where: { categoryId },
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
+      finalSortOrder = lastCombo ? lastCombo.sortOrder + 1 : 1;
+    }
+
     const combo = await prisma.comboOffer.create({
       data: {
         name,
@@ -78,6 +90,7 @@ export async function POST(req: NextRequest) {
         subMenuId: subMenuId || null,
         kotType: kotType || "KITCHEN",
         isAvailable: true,
+        sortOrder: finalSortOrder,
         price: {
           create: {
             actualPrice: parseFloat(price?.actualPrice || 0),

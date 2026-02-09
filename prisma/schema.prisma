@@ -362,6 +362,7 @@ model OrderItem {
   quantity       Int
   unitPrice      Float
   totalPrice     Float
+  complimentaryQuantity Int @default(0)
   selectedAddOns OrderItemAddOn[]
   status         OrderStatus      @default(PENDING)
   remarks        String?
@@ -612,5 +613,13 @@ model Purchase {
   amount    Float
   vendor    String?
   date      DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 }

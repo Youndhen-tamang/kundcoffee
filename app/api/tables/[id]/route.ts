@@ -153,3 +153,32 @@ export async function PATCH(
     );
   }
 }
+
+
+export async function DELETE(req:NextRequest,context:{
+  params:Params
+}) {
+  try {
+    const {id} =  await context.params;
+
+    if(!id) return NextResponse.json({
+      success:false,message:"Item not fount"
+    },{status:400})
+
+    await prisma.table.delete({
+      where:{id}
+    })
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Deleted successfully",
+      },
+      { status: 200 },)
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, message: "Something went wrong" },
+      { status: 500 },
+    );
+  }
+}

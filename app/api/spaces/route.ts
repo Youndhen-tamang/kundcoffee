@@ -20,32 +20,55 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name } = body;
-    if (!body.name) {
+    const { name, description, sortOrder } = body;
+
+    // 1. Validation
+    if (!name) {
       return NextResponse.json(
         { success: false, message: "Name is required" },
         { status: 400 },
       );
     }
+
+    // 2. Check for existence
     const findspace = await prisma.space.findFirst({
-      where: {
-        name,
-      },
+      where: { name },
     });
 
-    if (findspace)
+    if (findspace) {
       return NextResponse.json(
         {
           success: false,
-          message: "Space already exist with the current name",
+          message: "Space already exists with the current name",
         },
         { status: 400 },
       );
+    }
 
+    // 3. Calculate the next sortOrder if not provided
+    let finalSortOrder = parseInt(String(sortOrder));
+
+    if (!finalSortOrder) {
+      // We look for the space with the highest sortOrder
+      const lastSpace = await prisma.space.findFirst({
+        orderBy: {
+          sortOrder: "desc",
+        },
+        select: {
+          sortOrder: true,
+        },
+      });
+
+      // If no spaces exist, start at 1. Otherwise, take the highest + 1.
+      finalSortOrder = lastSpace ? lastSpace.sortOrder + 1 : 1;
+    }
+
+    // 4. Create the space with the calculated sortOrder
     const space = await prisma.space.create({
       data: {
-        name: body.name,
-        description: body.description,
+        name: name,
+        description: description,
+        sortOrder: finalSortOrder,
       },
     });
 
