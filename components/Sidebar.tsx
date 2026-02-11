@@ -28,10 +28,10 @@ export default function Sidebar() {
     pathname.includes("menu")
       ? "menu"
       : pathname.includes("tables") ||
-        pathname.includes("spaces") ||
-        pathname.includes("qrcodes")
-      ? "core"
-      : null,
+          pathname.includes("spaces") ||
+          pathname.includes("qrcodes")
+        ? "core"
+        : null,
   );
 
   const isActive = (path: string) => pathname === path;
@@ -177,9 +177,27 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      <div className="mt-auto p-6 border-t border-zinc-50">
-        <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-red-600 hover:bg-red-50 transition-all">
-          <LogOut size={18} />
+      <div className="mt-auto p-4 border-t border-zinc-50 space-y-2">
+        {/* User Profile Info */}
+        <div className="flex items-center gap-3 px-4 py-3 bg-zinc-50 rounded-2xl border border-zinc-100 mb-2">
+          <div className="w-9 h-9 bg-zinc-900 rounded-xl flex items-center justify-center text-white font-black text-xs">
+            JD
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[11px] font-black text-zinc-900 leading-none">
+              John Doe
+            </span>
+            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider mt-0.5">
+              Admin
+            </span>
+          </div>
+        </div>
+
+        <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-red-600 hover:bg-red-50 transition-all group">
+          <LogOut
+            size={18}
+            className="transition-transform group-hover:-translate-x-1"
+          />
           Sign Out
         </button>
       </div>
