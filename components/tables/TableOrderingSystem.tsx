@@ -25,6 +25,7 @@ import {
   PlusCircle,
   ChevronDown,
 } from "lucide-react";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 interface CartItem extends Partial<OrderItem> {
   dish?: Dish;
@@ -46,6 +47,7 @@ export function TableOrderingSystem({
   isAddingToExisting = false,
   existingItems = [],
 }: TableOrderingSystemProps) {
+  const { settings } = useSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [subMenus, setSubMenus] = useState<SubMenu[]>([]);
@@ -58,7 +60,9 @@ export function TableOrderingSystem({
   const [cart, setCart] = useState<CartItem[]>([]);
   const [guests, setGuests] = useState(1);
   const [kotRemarks, setKotRemarks] = useState("");
-  const [includeTax, setIncludeTax] = useState(false);
+  const [includeTax, setIncludeTax] = useState(
+    settings.includeTaxByDefault === "true",
+  );
 
   const [quantityToAdd, setQuantityToAdd] = useState(1);
   const [itemRemarks, setItemRemarks] = useState("");
@@ -512,19 +516,13 @@ export function TableOrderingSystem({
             </div>
 
             <div className="space-y-4 pt-2 border-t border-zinc-100">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-medium text-zinc-600 uppercase tracking-widest px-1">
-                  Include Tax (13%)
-                </span>
-                <button
-                  onClick={() => setIncludeTax(!includeTax)}
-                  className={`w-8 h-4 rounded-full transition-colors relative ${includeTax ? "bg-zinc-900" : "bg-zinc-300"}`}
-                >
-                  <div
-                    className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${includeTax ? "left-[18px]" : "left-0.5"}`}
-                  />
-                </button>
-              </div>
+              {settings.includeTaxByDefault === "true" && (
+                <div className="flex items-center justify-between pb-2">
+                  <span className="text-[9px] font-medium text-zinc-400 uppercase tracking-widest px-1">
+                    Tax Status: {includeTax ? "Enabled (13%)" : "Disabled"}
+                  </span>
+                </div>
+              )}
 
               <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-widest text-zinc-600 px-1">
                 <span>Sub-Total ({totalQty} pkts)</span>

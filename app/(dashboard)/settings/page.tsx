@@ -113,14 +113,40 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Future Settings Placeholder */}
-        <div className="bg-zinc-50 rounded-3xl border border-zinc-100 border-dashed p-12 text-center space-y-3 opacity-60">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto text-zinc-300">
-            <CreditCard size={24} />
+        {/* Tax Configuration Section */}
+        <div className="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-zinc-50 flex items-center gap-4">
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+              <CreditCard size={20} />
+            </div>
+            <h2 className="font-bold text-zinc-900">Tax Configuration</h2>
           </div>
-          <p className="text-sm font-bold text-zinc-400">
-            More settings coming soon...
-          </p>
+          <div className="p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-black text-zinc-400 uppercase tracking-widest block mb-1">
+                  Default Tax (13%)
+                </label>
+                <p className="text-xs text-zinc-500 font-medium italic">
+                  When enabled, VAT/Tax will be automatically applied to all new
+                  checkouts.
+                </p>
+              </div>
+              <button
+                onClick={() =>
+                  updateSetting(
+                    "includeTaxByDefault",
+                    settings.includeTaxByDefault === "true" ? "false" : "true",
+                  )
+                }
+                className={`w-12 h-6 rounded-full transition-colors relative ${settings.includeTaxByDefault === "true" ? "bg-red-600" : "bg-zinc-300"}`}
+              >
+                <div
+                  className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.includeTaxByDefault === "true" ? "left-[26px]" : "left-1"}`}
+                />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

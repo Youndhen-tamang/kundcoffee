@@ -19,7 +19,12 @@ import {
   createOrder,
   deleteOrderItem,
 } from "@/services/order";
-import { getTables, getTableTypes, getOccupiedTable, updateTable } from "@/services/table";
+import {
+  getTables,
+  getTableTypes,
+  getOccupiedTable,
+  updateTable,
+} from "@/services/table";
 import { getSpaces, updateSpace } from "@/services/space";
 import { OrderCard } from "@/components/orders/OrderCard";
 import { OrderDetailView } from "@/components/orders/OrderDetailView";
@@ -73,7 +78,14 @@ type ActiveTab = "ORDERS" | "TABLES" | "KOT";
 
 // --- Sub-Component: Sortable Table Card ---
 function SortableTableCard({ table, occupiedTable, handleTableClick }: any) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: table.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: table.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -96,20 +108,27 @@ function SortableTableCard({ table, occupiedTable, handleTableClick }: any) {
       }`}
     >
       {/* Table Drag Handle */}
-      <div 
-        {...attributes} 
-        {...listeners} 
+      <div
+        {...attributes}
+        {...listeners}
         className="absolute top-2 left-2 p-1 cursor-grab active:cursor-grabbing text-zinc-300 hover:text-zinc-600 rounded"
       >
         <GripVertical size={14} />
       </div>
 
-      <div onClick={() => handleTableClick(table)} className="flex flex-col items-center gap-3 cursor-pointer w-full">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isOccupied ? "bg-emerald-100" : "bg-white border border-zinc-200"}`}>
+      <div
+        onClick={() => handleTableClick(table)}
+        className="flex flex-col items-center gap-3 cursor-pointer w-full"
+      >
+        <div
+          className={`w-10 h-10 rounded-lg flex items-center justify-center ${isOccupied ? "bg-emerald-100" : "bg-white border border-zinc-200"}`}
+        >
           <Users size={18} />
         </div>
         <div className="text-center">
-          <h3 className={`font-bold text-xs uppercase tracking-tight ${isOccupied ? "text-zinc-900" : "text-zinc-600"}`}>
+          <h3
+            className={`font-bold text-xs uppercase tracking-tight ${isOccupied ? "text-zinc-900" : "text-zinc-600"}`}
+          >
             {table.name}
           </h3>
           <p className="text-[9px] font-bold uppercase opacity-80 mt-0.5 text-zinc-500">
@@ -122,8 +141,22 @@ function SortableTableCard({ table, occupiedTable, handleTableClick }: any) {
 }
 
 // --- Sub-Component: Sortable Space Section ---
-function SortableSpaceSection({ space, tables, occupiedTable, handleTableClick, tableLayout, onTableDragEnd }: any) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: space.id });
+function SortableSpaceSection({
+  space,
+  tables,
+  occupiedTable,
+  handleTableClick,
+  tableLayout,
+  onTableDragEnd,
+}: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: space.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -136,7 +169,11 @@ function SortableSpaceSection({ space, tables, occupiedTable, handleTableClick, 
       <div className="flex items-center justify-between border-b-2 border-zinc-100 pb-2">
         <div className="flex items-center gap-3">
           {/* Area Drag Handle */}
-          <div {...attributes} {...listeners} className="p-1 cursor-grab active:cursor-grabbing text-zinc-400 hover:bg-zinc-100 rounded">
+          <div
+            {...attributes}
+            {...listeners}
+            className="p-1 cursor-grab active:cursor-grabbing text-zinc-400 hover:bg-zinc-100 rounded"
+          >
             <GripVertical size={18} />
           </div>
           <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
@@ -148,21 +185,29 @@ function SortableSpaceSection({ space, tables, occupiedTable, handleTableClick, 
         </span>
       </div>
 
-      <DndContext collisionDetection={closestCenter} onDragEnd={(e) => onTableDragEnd(e, space.id)}>
-        <SortableContext items={tables.map((t: any) => t.id)} strategy={rectSortingStrategy}>
-          <div className={`grid gap-4 ${
-            tableLayout === "compact"
-              ? "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3"
-              : tableLayout === "spacious"
-                ? "grid-cols-2 lg:grid-cols-4 gap-6"
-                : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
-          }`}>
+      <DndContext
+        collisionDetection={closestCenter}
+        onDragEnd={(e) => onTableDragEnd(e, space.id)}
+      >
+        <SortableContext
+          items={tables.map((t: any) => t.id)}
+          strategy={rectSortingStrategy}
+        >
+          <div
+            className={`grid gap-4 ${
+              tableLayout === "compact"
+                ? "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3"
+                : tableLayout === "spacious"
+                  ? "grid-cols-2 lg:grid-cols-4 gap-6"
+                  : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
+            }`}
+          >
             {tables.map((table: any) => (
-              <SortableTableCard 
-                key={table.id} 
-                table={table} 
-                occupiedTable={occupiedTable} 
-                handleTableClick={handleTableClick} 
+              <SortableTableCard
+                key={table.id}
+                table={table}
+                occupiedTable={occupiedTable}
+                handleTableClick={handleTableClick}
               />
             ))}
           </div>
@@ -181,23 +226,32 @@ export default function OrdersPage() {
   const [tableTypes, setTableTypes] = useState<TableType[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrderType, setSelectedOrderType] = useState<string>("ALL");
-  const [spaceSortOrder, setSpaceSortOrder] = useState<"custom" | "alphabetical" | "tableCount">("custom");
-  const [tableLayout, setTableLayout] = useState<"compact" | "default" | "spacious">("default");
-  const [orderStatusFilter, setOrderStatusFilter] = useState<"active" | "all">("active");
+  const [spaceSortOrder, setSpaceSortOrder] = useState<
+    "custom" | "alphabetical" | "tableCount"
+  >("custom");
+  const [tableLayout, setTableLayout] = useState<
+    "compact" | "default" | "spacious"
+  >("default");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<"active" | "all">(
+    "active",
+  );
   const [occupiedTable, setOccupiedTable] = useState<TableSession[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [checkoutOrder, setCheckoutOrder] = useState<Order | null>(null);
   const [activeTable, setActiveTable] = useState<Table | null>(null);
-  const [existingOrderForAdding, setExistingOrderForAdding] = useState<Order | null>(null);
+  const [existingOrderForAdding, setExistingOrderForAdding] =
+    useState<Order | null>(null);
   const [showTableSelector, setShowTableSelector] = useState(false);
   const [showOrderTypeSelector, setShowOrderTypeSelector] = useState(false);
   const [pendingTable, setPendingTable] = useState<Table | null>(null);
   const [quickMenuTable, setQuickMenuTable] = useState<Table | null>(null);
 
-  // DnD Sensors configuration (Distance: 8 prevents drag when just clicking)
+  // DnD Sensors configuration (Distance: 4 for better responsiveness)
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   const fetchData = async () => {
@@ -233,7 +287,11 @@ export default function OrdersPage() {
     setSpaces(reorderedSpaces);
 
     try {
-      await Promise.all(reorderedSpaces.map((s, idx) => updateSpace({ id: s.id, sortOrder: idx })));
+      await Promise.all(
+        reorderedSpaces.map((s, idx) =>
+          updateSpace({ id: s.id, sortOrder: idx }),
+        ),
+      );
       toast.success("Area layout updated");
     } catch (e) {
       toast.error("Failed to save space order");
@@ -251,8 +309,10 @@ export default function OrdersPage() {
     setTables(reorderedTables);
 
     try {
-      const spaceTables = reorderedTables.filter(t => t.spaceId === spaceId);
-      await Promise.all(spaceTables.map((t, idx) => updateTable({ id: t.id, sortOrder: idx })));
+      const spaceTables = reorderedTables.filter((t) => t.spaceId === spaceId);
+      await Promise.all(
+        spaceTables.map((t, idx) => updateTable({ id: t.id, sortOrder: idx })),
+      );
     } catch (e) {
       toast.error("Failed to save table order");
     }
@@ -260,18 +320,40 @@ export default function OrdersPage() {
 
   const groupedTables = useMemo(() => {
     const groups = spaces
-      .map((space) => ({
-        ...space,
-        tables: tables
-          .filter((t) => t.spaceId === space.id && t.name.toLowerCase().includes(searchQuery.toLowerCase()))
-          .sort((a, b) => ((a as any).sortOrder ?? 0) - ((b as any).sortOrder ?? 0)),
-      }))
+      .map((space) => {
+        const spaceTables = tables.filter(
+          (t) =>
+            t.spaceId === space.id &&
+            t.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        );
+
+        // Sort tables within the space
+        const sortedTables = [...spaceTables].sort((a, b) => {
+          if (spaceSortOrder === "alphabetical") {
+            return a.name.localeCompare(b.name, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            });
+          }
+          return ((a as any).sortOrder ?? 0) - ((b as any).sortOrder ?? 0);
+        });
+
+        return {
+          ...space,
+          tables: sortedTables,
+        };
+      })
       .filter((s) => s.tables.length > 0);
 
-    if (spaceSortOrder === "alphabetical") return [...groups].sort((a, b) => a.name.localeCompare(b.name));
-    if (spaceSortOrder === "tableCount") return [...groups].sort((a, b) => b.tables.length - a.tables.length);
-    
-    return [...groups].sort((a, b) => ((a as any).sortOrder ?? 0) - ((b as any).sortOrder ?? 0));
+    // Sort spaces themselves
+    if (spaceSortOrder === "alphabetical")
+      return [...groups].sort((a, b) => a.name.localeCompare(b.name));
+    if (spaceSortOrder === "tableCount")
+      return [...groups].sort((a, b) => b.tables.length - a.tables.length);
+
+    return [...groups].sort(
+      (a, b) => ((a as any).sortOrder ?? 0) - ((b as any).sortOrder ?? 0),
+    );
   }, [spaces, tables, searchQuery, spaceSortOrder]);
 
   // --- Order Handlers ---
@@ -282,14 +364,19 @@ export default function OrdersPage() {
     if (success) fetchData();
   };
 
-  const handleUpdateItemStatus = async (orderItemId: string, status: OrderStatus) => {
+  const handleUpdateItemStatus = async (
+    orderItemId: string,
+    status: OrderStatus,
+  ) => {
     const success = await updateOrderItemStatus(orderItemId, status);
     if (success) fetchData();
   };
 
   const handleEditItem = async (itemId: string, updatedData: any) => {
     if (!selectedOrder) return;
-    const success = await updateOrderItems(selectedOrder.id, [{ ...updatedData, id: itemId, action: "update" }]);
+    const success = await updateOrderItems(selectedOrder.id, [
+      { ...updatedData, id: itemId, action: "update" },
+    ]);
     if (success) fetchData();
   };
 
@@ -311,28 +398,57 @@ export default function OrdersPage() {
     const orderData = {
       tableId: activeTable.id === "DIRECT" ? null : activeTable.id,
       type: "DINE_IN",
-      items: cart.map((i) => ({ dishId: i.dishId, comboId: i.comboId, quantity: i.quantity, addOnIds: (i.addons || []).map((a: any) => a.id), remarks: i.remarks })),
+      items: cart.map((i) => ({
+        dishId: i.dishId,
+        comboId: i.comboId,
+        quantity: i.quantity,
+        addOnIds: (i.addons || []).map((a: any) => a.id),
+        remarks: i.remarks,
+      })),
     };
     const success = await createOrder(orderData);
-    if (success) { setActiveTable(null); fetchData(); }
+    if (success) {
+      setActiveTable(null);
+      fetchData();
+    }
   };
 
   const handleQuickCheckout = async (order: Order) => {
     const success = await updateOrderStatus(order.id, "COMPLETED");
-    if (success) { setSelectedOrder(null); fetchData(); }
+    if (success) {
+      setSelectedOrder(null);
+      fetchData();
+    }
   };
 
   const handleAddItemsToOrder = async (cart: any[]) => {
     if (!existingOrderForAdding) return;
-    const items = cart.map((i) => ({ dishId: i.dishId, comboId: i.comboId, quantity: i.quantity, unitPrice: i.unitPrice, selectedAddOns: (i.addons || []).map((a: any) => ({ addOnId: a.id, quantity: 1, unitPrice: a.price?.listedPrice || 0 })), action: "add" }));
+    const items = cart.map((i) => ({
+      dishId: i.dishId,
+      comboId: i.comboId,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+      selectedAddOns: (i.addons || []).map((a: any) => ({
+        addOnId: a.id,
+        quantity: 1,
+        unitPrice: a.price?.listedPrice || 0,
+      })),
+      action: "add",
+    }));
     const success = await updateOrderItems(existingOrderForAdding.id, items);
-    if (success) { setExistingOrderForAdding(null); fetchData(); }
+    if (success) {
+      setExistingOrderForAdding(null);
+      fetchData();
+    }
   };
 
   const handleTableClick = (table: Table) => {
     const session = occupiedTable.find((o) => o.tableId === table.id);
     if (session) setQuickMenuTable(table);
-    else { setPendingTable(table); setShowOrderTypeSelector(true); }
+    else {
+      setPendingTable(table);
+      setShowOrderTypeSelector(true);
+    }
   };
 
   const handleNewOrder = (type: OrderType) => {
@@ -341,18 +457,33 @@ export default function OrdersPage() {
       pendingTable ? setActiveTable(pendingTable) : setShowTableSelector(true);
       setPendingTable(null);
     } else {
-      setActiveTable({ id: "DIRECT", name: type.replace("_", " "), status: "ACTIVE", capacity: 0, spaceId: "", tableTypeId: "", createdAt: new Date(), sessions: [] });
+      setActiveTable({
+        id: "DIRECT",
+        name: type.replace("_", " "),
+        status: "ACTIVE",
+        capacity: 0,
+        spaceId: "",
+        tableTypeId: "",
+        createdAt: new Date(),
+        sessions: [],
+      });
     }
   };
 
   const getFilteredKOTs = () => {
     let kots: { type: "KITCHEN" | "BAR"; order: Order; items: any[] }[] = [];
-    orders.filter((o) => o.status !== "COMPLETED" && o.status !== "CANCELLED").forEach((o) => {
-        const kitchenItems = o.items.filter((i) => i.dish?.kotType === "KITCHEN");
+    orders
+      .filter((o) => o.status !== "COMPLETED" && o.status !== "CANCELLED")
+      .forEach((o) => {
+        const kitchenItems = o.items.filter(
+          (i) => i.dish?.kotType === "KITCHEN",
+        );
         const barItems = o.items.filter((i) => i.dish?.kotType === "BAR");
-        if (kitchenItems.length > 0) kots.push({ type: "KITCHEN", order: o, items: kitchenItems });
-        if (barItems.length > 0) kots.push({ type: "BAR", order: o, items: barItems });
-    });
+        if (kitchenItems.length > 0)
+          kots.push({ type: "KITCHEN", order: o, items: kitchenItems });
+        if (barItems.length > 0)
+          kots.push({ type: "BAR", order: o, items: barItems });
+      });
     return kots;
   };
 
@@ -362,14 +493,18 @@ export default function OrdersPage() {
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <h1 className="text-xl font-normal text-zinc-900 tracking-tight">Orders</h1>
+            <h1 className="text-xl font-normal text-zinc-900 tracking-tight">
+              Orders
+            </h1>
             <div className="bg-zinc-100 p-1 rounded-lg flex items-center gap-1">
               {["TABLES", "KOT", "ORDERS"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab as ActiveTab)}
                   className={`px-4 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-widest transition-all ${
-                    activeTab === tab ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
+                    activeTab === tab
+                      ? "bg-white text-zinc-900 shadow-sm"
+                      : "text-zinc-500 hover:text-zinc-700"
                   }`}
                 >
                   {tab}
@@ -379,10 +514,22 @@ export default function OrdersPage() {
           </div>
           <div className="flex items-center gap-4">
             <div className="relative group w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={14} />
-              <input type="text" placeholder="Search..." className="w-full pl-9 pr-4 py-2 bg-white border border-zinc-200 rounded-lg text-xs outline-none focus:border-red-500 transition-all" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                size={14}
+              />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full pl-9 pr-4 py-2 bg-white border border-zinc-200 rounded-lg text-xs outline-none focus:border-red-500 transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <Button onClick={() => setShowOrderTypeSelector(true)} className="bg-red-600 text-white h-10 px-6 uppercase tracking-widest text-[10px]">
+            <Button
+              onClick={() => setShowOrderTypeSelector(true)}
+              className="bg-red-600 text-white h-10 px-6 uppercase tracking-widest text-[10px]"
+            >
               <Plus size={14} className="mr-2" /> Add New Order
             </Button>
           </div>
@@ -393,34 +540,59 @@ export default function OrdersPage() {
       <div className="min-h-[60vh]">
         {activeTab === "ORDERS" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {orders.filter(o => orderStatusFilter === 'all' || o.status !== 'COMPLETED').map(order => (
-              <OrderCard key={order.id} order={order} onClick={setSelectedOrder} onQuickCheckout={handleQuickCheckout} onPrint={() => window.print()} onCopy={handleCopyOrder} onAddItems={setExistingOrderForAdding} />
-            ))}
+            {orders
+              .filter(
+                (o) => orderStatusFilter === "all" || o.status !== "COMPLETED",
+              )
+              .map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onClick={setSelectedOrder}
+                  onQuickCheckout={handleQuickCheckout}
+                  onPrint={() => window.print()}
+                  onCopy={handleCopyOrder}
+                  onAddItems={setExistingOrderForAdding}
+                />
+              ))}
           </div>
         )}
 
         {activeTab === "TABLES" && (
           <div className="space-y-10">
             <div className="flex items-center gap-4 bg-white p-3 rounded-xl border border-zinc-100 shadow-sm">
-                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Layout:</span>
-                <select value={tableLayout} onChange={(e) => setTableLayout(e.target.value as any)} className="text-[10px] uppercase font-bold border-none bg-zinc-100 rounded-md px-2 py-1 outline-none">
-                  <option value="default">Default</option>
-                  <option value="compact">Compact</option>
-                  <option value="spacious">Spacious</option>
-                </select>
+              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                Layout:
+              </span>
+              <select
+                value={tableLayout}
+                onChange={(e) => setTableLayout(e.target.value as any)}
+                className="text-[10px] uppercase font-bold border-none bg-zinc-100 rounded-md px-2 py-1 outline-none"
+              >
+                <option value="default">Default</option>
+                <option value="compact">Compact</option>
+                <option value="spacious">Spacious</option>
+              </select>
             </div>
 
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSpaceDragEnd}>
-              <SortableContext items={spaces.map(s => s.id)} strategy={verticalListSortingStrategy}>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleSpaceDragEnd}
+            >
+              <SortableContext
+                items={spaces.map((s) => s.id)}
+                strategy={verticalListSortingStrategy}
+              >
                 <div className="space-y-10">
                   {groupedTables.map((space) => (
-                    <SortableSpaceSection 
-                      key={space.id} 
-                      space={space} 
-                      tables={space.tables} 
-                      occupiedTable={occupiedTable} 
-                      handleTableClick={handleTableClick} 
-                      tableLayout={tableLayout} 
+                    <SortableSpaceSection
+                      key={space.id}
+                      space={space}
+                      tables={space.tables}
+                      occupiedTable={occupiedTable}
+                      handleTableClick={handleTableClick}
+                      tableLayout={tableLayout}
                       onTableDragEnd={handleTableDragEnd}
                     />
                   ))}
@@ -431,101 +603,259 @@ export default function OrdersPage() {
         )}
 
         {activeTab === "KOT" && (
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              <div className="space-y-6">
-                 <div className="flex items-center gap-2 border-b-2 border-rose-100 pb-2">
-                    <ChefHat className="text-rose-600" size={20} />
-                    <h2 className="text-sm font-black uppercase">Kitchen</h2>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {getFilteredKOTs().filter(k => k.type === "KITCHEN").map((kot, i) => (
-                       <KOTCard key={i} order={kot.order} items={kot.items} type="KITCHEN" onUpdateStatus={async (ids, s) => { for(const id of ids) await updateOrderItemStatus(id, s as any); fetchData(); }} onDownload={()=>{}} onMove={()=>{}} />
-                    ))}
-                 </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 border-b-2 border-rose-100 pb-2">
+                <ChefHat className="text-rose-600" size={20} />
+                <h2 className="text-sm font-black uppercase">Kitchen</h2>
               </div>
-              <div className="space-y-6">
-                 <div className="flex items-center gap-2 border-b-2 border-zinc-100 pb-2">
-                    <Wine className="text-zinc-600" size={20} />
-                    <h2 className="text-sm font-black uppercase">Bar</h2>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {getFilteredKOTs().filter(k => k.type === "BAR").map((kot, i) => (
-                       <KOTCard key={i} order={kot.order} items={kot.items} type="BAR" onUpdateStatus={async (ids, s) => { for(const id of ids) await updateOrderItemStatus(id, s as any); fetchData(); }} onDownload={()=>{}} onMove={()=>{}} />
-                    ))}
-                 </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {getFilteredKOTs()
+                  .filter((k) => k.type === "KITCHEN")
+                  .map((kot, i) => (
+                    <KOTCard
+                      key={i}
+                      order={kot.order}
+                      items={kot.items}
+                      type="KITCHEN"
+                      onUpdateStatus={async (ids, s) => {
+                        for (const id of ids)
+                          await updateOrderItemStatus(id, s as any);
+                        fetchData();
+                      }}
+                      onDownload={() => {}}
+                      onMove={() => {}}
+                    />
+                  ))}
               </div>
-           </div>
+            </div>
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 border-b-2 border-zinc-100 pb-2">
+                <Wine className="text-zinc-600" size={20} />
+                <h2 className="text-sm font-black uppercase">Bar</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {getFilteredKOTs()
+                  .filter((k) => k.type === "BAR")
+                  .map((kot, i) => (
+                    <KOTCard
+                      key={i}
+                      order={kot.order}
+                      items={kot.items}
+                      type="BAR"
+                      onUpdateStatus={async (ids, s) => {
+                        for (const id of ids)
+                          await updateOrderItemStatus(id, s as any);
+                        fetchData();
+                      }}
+                      onDownload={() => {}}
+                      onMove={() => {}}
+                    />
+                  ))}
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
       {/* --- All Modals --- */}
-      <Modal isOpen={!!selectedOrder} onClose={() => setSelectedOrder(null)} size="5xl" title="">
-        {selectedOrder && <OrderDetailView order={selectedOrder} onClose={() => setSelectedOrder(null)} onUpdateStatus={handleUpdateStatus} onUpdateItemStatus={handleUpdateItemStatus} onEditItem={handleEditItem} onRemoveItem={handleRemoveItem} onCheckout={setCheckoutOrder} onAddMore={setExistingOrderForAdding} onPrint={() => window.print()} />}
+      <Modal
+        isOpen={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        size="5xl"
+        title=""
+      >
+        {selectedOrder && (
+          <OrderDetailView
+            order={selectedOrder}
+            onClose={() => setSelectedOrder(null)}
+            onUpdateStatus={handleUpdateStatus}
+            onUpdateItemStatus={handleUpdateItemStatus}
+            onEditItem={handleEditItem}
+            onRemoveItem={handleRemoveItem}
+            onCheckout={setCheckoutOrder}
+            onAddMore={setExistingOrderForAdding}
+            onPrint={() => window.print()}
+          />
+        )}
       </Modal>
 
-      <Modal isOpen={!!activeTable} onClose={() => setActiveTable(null)} size="6xl" title="">
-        {activeTable && <TableOrderingSystem table={activeTable} onClose={() => setActiveTable(null)} onConfirm={handleCreateOrder} isAddingToExisting={false} />}
+      <Modal
+        isOpen={!!activeTable}
+        onClose={() => setActiveTable(null)}
+        size="6xl"
+        title=""
+      >
+        {activeTable && (
+          <TableOrderingSystem
+            table={activeTable}
+            onClose={() => setActiveTable(null)}
+            onConfirm={handleCreateOrder}
+            isAddingToExisting={false}
+          />
+        )}
       </Modal>
 
-      <Modal isOpen={!!existingOrderForAdding} onClose={() => setExistingOrderForAdding(null)} size="6xl" title="">
-        {existingOrderForAdding && <TableOrderingSystem table={existingOrderForAdding.table || undefined} onClose={() => setExistingOrderForAdding(null)} onConfirm={handleAddItemsToOrder} isAddingToExisting={true} existingItems={existingOrderForAdding.items} />}
+      <Modal
+        isOpen={!!existingOrderForAdding}
+        onClose={() => setExistingOrderForAdding(null)}
+        size="6xl"
+        title=""
+      >
+        {existingOrderForAdding && (
+          <TableOrderingSystem
+            table={existingOrderForAdding.table || undefined}
+            onClose={() => setExistingOrderForAdding(null)}
+            onConfirm={handleAddItemsToOrder}
+            isAddingToExisting={true}
+            existingItems={existingOrderForAdding.items}
+          />
+        )}
       </Modal>
 
-      {checkoutOrder && <CheckoutModal isOpen={!!checkoutOrder} onClose={() => setCheckoutOrder(null)} order={checkoutOrder} onCheckoutComplete={() => { fetchData(); setCheckoutOrder(null); }} />}
+      {checkoutOrder && (
+        <CheckoutModal
+          isOpen={!!checkoutOrder}
+          onClose={() => setCheckoutOrder(null)}
+          order={checkoutOrder}
+          onCheckoutComplete={() => {
+            fetchData();
+            setCheckoutOrder(null);
+          }}
+        />
+      )}
 
-      <Modal isOpen={!!quickMenuTable} onClose={() => setQuickMenuTable(null)} size="md" title="">
+      <Modal
+        isOpen={!!quickMenuTable}
+        onClose={() => setQuickMenuTable(null)}
+        size="md"
+        title=""
+      >
         {quickMenuTable && (
           <div className="p-8 space-y-8">
             {(() => {
-                const activeOrder = orders.find(o => o.tableId === quickMenuTable.id && o.status !== "COMPLETED" && o.status !== "CANCELLED");
-                return (
-                    <>
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-lg"><Package size={22}/></div>
-                            <div>
-                                <h3 className="text-sm font-black text-zinc-900 uppercase">Table {quickMenuTable.name}</h3>
-                                <p className="text-[10px] text-zinc-400 font-bold uppercase mt-0.5">Ongoing session</p>
-                            </div>
-                        </div>
-                        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-6 flex items-center justify-between">
-                            <div className="space-y-1">
-                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">Total</span>
-                                <span className="text-2xl font-black text-zinc-900">Rs. {activeOrder?.total.toFixed(2) || "0.00"}</span>
-                            </div>
-                        </div>
-                        <div className="space-y-3">
-                            <Button onClick={() => { if(activeOrder) setExistingOrderForAdding(activeOrder); setQuickMenuTable(null); }} className="w-full h-14 bg-red-600 text-white font-bold uppercase text-[10px]">Modify / Add More</Button>
-                            <Button onClick={() => { if(activeOrder) setCheckoutOrder(activeOrder); setQuickMenuTable(null); }} className="w-full h-14 bg-zinc-900 text-white font-bold uppercase text-[10px]">Direct Checkout</Button>
-                            <Button variant="secondary" onClick={() => { if(activeOrder) setSelectedOrder(activeOrder); setQuickMenuTable(null); }} className="w-full h-12 border-zinc-200 text-zinc-600 font-bold text-[10px] uppercase">View Order</Button>
-                        </div>
-                    </>
-                );
+              const activeOrder = orders.find(
+                (o) =>
+                  o.tableId === quickMenuTable.id &&
+                  o.status !== "COMPLETED" &&
+                  o.status !== "CANCELLED",
+              );
+              return (
+                <>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                      <Package size={22} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-zinc-900 uppercase">
+                        Table {quickMenuTable.name}
+                      </h3>
+                      <p className="text-[10px] text-zinc-400 font-bold uppercase mt-0.5">
+                        Ongoing session
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-6 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
+                        Total
+                      </span>
+                      <span className="text-2xl font-black text-zinc-900">
+                        Rs. {activeOrder?.total.toFixed(2) || "0.00"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <Button
+                      onClick={() => {
+                        if (activeOrder) setExistingOrderForAdding(activeOrder);
+                        setQuickMenuTable(null);
+                      }}
+                      className="w-full h-14 bg-red-600 text-white font-bold uppercase text-[10px]"
+                    >
+                      Modify / Add More
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (activeOrder) setCheckoutOrder(activeOrder);
+                        setQuickMenuTable(null);
+                      }}
+                      className="w-full h-14 bg-zinc-900 text-white font-bold uppercase text-[10px]"
+                    >
+                      Direct Checkout
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        if (activeOrder) setSelectedOrder(activeOrder);
+                        setQuickMenuTable(null);
+                      }}
+                      className="w-full h-12 border-zinc-200 text-zinc-600 font-bold text-[10px] uppercase"
+                    >
+                      View Order
+                    </Button>
+                  </div>
+                </>
+              );
             })()}
           </div>
         )}
       </Modal>
 
-      <Modal isOpen={showTableSelector} onClose={() => setShowTableSelector(false)} size="4xl" title="Select Table">
+      <Modal
+        isOpen={showTableSelector}
+        onClose={() => setShowTableSelector(false)}
+        size="4xl"
+        title="Select Table"
+      >
         <div className="space-y-6 p-4">
-          {spaces.map(space => (
+          {spaces.map((space) => (
             <div key={space.id}>
-              <h2 className="text-xs font-bold uppercase text-zinc-500 mb-3">{space.name}</h2>
+              <h2 className="text-xs font-bold uppercase text-zinc-500 mb-3">
+                {space.name}
+              </h2>
               <div className="grid grid-cols-4 gap-4">
-                {tables.filter(t => t.spaceId === space.id).map(table => (
-                  <button key={table.id} onClick={() => { setActiveTable(table); setShowTableSelector(false); }} className="p-4 rounded-lg border bg-white hover:border-red-500 transition-all font-bold text-sm">{table.name}</button>
-                ))}
+                {tables
+                  .filter((t) => t.spaceId === space.id)
+                  .map((table) => (
+                    <button
+                      key={table.id}
+                      onClick={() => {
+                        setActiveTable(table);
+                        setShowTableSelector(false);
+                      }}
+                      className="p-4 rounded-lg border bg-white hover:border-red-500 transition-all font-bold text-sm"
+                    >
+                      {table.name}
+                    </button>
+                  ))}
               </div>
             </div>
           ))}
         </div>
       </Modal>
 
-      <Modal isOpen={showOrderTypeSelector} onClose={() => setShowOrderTypeSelector(false)} size="md" title="Order Type">
+      <Modal
+        isOpen={showOrderTypeSelector}
+        onClose={() => setShowOrderTypeSelector(false)}
+        size="md"
+        title="Order Type"
+      >
         <div className="grid grid-cols-2 gap-4 p-4">
-          {[{ id: "DINE_IN", label: "Dine In", icon: Users }, { id: "TAKE_AWAY", label: "Take Away", icon: Package }, { id: "RESERVATION", label: "Reservation", icon: CalendarDays }].map(t => (
-            <button key={t.id} onClick={() => handleNewOrder(t.id as any)} className="flex flex-col items-center p-6 bg-zinc-50 border rounded-xl hover:border-red-500 transition-all gap-3">
+          {[
+            { id: "DINE_IN", label: "Dine In", icon: Users },
+            { id: "TAKE_AWAY", label: "Take Away", icon: Package },
+            { id: "RESERVATION", label: "Reservation", icon: CalendarDays },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => handleNewOrder(t.id as any)}
+              className="flex flex-col items-center p-6 bg-zinc-50 border rounded-xl hover:border-red-500 transition-all gap-3"
+            >
               <t.icon size={24} className="text-zinc-400" />
-              <span className="text-[10px] font-black uppercase">{t.label}</span>
+              <span className="text-[10px] font-black uppercase">
+                {t.label}
+              </span>
             </button>
           ))}
         </div>

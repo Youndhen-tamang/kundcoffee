@@ -5,8 +5,18 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { SidePanel } from "@/components/ui/SidePanel";
 import { useParams, useRouter } from "next/navigation";
+import { useSettings } from "@/components/providers/SettingsProvider";
+import {
+  ShoppingBag,
+  CreditCard,
+  RefreshCcw,
+  UserPlus,
+  XCircle,
+  CheckCircle,
+} from "lucide-react";
 
 export default function CustomerProfilePage() {
+  const { settings } = useSettings();
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
@@ -27,6 +37,140 @@ export default function CustomerProfilePage() {
     fetchData();
   }, [id]);
 
+  const handlePrintStatement = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const ledgerRows = customer.CustomerLedger.map(
+      (txn: any, index: number) => `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${index + 1}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${new Date(txn.createdAt).toLocaleDateString()}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${txn.txnNo}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${txn.remarks || "-"}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${txn.type}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${settings.currency} ${txn.amount.toLocaleString()}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${settings.currency} ${txn.closingBalance.toLocaleString()}</td>
+      </tr>
+    `,
+    ).join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Statement - ${customer.fullName}</title>
+          <style>
+            body { font-family: sans-serif; padding: 40px; color: #333; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .info { margin-bottom: 30px; display: flex; justify-content: space-between; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+            th { background: #f9f9f9; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; }
+            .total-box { margin-top: 30px; border-top: 2px solid #333; padding-top: 10px; text-align: right; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Customer Statement</h1>
+            <p>Generated on ${new Date().toLocaleString()}</p>
+          </div>
+          <div class="info">
+            <div>
+              <strong>Customer Details:</strong><br/>
+              ${customer.fullName}<br/>
+              ${customer.phone || ""}<br/>
+              ${customer.address || ""}
+            </div>
+            <div style="text-align: right;">
+              <strong>Summary:</strong><br/>
+              Net Balance: ${settings.currency} ${customer.dueAmount.toLocaleString()}<br/>
+              Points: ${customer.loyaltyPoints}
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>SN</th>
+                <th>Date</th>
+                <th>Txn No</th>
+                <th>Particular</th>
+                <th>Type</th>
+                <th style="text-align: right;">Amount</th>
+                <th style="text-align: right;">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ledgerRows}
+            </tbody>
+          </table>
+          <div class="total-box">
+            <h3>Net Due Amount: ${settings.currency} ${customer.dueAmount.toLocaleString()}</h3>
+          </div>
+          <script>window.onload = () => { window.print(); window.close(); }</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const handlePrintInvoice = (order: any) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const itemRows = order.items
+      .map(
+        (item: any) => `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.dishId || item.comboId}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${settings.currency} ${item.unitPrice.toLocaleString()}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${settings.currency} ${item.totalPrice.toLocaleString()}</td>
+      </tr>
+    `,
+      )
+      .join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Invoice - ${order.id.slice(0, 8)}</title>
+          <style>
+            body { font-family: sans-serif; padding: 40px; }
+            .header { text-align: center; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th { border-bottom: 2px solid #333; padding: 10px; text-align: left; }
+            .total { text-align: right; margin-top: 20px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h2>INVOICE</h2>
+            <p>Order #${order.id.slice(0, 8)}</p>
+            <p>Customer: ${customer.fullName}</p>
+            <p>Date: ${new Date(order.createdAt).toLocaleString()}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: right;">Rate</th>
+                <th style="text-align: right;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemRows}
+            </tbody>
+          </table>
+          <div class="total">
+            <p>Grand Total: ${settings.currency} ${order.total.toLocaleString()}</p>
+          </div>
+          <script>window.onload = () => { window.print(); window.close(); }</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   if (!customer)
     return <div className="p-8 text-center text-gray-500">Loading...</div>;
 
@@ -36,6 +180,37 @@ export default function CustomerProfilePage() {
     paymentIn: 0,
     paymentOut: 0,
   };
+
+  const activities = (() => {
+    if (!customer) return [];
+
+    const ledgerActivities = (customer.CustomerLedger || []).map(
+      (txn: any) => ({
+        id: txn.id,
+        type: "LEDGER",
+        subtype: txn.type,
+        title: txn.type.replace("_", " "),
+        description: txn.remarks || `Transaction ${txn.txnNo}`,
+        date: new Date(txn.createdAt),
+        amount: txn.amount,
+        referenceId: txn.referenceId,
+      }),
+    );
+
+    const orderActivities = (customer.orders || []).map((order: any) => ({
+      id: order.id,
+      type: "ORDER",
+      subtype: order.status,
+      title: `Order ${order.status}`,
+      description: `${order.type} Order #${order.id.slice(0, 8)}`,
+      date: new Date(order.createdAt),
+      amount: order.total,
+    }));
+
+    return [...ledgerActivities, ...orderActivities].sort(
+      (a, b) => b.date.getTime() - a.date.getTime(),
+    );
+  })();
 
   return (
     <div className="flex gap-6 min-h-[calc(100vh-120px)] py-10 pr-6">
@@ -89,16 +264,16 @@ export default function CustomerProfilePage() {
               <Button
                 variant="secondary"
                 className="w-full justify-start text-sm py-2 px-4 border-gray-200"
+                onClick={() => handlePrintStatement()}
               >
-                <span className="flex items-center gap-2">Send Invoice</span>
+                <span className="flex items-center gap-2">Print Statement</span>
               </Button>
               <Button
                 variant="secondary"
                 className="w-full justify-start text-sm py-2 px-4 border-gray-200"
+                onClick={() => setActiveTab("invoices")}
               >
-                <span className="flex items-center gap-2">
-                  Statement Details
-                </span>
+                <span className="flex items-center gap-2">View Invoices</span>
               </Button>
             </div>
           </div>
@@ -128,19 +303,19 @@ export default function CustomerProfilePage() {
         <div className="grid grid-cols-4 gap-4">
           <MetricCard
             title="Total Sales"
-            value={`Rs. ${metrics.totalSales.toLocaleString()}`}
+            value={`${settings.currency} ${metrics.totalSales.toLocaleString()}`}
           />
           <MetricCard
             title="Sales Return"
-            value={`Rs. ${metrics.salesReturn.toLocaleString()}`}
+            value={`${settings.currency} ${metrics.salesReturn.toLocaleString()}`}
           />
           <MetricCard
             title="Payment In"
-            value={`Rs. ${metrics.paymentIn.toLocaleString()}`}
+            value={`${settings.currency} ${metrics.paymentIn.toLocaleString()}`}
           />
           <MetricCard
             title="Payment Out"
-            value={`Rs. ${metrics.paymentOut.toLocaleString()}`}
+            value={`${settings.currency} ${metrics.paymentOut.toLocaleString()}`}
           />
         </div>
 
@@ -215,10 +390,11 @@ export default function CustomerProfilePage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 font-semibold text-gray-900">
-                        Rs. {txn.amount.toLocaleString()}
+                        {settings.currency} {txn.amount.toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-gray-500">
-                        Rs. {txn.closingBalance.toLocaleString()}
+                        {settings.currency}{" "}
+                        {txn.closingBalance.toLocaleString()}
                       </td>
                       <td className="px-4 py-3">
                         {new Date(txn.createdAt).toLocaleDateString()}
@@ -257,6 +433,9 @@ export default function CustomerProfilePage() {
                     <th className="px-4 py-3 font-semibold text-gray-700">
                       Date
                     </th>
+                    <th className="px-4 py-3 font-semibold text-gray-700 text-right">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -279,13 +458,13 @@ export default function CustomerProfilePage() {
                         </td>
                         <td className="px-4 py-3">{order.type}</td>
                         <td className="px-4 py-3 text-green-600 font-medium">
-                          Rs. {paid.toLocaleString()}
+                          {settings.currency} {paid.toLocaleString()}
                         </td>
                         <td className="px-4 py-3 text-red-600 font-medium">
-                          Rs. {unpaid.toLocaleString()}
+                          {settings.currency} {unpaid.toLocaleString()}
                         </td>
                         <td className="px-4 py-3 font-semibold text-gray-900">
-                          Rs. {order.total.toLocaleString()}
+                          {settings.currency} {order.total.toLocaleString()}
                         </td>
                         <td className="px-4 py-3">
                           <span
@@ -297,6 +476,19 @@ export default function CustomerProfilePage() {
                         <td className="px-4 py-3">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePrintInvoice(order);
+                            }}
+                            className="h-8 px-2"
+                          >
+                            Print
+                          </Button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -306,12 +498,22 @@ export default function CustomerProfilePage() {
 
             {activeTab === "activity" && (
               <div className="p-4 space-y-6">
-                <ActivityItem
-                  title="Account Created"
-                  date={new Date(customer.createdAt).toLocaleString()}
-                  description={`Customer record for ${customer.fullName} was initialized.`}
-                  isLast={true}
-                />
+                {activities.map((act, id) => (
+                  <ActivityItem
+                    key={act.id + id}
+                    title={act.title}
+                    date={act.date.toLocaleString()}
+                    description={act.description}
+                    type={act.type}
+                    subtype={act.subtype}
+                    isLast={id === activities.length - 1}
+                  />
+                ))}
+                {activities.length === 0 && (
+                  <div className="text-center py-10 text-gray-400">
+                    No recent activity.
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -336,7 +538,8 @@ export default function CustomerProfilePage() {
                     Balance After Txn
                   </p>
                   <p className="text-lg font-bold text-slate-900">
-                    Rs. {selectedTxn.closingBalance?.toLocaleString() || "N/A"}
+                    {settings.currency}{" "}
+                    {selectedTxn.closingBalance?.toLocaleString() || "N/A"}
                   </p>
                 </div>
                 <div>
@@ -361,7 +564,7 @@ export default function CustomerProfilePage() {
               />
               <DetailRow
                 label="Amount"
-                value={`Rs. ${selectedTxn.amount?.toLocaleString() || selectedTxn.total?.toLocaleString()}`}
+                value={`${settings.currency} ${selectedTxn.amount?.toLocaleString() || selectedTxn.total?.toLocaleString()}`}
                 color="text-red-600 font-bold"
               />
               <DetailRow label="Remarks" value={selectedTxn.remarks || "N/A"} />
@@ -386,7 +589,7 @@ export default function CustomerProfilePage() {
                         {item.quantity}x {item.dishId || item.comboId}
                       </span>
                       <span className="font-medium text-gray-900">
-                        Rs. {item.totalPrice.toLocaleString()}
+                        {settings.currency} {item.totalPrice.toLocaleString()}
                       </span>
                     </div>
                   ))}
@@ -395,8 +598,15 @@ export default function CustomerProfilePage() {
             )}
 
             <div className="pt-4">
-              <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white shadow-md">
-                Print Statement
+              <Button
+                onClick={() =>
+                  selectedTxn.items
+                    ? handlePrintInvoice(selectedTxn)
+                    : handlePrintStatement()
+                }
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white shadow-md"
+              >
+                Print {selectedTxn.items ? "Invoice" : "Statement"}
               </Button>
             </div>
           </div>
@@ -463,22 +673,55 @@ function ActivityItem({
   title,
   date,
   description,
+  type,
+  subtype,
   isLast,
 }: {
   title: string;
   date: string;
   description: string;
+  type?: string;
+  subtype?: string;
   isLast?: boolean;
 }) {
+  const getIcon = () => {
+    if (type === "ORDER") {
+      if (subtype === "CANCELLED")
+        return <XCircle className="w-4 h-4 text-red-600" />;
+      if (subtype === "COMPLETED")
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      return <ShoppingBag className="w-4 h-4 text-blue-600" />;
+    }
+    if (subtype === "PAYMENT_IN")
+      return <CreditCard className="w-4 h-4 text-green-600" />;
+    if (subtype === "RETURN")
+      return <RefreshCcw className="w-4 h-4 text-amber-600" />;
+    return <UserPlus className="w-4 h-4 text-red-600" />;
+  };
+
+  const getRingColor = () => {
+    if (subtype === "CANCELLED") return "ring-red-100 bg-red-600";
+    if (subtype === "COMPLETED") return "ring-green-100 bg-green-600";
+    if (subtype === "PAYMENT_IN") return "ring-green-100 bg-green-600";
+    if (subtype === "RETURN") return "ring-amber-100 bg-amber-600";
+    return "ring-red-100 bg-red-600";
+  };
+
   return (
-    <div className="relative pl-6">
+    <div className="relative pl-8">
       {!isLast && (
-        <div className="absolute left-[3px] top-6 bottom-[-24px] w-[2px] bg-slate-100" />
+        <div className="absolute left-[3px] top-6 bottom-[-24px] w-[2px] bg-slate-100 ml-[10px]" />
       )}
-      <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-red-600 ring-4 ring-red-100" />
-      <div>
+      <div
+        className={`absolute left-0 top-1.5 w-7 h-7 rounded-full flex items-center justify-center ring-4 ${getRingColor().split(" ")[0]} bg-white border border-gray-100 z-10 shadow-sm`}
+      >
+        {getIcon()}
+      </div>
+      <div className="ml-4">
         <div className="flex justify-between items-baseline mb-1">
-          <h4 className="text-sm font-bold text-gray-900">{title}</h4>
+          <h4 className="text-sm font-bold text-gray-900 capitalize">
+            {title.toLowerCase()}
+          </h4>
           <span className="text-[10px] font-medium text-gray-400">{date}</span>
         </div>
         <p className="text-sm text-gray-500 leading-relaxed">{description}</p>

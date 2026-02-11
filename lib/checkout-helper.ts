@@ -10,10 +10,12 @@ export async function finalizeSessionTransaction(data: {
   serviceCharge: number;
   discount: number;
   customerId?: string;
-  paymentId: string;
+  paymentId?: string; // paymentId is now optional here as we might create/update it inside
   paymentMethod: string;
-  complimentaryItems?: Record<string, number>;
-  extraFreeItems?: { name: string; unitPrice: number; quantity: number }[];
+  complimentaryItems?: Record<string, number> | null;
+  extraFreeItems?:
+    | { dishId?: string; name: string; unitPrice: number; quantity: number }[]
+    | null;
 }) {
   const {
     sessionId,
@@ -24,13 +26,43 @@ export async function finalizeSessionTransaction(data: {
     serviceCharge,
     discount,
     customerId,
-    paymentId,
     paymentMethod,
-    complimentaryItems = {},
-    extraFreeItems = [],
   } = data;
 
+  const complimentaryItems = data.complimentaryItems || {};
+  const extraFreeItems = data.extraFreeItems || [];
+
   return await prisma.$transaction(async (tx) => {
+    // 0. Update or Create Payment inside the transaction
+    const existingPayment = await tx.payment.findUnique({
+      where: { sessionId: sessionId },
+    });
+
+    let payment;
+    if (existingPayment) {
+      payment = await tx.payment.update({
+        where: { id: existingPayment.id },
+        data: {
+          method: paymentMethod as any,
+          amount,
+          status: paymentMethod === "CREDIT" ? "CREDIT" : "PAID",
+          transactionUuid: null,
+          esewaRefId: null,
+        },
+      });
+    } else {
+      payment = await tx.payment.create({
+        data: {
+          session: { connect: { id: sessionId } },
+          method: paymentMethod as any,
+          amount,
+          status: paymentMethod === "CREDIT" ? "CREDIT" : "PAID",
+        },
+      });
+    }
+
+    const finalPaymentId = payment.id;
+
     // 1. Update all orders in this session to COMPLETED and link them to the payment
     const orders = await tx.order.findMany({
       where: { sessionId },
@@ -43,7 +75,7 @@ export async function finalizeSessionTransaction(data: {
         data: {
           status: "COMPLETED",
           customerId: customerId || null,
-          paymentId: paymentId,
+          paymentId: finalPaymentId,
         },
       });
 
@@ -71,12 +103,12 @@ export async function finalizeSessionTransaction(data: {
           type: "DINE_IN",
           status: "COMPLETED",
           customerId: customerId || null,
-          paymentId: paymentId,
+          paymentId: finalPaymentId,
           total: 0,
           items: {
             create: extraFreeItems.map((item) => ({
-              dishId: null, // Should ideally link to dish, but for now simple
-              name: item.name,
+              dishId: item.dishId || null,
+              remarks: item.name, // Store name in remarks since name field doesn't exist in OrderItem
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               totalPrice: 0,
@@ -98,7 +130,7 @@ export async function finalizeSessionTransaction(data: {
       data: {
         status: "COMPLETED",
         customerId: customerId || null,
-        paymentId: paymentId,
+        paymentId: finalPaymentId,
         sessionId: sessionId,
       },
     });
@@ -166,7 +198,7 @@ export async function finalizeSessionTransaction(data: {
             type: "PAYMENT_IN",
             amount: amount,
             closingBalance: newBalance - amount, // Back to previous or zeroed if no other sales
-            referenceId: paymentId,
+            referenceId: finalPaymentId,
             remarks: `Payment for Table Checkout (${paymentMethod})`,
           },
         });

@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     }
 
     // === OPTION B: INSTANT PAYMENT (CASH / CARD / MANUAL QR / CREDIT) ===
-    if (["CASH", "CARD", "QR", "CREDIT"].includes(paymentMethod)) {
+    if (["CASH", "QR", "CARD", "CREDIT"].includes(paymentMethod)) {
       console.log(
         `[Checkout] Processing ${paymentMethod} payment for session: ${activeSessionId}`,
       );
@@ -133,53 +133,8 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const existingPayment = await prisma.payment.findUnique({
-        where: { sessionId: activeSessionId },
-      });
-
-      let payment;
-      if (existingPayment) {
-        if (existingPayment.status === "PAID") {
-          return NextResponse.json(
-            {
-              success: false,
-              message: "Session is already paid.",
-            },
-            { status: 400 },
-          );
-        }
-
-        // Update existing
-        payment = await prisma.payment.update({
-          where: { id: existingPayment.id },
-          data: {
-            method: paymentMethod,
-            amount,
-            status:
-              paymentMethod === "CREDIT"
-                ? PaymentStatus.CREDIT
-                : PaymentStatus.PAID,
-            transactionUuid: null,
-            esewaRefId: null,
-          },
-        });
-      } else {
-        // Create new
-        payment = await prisma.payment.create({
-          data: {
-            session: { connect: { id: activeSessionId } },
-            method: paymentMethod,
-            amount,
-            status:
-              paymentMethod === "CREDIT"
-                ? PaymentStatus.CREDIT
-                : PaymentStatus.PAID,
-          },
-        });
-      }
-
-      // 3. Finalize Session (Helper function)
-      await finalizeSessionTransaction({
+      // 3. Finalize Session (Payment logic moved inside for atomicity)
+      const result = await finalizeSessionTransaction({
         sessionId: activeSessionId,
         tableId,
         amount,
@@ -188,7 +143,6 @@ export async function POST(req: NextRequest) {
         serviceCharge,
         discount,
         customerId,
-        paymentId: payment.id,
         paymentMethod,
         complimentaryItems,
         extraFreeItems,
@@ -196,7 +150,6 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        data: payment,
         message:
           paymentMethod === "CREDIT"
             ? "Saved as Credit"

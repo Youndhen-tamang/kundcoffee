@@ -61,7 +61,9 @@ export function CheckoutModal({
     "CASH" | "QR" | "CARD" | "CREDIT"
   >("CASH");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [includeTax, setIncludeTax] = useState(false);
+  const [includeTax, setIncludeTax] = useState(
+    settings.includeTaxByDefault === "true",
+  );
   const [includeServiceCharge, setIncludeServiceCharge] = useState(false);
 
   // New Customer Form State
@@ -298,6 +300,7 @@ export function CheckoutModal({
           discount: totalDiscount,
           complimentaryItems,
           extraFreeItems: extraFreeItems.map((i) => ({
+            dishId: i.id,
             name: i.name,
             unitPrice: i.unitPrice,
             quantity: i.quantity,
@@ -563,19 +566,21 @@ export function CheckoutModal({
             </div>
 
             <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-zinc-200">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                  Add Tax (13%)
-                </span>
-                <button
-                  onClick={() => setIncludeTax(!includeTax)}
-                  className={`w-6 h-3 rounded-full transition-colors relative ${includeTax ? "bg-red-500" : "bg-zinc-300"}`}
-                >
-                  <div
-                    className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${includeTax ? "left-[13px]" : "left-0.5"}`}
-                  />
-                </button>
-              </div>
+              {settings.includeTaxByDefault === "true" && (
+                <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-zinc-200">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    Add Tax (13%)
+                  </span>
+                  <button
+                    onClick={() => setIncludeTax(!includeTax)}
+                    className={`w-6 h-3 rounded-full transition-colors relative ${includeTax ? "bg-red-500" : "bg-zinc-300"}`}
+                  >
+                    <div
+                      className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${includeTax ? "left-[13px]" : "left-0.5"}`}
+                    />
+                  </button>
+                </div>
+              )}
               <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-zinc-200">
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
                   Service Chg (10%)
@@ -592,73 +597,75 @@ export function CheckoutModal({
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                Custom Taxes
-              </h4>
-              {!isAddingTax ? (
-                <button
-                  onClick={() => setIsAddingTax(true)}
-                  className="text-[10px] font-bold text-red-600 uppercase tracking-wider hover:text-red-700"
-                >
-                  + Add
-                </button>
-              ) : (
-                <button
-                  onClick={() => setIsAddingTax(false)}
-                  className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-
-            {isAddingTax && (
-              <div className="flex gap-2 items-center bg-white p-2 rounded-lg animate-in slide-in-from-top-2 border border-zinc-200">
-                <input
-                  placeholder="Tax Name"
-                  className="text-[10px] p-2 rounded border bg-zinc-50 flex-1 outline-none focus:border-zinc-900"
-                  value={newTaxName}
-                  onChange={(e) => setNewTaxName(e.target.value)}
-                />
-                <input
-                  placeholder="%"
-                  type="number"
-                  className="text-[10px] p-2 rounded border bg-zinc-50 w-14 outline-none focus:border-zinc-900"
-                  value={newTaxPercent}
-                  onChange={(e) => setNewTaxPercent(e.target.value)}
-                />
-                <button
-                  onClick={handleAddTax}
-                  className="bg-zinc-900 text-white p-2 rounded shadow-sm hover:bg-zinc-800"
-                >
-                  <CheckCircle2 size={14} />
-                </button>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              {customTaxes.map((tax, idx) => (
-                <div
-                  key={idx}
-                  className="flex justify-between items-center text-[10px] font-bold text-zinc-600 bg-white p-2 rounded border border-zinc-100"
-                >
-                  <span>
-                    {tax.name} ({tax.percentage}%)
-                  </span>
+          {settings.includeTaxByDefault === "true" && (
+            <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                  Custom Taxes
+                </h4>
+                {!isAddingTax ? (
                   <button
-                    onClick={() =>
-                      setCustomTaxes(customTaxes.filter((_, i) => i !== idx))
-                    }
-                    className="text-zinc-300 hover:text-red-500"
+                    onClick={() => setIsAddingTax(true)}
+                    className="text-[10px] font-bold text-red-600 uppercase tracking-wider hover:text-red-700"
                   >
-                    <X size={12} />
+                    + Add
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsAddingTax(false)}
+                    className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+
+              {isAddingTax && (
+                <div className="flex gap-2 items-center bg-white p-2 rounded-lg animate-in slide-in-from-top-2 border border-zinc-200">
+                  <input
+                    placeholder="Tax Name"
+                    className="text-[10px] p-2 rounded border bg-zinc-50 flex-1 outline-none focus:border-zinc-900"
+                    value={newTaxName}
+                    onChange={(e) => setNewTaxName(e.target.value)}
+                  />
+                  <input
+                    placeholder="%"
+                    type="number"
+                    className="text-[10px] p-2 rounded border bg-zinc-50 w-14 outline-none focus:border-zinc-900"
+                    value={newTaxPercent}
+                    onChange={(e) => setNewTaxPercent(e.target.value)}
+                  />
+                  <button
+                    onClick={handleAddTax}
+                    className="bg-zinc-900 text-white p-2 rounded shadow-sm hover:bg-zinc-800"
+                  >
+                    <CheckCircle2 size={14} />
                   </button>
                 </div>
-              ))}
+              )}
+
+              <div className="space-y-2">
+                {customTaxes.map((tax, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center text-[10px] font-bold text-zinc-600 bg-white p-2 rounded border border-zinc-100"
+                  >
+                    <span>
+                      {tax.name} ({tax.percentage}%)
+                    </span>
+                    <button
+                      onClick={() =>
+                        setCustomTaxes(customTaxes.filter((_, i) => i !== idx))
+                      }
+                      className="text-zinc-300 hover:text-red-500"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
@@ -784,7 +791,7 @@ export function CheckoutModal({
               </div>
             )}
 
-            {includeTax && (
+            {settings.includeTaxByDefault === "true" && includeTax && (
               <div className="flex justify-between text-xs text-zinc-400 uppercase tracking-widest font-black">
                 <span>Tax (13%)</span>
                 <span className="text-white">
