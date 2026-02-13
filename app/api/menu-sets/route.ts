@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const menuSets = await prisma.menuSet.findMany({
+      where: { storeId },
       include: {
         subMenus: {
           include: {
@@ -25,6 +38,16 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { name, service, isActive, subMenuIds, sortOrder } = await req.json();
 
     if (!name || !service) {
@@ -38,6 +61,7 @@ export async function POST(req: NextRequest) {
     let finalSortOrder = parseInt(String(sortOrder));
     if (!finalSortOrder) {
       const lastSet = await prisma.menuSet.findFirst({
+        where: { storeId },
         orderBy: { sortOrder: "desc" },
         select: { sortOrder: true },
       });
@@ -50,6 +74,7 @@ export async function POST(req: NextRequest) {
         service,
         isActive: isActive ?? true,
         sortOrder: finalSortOrder,
+        storeId,
         subMenus: {
           create:
             subMenuIds?.map((id: string) => ({

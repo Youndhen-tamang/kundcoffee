@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { Params } from "@/lib/types";
 import { NextResponse, NextRequest } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
@@ -26,9 +28,19 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       );
     }
 
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const existingSpaceName = name
       ? await prisma.space.findFirst({
-          where: { name, id: { not: id } },
+          where: { name, storeId, id: { not: id } },
         })
       : null;
 
@@ -38,7 +50,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         { status: 400 },
       );
     const updatedSpace = await prisma.space.update({
-      where: { id },
+      where: { id, storeId },
       data: {
         ...(name !== undefined && { name }),
         ...(description !== undefined && { description }),
@@ -77,8 +89,18 @@ export async function DELETE(req: NextRequest, context: { params: Params }) {
       );
     }
 
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     await prisma.space.delete({
-      where: { id },
+      where: { id, storeId },
     });
 
     return NextResponse.json(

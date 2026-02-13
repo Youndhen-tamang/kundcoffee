@@ -1,25 +1,42 @@
 import { prisma } from "@/lib/prisma";
 import { Params } from "@/lib/types";
 import { NextResponse, NextRequest } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
+    // 1. Get Session and StoreId
+    const sessionUser = await getServerSession(authOptions);
+    const storeId = sessionUser?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const body = await req.json();
     const { status, paymentMethod, items } = body;
 
+    // 2. Authorization Check: Does this order belong to this store?
+    const existingOrder = await prisma.order.findFirst({
+      where: { id, storeId }
+    });
+
+    if (!existingOrder) {
+      return NextResponse.json({ success: false, message: "Order not found or unauthorized" }, { status: 404 });
+    }
+
     const updatedOrder = await prisma.$transaction(async (tx) => {
-      // 1. Handle Item Updates
+      // --- Handle Item Updates ---
       if (items && Array.isArray(items)) {
         for (const item of items) {
           if (item.action === "add") {
             const addOnsTotal = (item.selectedAddOns || []).reduce(
-              (sum: number, a: any) =>
-                sum + (a.unitPrice || 0) * (a.quantity || 1),
+              (sum: number, a: any) => sum + (a.unitPrice || 0) * (a.quantity || 1),
               0,
             );
-            const totalPrice =
-              (item.unitPrice || 0) * (item.quantity || 1) + addOnsTotal;
+            const totalPrice = (item.unitPrice || 0) * (item.quantity || 1) + addOnsTotal;
 
             await (tx.orderItem.create as any)({
               data: {
@@ -41,12 +58,10 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
             });
           } else if (item.action === "update") {
             const addOnsTotal = (item.selectedAddOns || []).reduce(
-              (sum: number, a: any) =>
-                sum + (a.unitPrice || 0) * (a.quantity || 1),
+              (sum: number, a: any) => sum + (a.unitPrice || 0) * (a.quantity || 1),
               0,
             );
-            const totalPrice =
-              (item.unitPrice || 0) * (item.quantity || 1) + addOnsTotal;
+            const totalPrice = (item.unitPrice || 0) * (item.quantity || 1) + addOnsTotal;
 
             await (tx.orderItem.update as any)({
               where: { id: item.id },
@@ -59,9 +74,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
             });
 
             if (item.selectedAddOns) {
-              await tx.orderItemAddOn.deleteMany({
-                where: { orderItemId: item.id },
-              });
+              await tx.orderItemAddOn.deleteMany({ where: { orderItemId: item.id } });
               await tx.orderItemAddOn.createMany({
                 data: item.selectedAddOns.map((a: any) => ({
                   orderItemId: item.id,
@@ -77,11 +90,10 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         }
       }
 
-      // 2. Recalculate Total
+      // --- Recalculate Total ---
       const allItems = await tx.orderItem.findMany({ where: { orderId: id } });
       const newTotal = allItems.reduce((sum, i) => sum + i.totalPrice, 0);
 
-      // 3. Update Order Level Metadata
       const updateData: any = { total: newTotal };
       if (status) updateData.status = status;
 
@@ -98,18 +110,16 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
           table: true,
         },
       });
-      // 4. Handle Completion and Payments
-      // 4. Handle Completion and Payments
+
+      // --- Handle Completion and Payments ---
       if (status === "COMPLETED" && paymentMethod) {
-        // First, find the session if it's a DINE_IN order
-        let session = null;
+        let tableSession = null;
         if (order.tableId && order.type === "DINE_IN") {
-          session = await tx.tableSession.findFirst({
+          tableSession = await tx.tableSession.findFirst({
             where: { tableId: order.tableId, isActive: true },
           });
         }
 
-        // Now create or update the payment
         if (order.paymentId) {
           await tx.payment.update({
             where: { id: order.paymentId },
@@ -117,7 +127,8 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
               amount: newTotal,
               method: paymentMethod,
               status: "PAID",
-              sessionId: session?.id || null,
+              sessionId: tableSession?.id || null, // Scalar field
+              storeId: storeId,                    // FIX: Changed from 'store: { connect... }'
             },
           });
         } else {
@@ -126,7 +137,8 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
               amount: newTotal,
               method: paymentMethod,
               status: "PAID",
-              sessionId: session?.id || null,
+              sessionId: tableSession?.id || null, // Scalar field
+              storeId: storeId,                    // FIX: Changed from 'store: { connect... }'
               orders: {
                 connect: { id: id },
               },
@@ -134,10 +146,9 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
           });
         }
 
-        // Handle Session and Table status
-        if (session) {
+        if (tableSession) {
           await tx.tableSession.update({
-            where: { id: session.id },
+            where: { id: tableSession.id },
             data: {
               total: { increment: order.total },
               isActive: false,
@@ -158,86 +169,55 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     return NextResponse.json({ success: true, data: updatedOrder });
   } catch (error: any) {
     console.error("DEBUG ORDER PATCH ERROR:", error);
-    return NextResponse.json(
-      { success: false, message: error.message },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
 
 export async function DELETE(req: NextRequest, context: { params: Params }) {
   try {
+    const sessionUser = await getServerSession(authOptions);
+    const storeId = sessionUser?.user?.storeId;
+    if (!storeId) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+
     const { id } = await context.params;
-    const order = await prisma.order.findUnique({
-      where: { id },
+    
+    // Authorization: Check if order belongs to user's store
+    const order = await prisma.order.findFirst({
+      where: { id, storeId },
     });
 
-    if (!order)
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Order not found",
-        },
-        { status: 400 },
-      );
+    if (!order) return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
 
     if (order.status !== "PENDING") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Cannot delete a processed order",
-        },
-        { status: 400 },
-      );
+      return NextResponse.json({ success: false, message: "Cannot delete processed order" }, { status: 400 });
     }
-    await prisma.order.delete({
-      where: { id },
-    });
-    return NextResponse.json({
-      success: true,
-      message: "Deleted Successfully",
-    });
+
+    await prisma.order.delete({ where: { id } });
+    return NextResponse.json({ success: true, message: "Deleted Successfully" });
   } catch (error: any) {
-    console.error(error);
-    return NextResponse.json(
-      { success: false, message: error.message },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
 
 export async function GET(req: NextRequest, context: { params: Params }) {
   try {
+    const sessionUser = await getServerSession(authOptions);
+    const storeId = sessionUser?.user?.storeId;
+    if (!storeId) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+
     const { id } = await context.params;
-    const order = await prisma.order.findUnique({
-      where: { id },
+    const order = await prisma.order.findFirst({
+      where: { id, storeId }, // Ensure store context
       include: {
         table: true,
         customer: true,
       },
     });
 
-    if (!order)
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Order not found",
-        },
-        { status: 400 },
-      );
+    if (!order) return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: order,
-      },
-      { status: 200 },
-    );
+    return NextResponse.json({ success: true, data: order }, { status: 200 });
   } catch (error: any) {
-    console.error(error);
-    return NextResponse.json(
-      { success: false, message: error.message },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

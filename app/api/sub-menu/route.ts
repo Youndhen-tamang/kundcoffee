@@ -1,8 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { name, image, categoryId, sortOrder, isActive } = await req.json();
 
     if (!name)
@@ -14,6 +26,7 @@ export async function POST(req: NextRequest) {
     const existingSubMenu = await prisma.subMenu.findFirst({
       where: {
         name,
+        storeId,
         categoryId: categoryId || null,
       },
     });
@@ -32,6 +45,7 @@ export async function POST(req: NextRequest) {
     let finalSortOrder = parseInt(String(sortOrder));
     if (!finalSortOrder) {
       const lastSubMenu = await prisma.subMenu.findFirst({
+        where: { storeId },
         orderBy: { sortOrder: "desc" },
         select: { sortOrder: true },
       });
@@ -46,6 +60,7 @@ export async function POST(req: NextRequest) {
         image: image || null,
         sortOrder: finalSortOrder,
         isActive: isActive !== undefined ? isActive : true,
+        storeId,
       },
     });
 
@@ -63,7 +78,18 @@ export async function POST(req: NextRequest) {
 }
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const submenu = await prisma.subMenu.findMany({
+      where: { storeId },
       orderBy: { sortOrder: "asc" },
     });
     if (!submenu)

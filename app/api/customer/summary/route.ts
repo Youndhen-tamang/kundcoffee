@@ -1,10 +1,25 @@
 // routes/api/customers/summary.ts
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const customers = await prisma.customer.findMany({
+      where: {
+        storeId, // Filter by storeId
+      },
       include: {
         CustomerLedger: true,
       },
@@ -14,6 +29,9 @@ export async function GET() {
     let totalToPay = 0;
 
     const summary = customers.map((c) => {
+      // Calculate due amount based on ledger
+      // For performance in future, this should be aggregated in DB or stored field
+      // But adhering to existing logic pattern:
       const dueAmount =
         c.openingBalance +
         c.CustomerLedger.reduce((sum, l) => {

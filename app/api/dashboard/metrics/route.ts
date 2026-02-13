@@ -10,9 +10,21 @@ import {
   endOfYear,
   subDays,
 } from "date-fns";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const filter = searchParams.get("filter") || "this_month";
     const date = searchParams.get("date");
@@ -51,6 +63,7 @@ export async function GET(req: NextRequest) {
     if (type === "chart") {
       const payments = await prisma.payment.findMany({
         where: {
+          storeId,
           status: "PAID",
           createdAt: { gte: startDate, lte: endDate },
           isDeleted: false,
@@ -67,7 +80,7 @@ export async function GET(req: NextRequest) {
       const dailyMap = new Map<string, number>();
 
       payments.forEach((p) => {
-        const day = new Date(p.createdAt).toLocaleDateString("en-CA"); date
+        const day = new Date(p.createdAt).toLocaleDateString("en-CA");
         const current = dailyMap.get(day) || 0;
         dailyMap.set(day, current + p.amount);
       });
@@ -90,6 +103,7 @@ export async function GET(req: NextRequest) {
         prisma.payment.aggregate({
           _sum: { amount: true },
           where: {
+            storeId,
             status: "PAID",
             createdAt: { gte: startDate, lte: endDate },
             isDeleted: false,
@@ -98,18 +112,21 @@ export async function GET(req: NextRequest) {
         prisma.purchase.aggregate({
           _sum: { amount: true },
           where: {
+            storeId,
             date: { gte: startDate, lte: endDate },
           },
         }),
         prisma.expense.aggregate({
           _sum: { amount: true },
           where: {
+            storeId,
             date: { gte: startDate, lte: endDate },
           },
         }),
         prisma.customerLedger.aggregate({
           _sum: { amount: true },
           where: {
+            customer: { storeId },
             type: "PAYMENT_IN",
             createdAt: { gte: startDate, lte: endDate },
           },
@@ -117,6 +134,7 @@ export async function GET(req: NextRequest) {
         prisma.customerLedger.aggregate({
           _sum: { amount: true },
           where: {
+            customer: { storeId },
             type: "PAYMENT_OUT",
             createdAt: { gte: startDate, lte: endDate },
           },
@@ -124,6 +142,7 @@ export async function GET(req: NextRequest) {
         prisma.salesReturn.aggregate({
           _sum: { totalAmount: true },
           where: {
+            storeId,
             txnDate: { gte: startDate, lte: endDate },
             isDeleted: false,
           },

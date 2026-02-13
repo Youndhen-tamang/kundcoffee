@@ -1,9 +1,21 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
     const { name, description, image, sortOrder } = await req.json();
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     if (!name) {
       return NextResponse.json(
         {
@@ -16,6 +28,7 @@ export async function POST(req: NextRequest) {
     const existingCategoryName = await prisma.category.findFirst({
       where: {
         name,
+        storeId,
       },
     });
 
@@ -28,10 +41,11 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
 
-    // Calculate next sortOrder
+    // Calculate next sortOrder within this store
     let finalSortOrder = parseInt(String(sortOrder));
     if (!finalSortOrder) {
       const lastCategory = await prisma.category.findFirst({
+        where: { storeId },
         orderBy: { sortOrder: "desc" },
         select: { sortOrder: true },
       });
@@ -43,6 +57,7 @@ export async function POST(req: NextRequest) {
         name,
         description,
         sortOrder: finalSortOrder,
+        storeId,
         ...(image && { image }),
       },
     });
@@ -62,7 +77,18 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const category = await prisma.category.findMany({
+      where: { storeId },
       include: {
         dishes: true,
         combos: true,

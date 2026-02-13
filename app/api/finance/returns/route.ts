@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ApiResponse } from "@/lib/types";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const filter = searchParams.get("filter");
     const date = searchParams.get("date");
@@ -12,6 +24,7 @@ export async function GET(req: NextRequest) {
 
     const where: any = {
       isDeleted: false,
+      storeId, // Filter by storeId
     };
 
     if (date) {
@@ -114,6 +127,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await req.json();
     const {
       customerId,
@@ -155,6 +178,7 @@ export async function POST(req: NextRequest) {
         remark,
         paymentStatus: paymentStatus || "UNPAID",
         paymentMode: paymentMode || null,
+        storeId, // Add storeId
         items: {
           create: items.map((item: any) => ({
             dishName: item.dishName,

@@ -10,12 +10,12 @@ export async function finalizeSessionTransaction(data: {
   serviceCharge: number;
   discount: number;
   customerId?: string;
-  paymentId?: string; // paymentId is now optional here as we might create/update it inside
   paymentMethod: string;
   complimentaryItems?: Record<string, number> | null;
   extraFreeItems?:
     | { dishId?: string; name: string; unitPrice: number; quantity: number }[]
     | null;
+  storeId?: string;
 }) {
   const {
     sessionId,
@@ -27,43 +27,63 @@ export async function finalizeSessionTransaction(data: {
     discount,
     customerId,
     paymentMethod,
+    storeId,
   } = data;
 
   const complimentaryItems = data.complimentaryItems || {};
   const extraFreeItems = data.extraFreeItems || [];
 
   return await prisma.$transaction(async (tx) => {
-    // 0. Update or Create Payment inside the transaction
+    // 0. Resolve the mandatory Store ID
+    // If not passed from the frontend, we must fetch it from the Table
+    let finalStoreId = storeId;
+    if (!finalStoreId) {
+      const table = await tx.table.findUnique({
+        where: { id: tableId },
+        select: { storeId: true },
+      });
+      if (!table || !table.storeId) {
+        throw new Error("Store identification failed for this table");
+      }
+      finalStoreId = table.storeId;
+    }
+
+    // 1. Update or Create Payment inside the transaction
     const existingPayment = await tx.payment.findUnique({
       where: { sessionId: sessionId },
     });
 
     let payment;
+    const paymentStatus = (paymentMethod === "CREDIT" ? "CREDIT" : "PAID") as any;
+
     if (existingPayment) {
       payment = await tx.payment.update({
         where: { id: existingPayment.id },
         data: {
           method: paymentMethod as any,
           amount,
-          status: paymentMethod === "CREDIT" ? "CREDIT" : "PAID",
+          status: paymentStatus,
           transactionUuid: null,
           esewaRefId: null,
+          storeId: finalStoreId, // Ensure Store Isolation
         },
       });
     } else {
       payment = await tx.payment.create({
         data: {
-          session: { connect: { id: sessionId } },
-          method: paymentMethod as any,
           amount,
-          status: paymentMethod === "CREDIT" ? "CREDIT" : "PAID",
+          method: paymentMethod as any,
+          status: paymentStatus,
+          // FIX: Use scalar fields (sessionId/storeId) to avoid "Mixed Types" error
+          sessionId: sessionId, 
+          storeId: finalStoreId,
         },
       });
     }
 
     const finalPaymentId = payment.id;
 
-    // 1. Update all orders in this session to COMPLETED and link them to the payment
+    // 2. Update all orders in this session to COMPLETED
     const orders = await tx.order.findMany({
       where: { sessionId },
       include: { items: true },
@@ -85,21 +105,19 @@ export async function finalizeSessionTransaction(data: {
         if (compQty > 0) {
           await tx.orderItem.update({
             where: { id: item.id },
-            data: {
-              complimentaryQuantity: compQty,
-              // We could also adjust totalPrice here if needed, but usually it's better to keep raw prices
-            },
+            data: { complimentaryQuantity: compQty },
           });
         }
       }
     }
 
-    // Handle extra free items - create a special "Complimentary" order for them
+    // 3. Handle extra free items - Create a special "Complimentary" order
     if (extraFreeItems.length > 0) {
       await tx.order.create({
         data: {
           sessionId,
           tableId,
+          storeId: finalStoreId, // MANDATORY: Orders now require storeId
           type: "DINE_IN",
           status: "COMPLETED",
           customerId: customerId || null,
@@ -108,7 +126,7 @@ export async function finalizeSessionTransaction(data: {
           items: {
             create: extraFreeItems.map((item) => ({
               dishId: item.dishId || null,
-              remarks: item.name, // Store name in remarks since name field doesn't exist in OrderItem
+              remarks: item.name,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               totalPrice: 0,
@@ -120,7 +138,7 @@ export async function finalizeSessionTransaction(data: {
       });
     }
 
-    // 2. Also handle any stray orders on the table not linked to session (legacy or manual)
+    // 4. Handle stray orders on the table (not yet linked to session)
     await tx.order.updateMany({
       where: {
         tableId,
@@ -132,10 +150,11 @@ export async function finalizeSessionTransaction(data: {
         customerId: customerId || null,
         paymentId: finalPaymentId,
         sessionId: sessionId,
+        storeId: finalStoreId,
       },
     });
 
-    // 3. Close the TableSession
+    // 5. Close the TableSession
     await tx.tableSession.update({
       where: { id: sessionId },
       data: {
@@ -149,13 +168,13 @@ export async function finalizeSessionTransaction(data: {
       },
     });
 
-    // 4. Reset Table status to ACTIVE
+    // 6. Reset Table status to ACTIVE
     await tx.table.update({
       where: { id: tableId },
       data: { status: "ACTIVE" },
     });
 
-    // 5. Handle Customer Ledger and Loyalty
+    // 7. Handle Customer Ledger and Loyalty
     if (customerId) {
       const pointsEarned = Math.floor(amount / 100);
       await tx.customer.update({
@@ -163,18 +182,12 @@ export async function finalizeSessionTransaction(data: {
         data: { loyaltyPoints: { increment: pointsEarned } },
       });
 
-      // Fetch last ledger to get balance
       const lastLedger = await tx.customerLedger.findFirst({
         where: { customerId },
         orderBy: { createdAt: "desc" },
       });
 
       const currentBalance = lastLedger ? lastLedger.closingBalance : 0;
-      // If it's CREDIT, the closing balance increases (dueAmount increases)
-      // Actually, let's look at the formula in Customer detail:
-      // dueAmount = openingBalance + (totalSales + paymentOut) - (paymentIn + salesReturn)
-
-      // So SALE increases the balance. PAYMENT_IN decreases it.
       const newBalance = currentBalance + amount;
 
       await tx.customerLedger.create({
@@ -189,7 +202,6 @@ export async function finalizeSessionTransaction(data: {
         },
       });
 
-      // If it's NOT a credit payment, we immediately create a PAYMENT_IN entry too
       if (paymentMethod !== "CREDIT") {
         await tx.customerLedger.create({
           data: {
@@ -197,7 +209,7 @@ export async function finalizeSessionTransaction(data: {
             txnNo: `PAY-${Date.now()}-${sessionId.substring(0, 4)}`,
             type: "PAYMENT_IN",
             amount: amount,
-            closingBalance: newBalance - amount, // Back to previous or zeroed if no other sales
+            closingBalance: newBalance - amount,
             referenceId: finalPaymentId,
             remarks: `Payment for Table Checkout (${paymentMethod})`,
           },

@@ -2,10 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { finalizeSessionTransaction } from "@/lib/checkout-helper";
-import { PaymentStatus } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const sessionUser = await getServerSession(authOptions);
+    const storeId = sessionUser?.user?.storeId;
+
+    if (!storeId) {
+      // Ideally we should enforce storeId here, but for now let's at least try to get it
+      // If this is a client-side call from a logged-in user, we have it.
+      // Only "Guest" checkout might be tricky, but usually checkout is done by Staff/Cashier.
+    }
+
     const body = await req.json();
     const {
       tableId,
@@ -53,12 +63,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Ensure the session belongs to the authenticated store
+    // Only if we have a logged in user with storeId.
+    if (storeId && session.table.storeId !== storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized access to this table" },
+        { status: 401 },
+      );
+    }
+
+    // Use the storeId from the table if we didn't get it from session (rare fallback)
+    const effectiveStoreId = storeId || session.table.storeId;
+
     const activeSessionId = session.id;
 
     // --- 2. BRANCHING LOGIC ---
 
     // === OPTION A: ESEWA GATEWAY (Only for actual ESEWA integration) ===
-    // CHANGE 1: Removed `|| paymentMethod === "QR"` from here
     if (paymentMethod === "ESEWA") {
       console.log(
         `[Checkout] Processing ESEWA for session: ${activeSessionId}`,
@@ -85,13 +106,18 @@ export async function POST(req: NextRequest) {
           amount,
           status: "PENDING",
           transactionUuid,
+          // In update, we can use the raw ID field
+          storeId: effectiveStoreId, 
         },
         create: {
-          session: { connect: { id: activeSessionId } },
           method: "ESEWA",
           amount,
           status: "PENDING",
           transactionUuid,
+          // Use 'connect' for the relations. 
+          // DO NOT include 'storeId: effectiveStoreId' here.
+          session: { connect: { id: activeSessionId } },
+          store: { connect: { id: effectiveStoreId } },
         },
       });
 
@@ -146,6 +172,7 @@ export async function POST(req: NextRequest) {
         paymentMethod,
         complimentaryItems,
         extraFreeItems,
+        storeId: effectiveStoreId, // Pass storeId
       });
 
       return NextResponse.json({

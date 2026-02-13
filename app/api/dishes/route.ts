@@ -1,23 +1,33 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const dishes = await prisma.dish.findMany({
+      where: { storeId: storeId }, // CRITICAL: Only get dishes for THIS store
       include: {
         category: true,
-        subMenu: true,
         price: true,
-        stocks: true,
-        addOns: true,
       },
       orderBy: { sortOrder: "asc" },
     });
+
     return NextResponse.json({ success: true, data: dishes });
   } catch (error) {
-    console.error("Error fetching dishes:", error);
     return NextResponse.json(
-      { success: false, message: "Failed to fetch dishes" },
+      { success: false, message: "Error" },
       { status: 500 },
     );
   }
@@ -25,6 +35,16 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await req.json();
     const {
       name,
@@ -51,6 +71,7 @@ export async function POST(req: NextRequest) {
 
     const existingDish = await prisma.dish.findFirst({
       where: {
+        storeId, // Ensure uniqueness within the store
         name,
         OR: [{ categoryId }, { subMenuId: subMenuId || null }],
       },
@@ -79,7 +100,7 @@ export async function POST(req: NextRequest) {
     let finalSortOrder = parseInt(String(sortOrder));
     if (!finalSortOrder) {
       const lastDish = await prisma.dish.findFirst({
-        where: { categoryId },
+        where: { categoryId, storeId }, // Filter by storeId for sort order
         orderBy: { sortOrder: "desc" },
         select: { sortOrder: true },
       });
@@ -88,6 +109,7 @@ export async function POST(req: NextRequest) {
 
     const dish = await prisma.dish.create({
       data: {
+        storeId, // Add storeId here
         name,
         hscode,
         image: image || [],

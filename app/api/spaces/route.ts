@@ -1,9 +1,22 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const spaces = await prisma.space.findMany({
+      where: { storeId },
       include: { tables: { orderBy: { sortOrder: "asc" } } },
       orderBy: { sortOrder: "asc" },
     });
@@ -22,6 +35,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, description, sortOrder } = body;
 
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     // 1. Validation
     if (!name) {
       return NextResponse.json(
@@ -30,9 +53,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Check for existence
+    // 2. Check for existence within this store
     const findspace = await prisma.space.findFirst({
-      where: { name },
+      where: { name, storeId },
     });
 
     if (findspace) {
@@ -49,8 +72,9 @@ export async function POST(req: NextRequest) {
     let finalSortOrder = parseInt(String(sortOrder));
 
     if (!finalSortOrder) {
-      // We look for the space with the highest sortOrder
+      // We look for the space with the highest sortOrder in this store
       const lastSpace = await prisma.space.findFirst({
+        where: { storeId },
         orderBy: {
           sortOrder: "desc",
         },
@@ -69,6 +93,7 @@ export async function POST(req: NextRequest) {
         name: name,
         description: description,
         sortOrder: finalSortOrder,
+        storeId,
       },
     });
 

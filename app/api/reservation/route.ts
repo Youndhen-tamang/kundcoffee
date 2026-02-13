@@ -1,15 +1,26 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const {
       name,
       phone,
       customerId,
       tableId,
       remarks,
-      images,
       guests,
       startTime,
       endTime,
@@ -37,6 +48,9 @@ export async function POST(req: NextRequest) {
           some: {
             startTime: start
           }
+        },
+        table: {
+            storeId: storeId // Ensure table belongs to store
         }
       }
     })

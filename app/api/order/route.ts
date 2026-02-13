@@ -1,10 +1,19 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
-    const { tableId, type, items, customerId, customer } = body;
+    const { tableId, type, items, customerId } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "No items in order" }, { status: 400 });
@@ -107,6 +116,7 @@ export async function POST(req: NextRequest) {
     const newOrder = await prisma.order.create({
       data: {
         tableId: tableId || null,
+        storeId, // Add storeId
         type: type,
         status: "PENDING",
         total: calculatedGrandTotal,
@@ -143,8 +153,16 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const orders = await prisma.order.findMany({
       where: {
+        storeId, // Filter by storeId
         status: { not: "CANCELLED" },
         isDeleted: false,
       },
@@ -159,6 +177,7 @@ export async function GET() {
           },
         },
       },
+      take: 50, // Limit to recent 50 orders for performance
     });
 
     return NextResponse.json(

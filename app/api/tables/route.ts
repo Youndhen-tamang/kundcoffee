@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { NextResponse, NextRequest } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +19,16 @@ export async function POST(req: NextRequest) {
       sortOrder,
     } = body;
 
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     if (!name || !capacity) {
       return NextResponse.json(
         { success: false, message: "Name and capacity are required" },
@@ -29,15 +41,15 @@ export async function POST(req: NextRequest) {
       let finalTableTypeId = tableTypeId;
 
       if (!finalTableTypeId && tableTypeName) {
-        const existingType = await tx.tableType.findUnique({
-          where: { name: tableTypeName },
+        const existingType = await tx.tableType.findFirst({
+          where: { name: tableTypeName, storeId },
         });
 
         if (existingType) {
           finalTableTypeId = existingType.id;
         } else {
           const newType = await tx.tableType.create({
-            data: { name: tableTypeName },
+            data: { name: tableTypeName, storeId },
           });
           finalTableTypeId = newType.id;
         }
@@ -52,14 +64,14 @@ export async function POST(req: NextRequest) {
 
       if (!finalSpaceId && spaceName) {
         const existingSpace = await tx.space.findFirst({
-          where: { name: spaceName },
+          where: { name: spaceName, storeId },
         });
 
         if (existingSpace) {
           finalSpaceId = existingSpace.id;
         } else {
           const newSpace = await tx.space.create({
-            data: { name: spaceName, description: spaceDescription },
+            data: { name: spaceName, description: spaceDescription, storeId },
           });
           finalSpaceId = newSpace.id;
         }
@@ -101,6 +113,7 @@ export async function POST(req: NextRequest) {
           spaceId: finalSpaceId,
           tableTypeId: finalTableTypeId,
           sortOrder: finalSortOrder,
+          storeId,
         },
         include: { tableType: true },
       });
@@ -154,7 +167,18 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const tables = await prisma.table.findMany({
+      where: { storeId },
       include: {
         tableType: true,
         space: true,

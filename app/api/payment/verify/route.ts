@@ -36,7 +36,6 @@ export async function POST(req: NextRequest) {
     tax: payment.session.tax,
     serviceCharge: payment.session.serviceCharge,
     discount: payment.session.discount,
-    paymentId: payment.id,
     paymentMethod: payment.method,
   });
 

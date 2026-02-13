@@ -1,8 +1,20 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse ,NextRequest} from "next/server";
+import { NextResponse, NextRequest } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await req.json();
 
     const {
@@ -60,6 +72,7 @@ export async function POST(req: NextRequest) {
           taxNumber,
           address,
           notes,
+          storeId,
         },
       });
 
@@ -90,7 +103,18 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const customers = await prisma.customer.findMany({
+      where: { storeId },
       orderBy: { createdAt: "desc" },
     });
     if (!customers)

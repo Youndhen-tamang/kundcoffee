@@ -18,6 +18,8 @@ import {
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -37,11 +39,20 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      console.log("Login attempt:", data);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      router.push("/");
+      // Use NextAuth signIn
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      });
+
+      if (result?.error) {
+        setError("Invalid email or password");
+      } else {
+        router.push("/"); // Middleware will handle redirect if not verified/setup
+      }
     } catch (err) {
-      setError("Invalid username or password");
+      setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +71,7 @@ export default function LoginPage() {
             className="object-cover opacity-60 scale-105"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-zinc-900 via-zinc-900/40 to-transparent" />
         </div>
 
         {/* Content Overlay */}
@@ -195,11 +206,11 @@ export default function LoginPage() {
             </AnimatePresence>
 
             <div className="space-y-5">
-              {/* Username Input */}
+              {/* Email Input */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1">
                   <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                    Username
+                    Email Address
                   </label>
                 </div>
                 <div className="relative group">
@@ -207,17 +218,21 @@ export default function LoginPage() {
                     <User size={18} strokeWidth={2.5} />
                   </div>
                   <input
-                    {...register("username")}
-                    type="text"
+                    {...register("email")}
+                    type="email"
                     className={`w-full h-14 pl-14 pr-5 bg-zinc-50 border ${
-                      errors.username ? "border-red-200" : "border-zinc-100"
+                      errors.email ? "border-red-200" : "border-zinc-100"
                     } rounded-2xl text-[13px] font-bold text-zinc-900 placeholder:text-zinc-300 focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900 focus:bg-white transition-all`}
-                    placeholder="E.g. phurba_admin"
+                    placeholder="name@company.com"
                   />
-                  {errors.username && (
-                    <p className="text-[10px] font-bold text-red-500 mt-2 ml-1">
-                      {errors.username.message}
-                    </p>
+                  {errors.email && (
+                    <motion.p
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="text-[10px] font-bold text-red-500 mt-2 ml-1"
+                    >
+                      {errors.email.message}
+                    </motion.p>
                   )}
                 </div>
               </div>
@@ -248,9 +263,13 @@ export default function LoginPage() {
                     placeholder="Enter your security key"
                   />
                   {errors.password && (
-                    <p className="text-[10px] font-bold text-red-500 mt-2 ml-1">
+                    <motion.p
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="text-[10px] font-bold text-red-500 mt-2 ml-1"
+                    >
                       {errors.password.message}
-                    </p>
+                    </motion.p>
                   )}
                 </div>
               </div>
@@ -286,6 +305,16 @@ export default function LoginPage() {
                 Verified Secure Access
               </span>
             </div>
+
+            <p className="text-zinc-500 font-medium text-xs">
+              New to Kund Coffee?{" "}
+              <Link
+                href="/signup"
+                className="text-zinc-900 font-black hover:underline"
+              >
+                Create Account
+              </Link>
+            </p>
           </div>
         </motion.div>
       </div>

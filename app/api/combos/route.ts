@@ -1,10 +1,23 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Params } from "@/lib/types";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const combos = await prisma.comboOffer.findMany({
+      where: { storeId },
       include: {
         category: true,
         subMenu: true,
@@ -28,6 +41,16 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await req.json();
     const {
       name,
@@ -55,6 +78,7 @@ export async function POST(req: NextRequest) {
       where: {
         name,
         categoryId,
+        storeId,
       },
     });
 
@@ -72,7 +96,7 @@ export async function POST(req: NextRequest) {
     let finalSortOrder = parseInt(String(sortOrder));
     if (!finalSortOrder) {
       const lastCombo = await prisma.comboOffer.findFirst({
-        where: { categoryId },
+        where: { categoryId, storeId },
         orderBy: { sortOrder: "desc" },
         select: { sortOrder: true },
       });
@@ -91,6 +115,7 @@ export async function POST(req: NextRequest) {
         kotType: kotType || "KITCHEN",
         isAvailable: true,
         sortOrder: finalSortOrder,
+        storeId,
         price: {
           create: {
             actualPrice: parseFloat(price?.actualPrice || 0),

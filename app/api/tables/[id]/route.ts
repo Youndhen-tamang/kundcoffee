@@ -4,12 +4,12 @@ import { NextResponse, NextRequest } from "next/server";
 import { Params } from "@/lib/types";
 export async function PATCH(
   req: NextRequest,
-  context: { params: Params } // Next.js 15+ params are promises
+  context: { params: Params }, // Next.js 15+ params are promises
 ) {
   try {
     const { id } = await context.params;
     const body = await req.json();
-    
+
     // 1. EXTRACT sortOrder FROM BODY
     const {
       name,
@@ -25,7 +25,7 @@ export async function PATCH(
     if (!id) {
       return NextResponse.json(
         { success: false, message: "Table ID is missing" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -33,7 +33,7 @@ export async function PATCH(
     if (!currentTable) {
       return NextResponse.json(
         { success: false, message: "Table not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -45,14 +45,22 @@ export async function PATCH(
       // Only look for/create type if name is provided and ID is not
       if (!tableTypeId && tableTypeName) {
         const existingType = await tx.tableType.findUnique({
-          where: { name: tableTypeName },
+          where: {
+            name_storeId: {
+              name: tableTypeName,
+              storeId: currentTable.storeId,
+            },
+          },
         });
 
         if (existingType) {
           finalTableTypeId = existingType.id;
         } else {
           const newType = await tx.tableType.create({
-            data: { name: tableTypeName },
+            data: {
+              name: tableTypeName,
+              storeId: currentTable.storeId,
+            },
           });
           finalTableTypeId = newType.id;
         }
@@ -64,14 +72,21 @@ export async function PATCH(
       // Only look for/create space if name is provided and ID is not
       if (!spaceId && spaceName) {
         const existingSpace = await tx.space.findFirst({
-          where: { name: spaceName },
+          where: {
+            name: spaceName,
+            storeId: currentTable.storeId,
+          },
         });
 
         if (existingSpace) {
           finalSpaceId = existingSpace.id;
         } else {
           const newSpace = await tx.space.create({
-            data: { name: spaceName, description: spaceDescription },
+            data: {
+              name: spaceName,
+              description: spaceDescription,
+              storeId: currentTable.storeId,
+            },
           });
           finalSpaceId = newSpace.id;
         }
@@ -79,7 +94,7 @@ export async function PATCH(
 
       // --- Check for Duplicate Name ---
       const tableNameToCheck = name ?? currentTable.name;
-      const spaceIdToCheck = finalSpaceId ?? currentTable.spaceId; 
+      const spaceIdToCheck = finalSpaceId ?? currentTable.spaceId;
 
       if (tableNameToCheck && spaceIdToCheck) {
         const duplicateTable = await tx.table.findFirst({
@@ -99,11 +114,15 @@ export async function PATCH(
       const updateData: any = {
         name: name ?? currentTable.name,
         // If capacity is sent, parse it; otherwise keep current
-        capacity: capacity !== undefined ? parseInt(capacity) : currentTable.capacity,
+        capacity:
+          capacity !== undefined ? parseInt(capacity) : currentTable.capacity,
         spaceId: finalSpaceId,
         tableTypeId: finalTableTypeId,
         // If sortOrder is sent, parse it; otherwise keep current
-        sortOrder: sortOrder !== undefined ? parseInt(sortOrder) : currentTable.sortOrder, // <--- ADD THIS
+        sortOrder:
+          sortOrder !== undefined
+            ? parseInt(sortOrder)
+            : currentTable.sortOrder, // <--- ADD THIS
       };
 
       const table = await tx.table.update({
@@ -124,7 +143,7 @@ export async function PATCH(
         message: "Table updated successfully",
         data: updatedTable,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Update Table Error:", error.message);
@@ -136,45 +155,53 @@ export async function PATCH(
           success: false,
           message: `Table "${tableName}" already exists in this space`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (error.code === "P2025") {
       return NextResponse.json(
         { success: false, message: "Table not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     return NextResponse.json(
       { success: false, message: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-
-export async function DELETE(req:NextRequest,context:{
-  params:Params
-}) {
+export async function DELETE(
+  req: NextRequest,
+  context: {
+    params: Params;
+  },
+) {
   try {
-    const {id} =  await context.params;
+    const { id } = await context.params;
 
-    if(!id) return NextResponse.json({
-      success:false,message:"Item not fount"
-    },{status:400})
+    if (!id)
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Item not fount",
+        },
+        { status: 400 },
+      );
 
     await prisma.table.delete({
-      where:{id}
-    })
+      where: { id },
+    });
 
     return NextResponse.json(
       {
         success: true,
         message: "Deleted successfully",
       },
-      { status: 200 },)
+      { status: 200 },
+    );
   } catch (error) {
     return NextResponse.json(
       { success: false, message: "Something went wrong" },
