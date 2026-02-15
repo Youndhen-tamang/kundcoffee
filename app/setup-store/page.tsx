@@ -5,11 +5,20 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
-import { Loader2, Store, MapPin, BadgeDollarSign, LayoutDashboard } from "lucide-react";
+import { 
+  Loader2, 
+  Store, 
+  LayoutDashboard, 
+  Coffee, 
+  CheckCircle2, 
+  AlertCircle,
+  Globe
+} from "lucide-react";
 import { storeSetupSchema, type StoreSetupInput } from "@/lib/validations/auth";
 import { useRouter } from "next/navigation";
 import { setupStoreAction } from "@/app/actions/auth";
 import { toast } from "sonner";
+import Image from "next/image";
 
 export default function SetupStorePage() {
   const { data: session, status, update } = useSession();
@@ -48,13 +57,12 @@ export default function SetupStorePage() {
       if (result.success) {
         toast.success("Store setup complete!");
         
-        // IMPORTANT: Update session so middleware knows setup is done
         await update({
           ...session,
           user: { ...session?.user, isSetupComplete: true }
         });
 
-        router.push("/dashboard");
+        router.push("/");
       } else {
         setError(result.message);
       }
@@ -67,73 +75,204 @@ export default function SetupStorePage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <Loader2 className="animate-spin text-zinc-900" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full bg-zinc-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-5xl bg-white rounded-[40px] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
-        {/* Left Visual Sidebar */}
-        <div className="w-full md:w-[45%] bg-zinc-900 p-12 flex flex-col justify-between relative">
-          <div className="relative z-10">
-            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white mb-8 border border-white/10">
-              <Store size={24} />
+    <div className="min-h-screen w-full bg-white flex flex-col md:flex-row overflow-hidden selection:bg-zinc-100">
+      
+      {/* --- LEFT SIDE: THE BRAND EXPERIENCE (Consistent with Auth) --- */}
+      <div className="hidden md:flex md:w-[45%] lg:w-[50%] bg-zinc-950 relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/login-hero.png" 
+            alt="Business Setup"
+            fill
+            className="object-cover opacity-30 grayscale-[0.5]"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-tr from-zinc-950 via-zinc-950/80 to-transparent" />
+        </div>
+
+        <div className="relative z-10 w-full flex flex-col justify-between p-12 lg:p-20">
+          {/* Logo Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3"
+          >
+            <div className="w-10 h-10 bg-white flex items-center justify-center rounded-lg shadow-xl">
+              <Coffee size={22} className="text-zinc-900" />
             </div>
-            <h2 className="text-3xl font-black text-white tracking-tight mb-4">
-              Setup Your Digital<br /><span className="text-zinc-500">Storefront.</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold text-white tracking-tight leading-none uppercase">Kund</span>
+              <span className="text-[10px] font-semibold text-red-800 tracking-[0.2em] uppercase">Coffee Group</span>
+            </div>
+          </motion.div>
+
+          {/* Setup Value Prop */}
+          <div className="max-w-md">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="space-y-6"
+            >
+              <h3 className="text-4xl lg:text-5xl font-semibold text-white leading-tight tracking-tight">
+                Establish your <br /> 
+                <span className="text-zinc-400">digital storefront.</span>
+              </h3>
+              <p className="text-zinc-400 text-lg leading-relaxed font-light">
+                Configure your business identity and regional settings to 
+                initialize your enterprise dashboard.
+              </p>
+            </motion.div>
+
+            <div className="mt-12 space-y-4">
+              <div className="flex items-center gap-3 text-sm text-zinc-300">
+                <div className="w-5 h-5 rounded-full bg-red-800/20 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-red-700">01</span>
+                </div>
+                <span>Account Verified</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-white font-semibold">
+                <div className="w-5 h-5 rounded-full bg-red-800 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-white">02</span>
+                </div>
+                <span>Business Identity</span>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-zinc-500 font-medium uppercase tracking-widest">
+            Configuration Module • Session: {session?.user?.email?.split('@')[0]}
+          </p>
+        </div>
+      </div>
+
+      {/* --- RIGHT SIDE: SETUP FORM --- */}
+      <div className="flex-1 flex flex-col items-center justify-center p-8 lg:p-16 bg-white overflow-y-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-[420px]"
+        >
+          {/* Mobile Header */}
+          <div className="md:hidden flex items-center gap-3 mb-10">
+            <Store size={24} className="text-red-800" />
+            <h1 className="text-lg font-bold tracking-tighter uppercase">Store Setup</h1>
+          </div>
+
+          <div className="mb-10 text-center md:text-left">
+            <h2 className="text-3xl font-semibold text-zinc-900 tracking-tight mb-2">
+              Business Details
             </h2>
+            <p className="text-zinc-500 text-sm">
+              Define the core attributes of your coffee establishment.
+            </p>
           </div>
-          <div className="relative z-10 space-y-4">
-             <div className="text-xs font-black text-white uppercase tracking-widest bg-white/10 w-fit px-3 py-1 rounded-full">Step 3: Business Details</div>
-          </div>
-        </div>
 
-        {/* Form Area */}
-        <div className="flex-1 p-12 flex flex-col justify-center">
-          <div className="max-w-md mx-auto w-full">
-            <h1 className="text-2xl font-black text-zinc-900 mb-8">Business Identity</h1>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              <AnimatePresence>
-                {error && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold">
-                    {error}
-                  </motion.div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <AnimatePresence mode="wait">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="bg-red-50 border-l-2 border-red-800 p-4 flex gap-3 items-center text-red-900"
+                >
+                  <AlertCircle size={18} className="shrink-0" />
+                  <p className="text-xs font-semibold">{error}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="space-y-4">
+              {/* Store Name */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 ml-1">Store Name</label>
+                <input
+                  {...register("name")}
+                  className={`w-full h-12 px-4 bg-white border ${
+                    errors.name ? "border-red-700 shadow-sm shadow-red-50" : "border-zinc-200"
+                  } rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/5 focus:border-zinc-900 placeholder:text-zinc-300`}
+                  placeholder="Resturant Name"
+                />
+                {errors.name && (
+                  <p className="text-[11px] text-red-800 font-medium mt-1 ml-1">{errors.name.message}</p>
                 )}
-              </AnimatePresence>
-
-              <div>
-                <label className="text-[10px] font-black text-zinc-400 uppercase mb-2 block">Store Name</label>
-                <input {...register("name")} className="w-full h-14 px-5 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-bold focus:border-zinc-900 outline-none transition-all" placeholder="e.g. Kund Coffee Thamel" />
-                {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1">{errors.name.message}</p>}
               </div>
 
-              <div>
-                <label className="text-[10px] font-black text-zinc-400 uppercase mb-2 block">Location</label>
-                <input {...register("location")} className="w-full h-14 px-5 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-bold focus:border-zinc-900 outline-none transition-all" placeholder="e.g. Kathmandu, Nepal" />
-                {errors.location && <p className="text-[10px] text-red-500 font-bold mt-1">{errors.location.message}</p>}
+              {/* Location */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 ml-1">Location</label>
+                <input
+                  {...register("location")}
+                  className={`w-full h-12 px-4 bg-white border ${
+                    errors.location ? "border-red-700 shadow-sm shadow-red-50" : "border-zinc-200"
+                  } rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/5 focus:border-zinc-900 placeholder:text-zinc-300`}
+                  placeholder="Address"
+                />
+                {errors.location && (
+                  <p className="text-[11px] text-red-800 font-medium mt-1 ml-1">{errors.location.message}</p>
+                )}
               </div>
 
-              <div>
-                <label className="text-[10px] font-black text-zinc-400 uppercase mb-2 block">Currency</label>
-                <select {...register("currency")} className="w-full h-14 px-5 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-bold outline-none">
-                  <option value="NPR">NPR (Nepalese Rupee)</option>
-                  <option value="USD">USD (Dollar)</option>
-                </select>
+              {/* Currency */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 ml-1">Reporting Currency</label>
+                <div className="relative">
+                  <select
+                    {...register("currency")}
+                    className="w-full h-12 px-4 bg-white border border-zinc-200 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/5 focus:border-zinc-900 appearance-none"
+                  >
+                    <option value="NPR">NPR (Nepalese Rupee)</option>
+                    <option value="USD">USD (United States Dollar)</option>
+                    <option value="EUR">EUR (Euro)</option>
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+                    <Globe size={14} />
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <motion.button
-                disabled={isLoading}
-                type="submit"
-                className="w-full h-14 bg-zinc-900 text-white rounded-2xl font-black text-[13px] uppercase tracking-widest mt-4 flex items-center justify-center gap-3"
-              >
-                {isLoading ? <Loader2 className="animate-spin" /> : <>Launch Dashboard <LayoutDashboard size={18} /></>}
-              </motion.button>
-            </form>
+            <button
+              disabled={isLoading}
+              type="submit"
+              className="w-full h-12 bg-zinc-950 hover:bg-zinc-800 text-white rounded-lg font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-zinc-200"
+            >
+              {isLoading ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : (
+                <>
+                  Initialize Dashboard
+                  <LayoutDashboard size={16} />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Footer Branding / Progress */}
+          <div className="mt-12 pt-8 border-t border-zinc-100 flex flex-col items-center gap-6">
+            <div className="flex items-center gap-4 text-zinc-400">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 size={14} className="text-red-800" />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Global Standards</span>
+              </div>
+              <div className="w-1 h-1 bg-zinc-200 rounded-full" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest">Multi-Currency ready</span>
+              </div>
+            </div>
+            
+            <p className="text-[11px] text-zinc-400 font-medium italic text-center">
+              Initialization will finalize your account permissions.
+            </p>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
