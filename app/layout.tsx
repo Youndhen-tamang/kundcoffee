@@ -31,8 +31,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-                <AuthProvider>
-
+        <AuthProvider>
         <SettingsProvider>
           {children}
           <Toaster position="top-right" richColors duration={2000} />

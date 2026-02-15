@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react"; // Added Suspense
+import { useState, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,9 +15,10 @@ import { verifyCodeSchema, type VerifyCodeInput } from "@/lib/validations/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { verifyEmailAction, resendCodeAction } from "@/app/actions/auth";
 import { toast } from "sonner";
+import { useSession, signOut } from "next-auth/react"; // 1. Import useSession and signOut
 
-// 1. Move all the logic into this inner component
 function VerifyEmailContent() {
+  const { update } = useSession(); // 2. Initialize the update helper
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -39,12 +40,22 @@ function VerifyEmailContent() {
   const onSubmit = async (data: VerifyCodeInput) => {
     setIsLoading(true);
     setError(null);
-
     try {
       const result = await verifyEmailAction(data.email, data.code);
+
       if (result.success) {
         toast.success(result.message);
-        router.push("/setup-store?email=" + encodeURIComponent(data.email));
+
+        // 3. SECURE SESSION UPDATE
+        // This tells NextAuth: "Run the JWT callback again".
+        // Our JWT callback will then fetch the fresh 'emailVerified' status from Prisma.
+        await update();
+
+        // 4. Force refresh of all server components and push to next step
+        router.refresh();
+        setTimeout(() => {
+          router.push("/setup-store?email=" + encodeURIComponent(data.email));
+        }, 150);
       } else {
         setError(result.message);
       }
@@ -167,25 +178,35 @@ function VerifyEmailContent() {
           </div>
         </form>
 
-        <div className="mt-10 flex items-center justify-center gap-2 text-zinc-300">
-          <ShieldCheck size={14} />
-          <span className="text-[9px] font-black uppercase tracking-[0.2em]">
-            Secure Verification
-          </span>
+        <div className="mt-10 flex flex-col items-center justify-center gap-4 text-zinc-300">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={14} />
+            <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+              Secure Verification
+            </span>
+          </div>
+
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="text-[10px] font-bold text-zinc-400 hover:text-red-500 transition-colors"
+          >
+            Wrong email? Log out
+          </button>
         </div>
       </motion.div>
     </div>
   );
 }
 
-// 2. Wrap the content in Suspense for the main page export
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-zinc-900" size={32} />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="animate-spin text-zinc-900" size={32} />
+        </div>
+      }
+    >
       <VerifyEmailContent />
     </Suspense>
   );

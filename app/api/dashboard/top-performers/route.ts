@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ApiResponse } from "@/lib/types";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     // Top Customers by Sales Volume (Completed Orders)
     const topCustomersGroups = await prisma.order.groupBy({
       by: ["customerId"],
@@ -11,10 +23,8 @@ export async function GET(req: NextRequest) {
         total: true,
       },
       where: {
-        status: "COMPLETED", // Or based on Payment status? Let's use Order status for now or Payment link?
-        // Using Order status COMPLETED or SERVED? usually COMPLETED.
-        // Actually best to use Payment table but Payment links to Session order links to Customer.
-        // Let's stick to Order total for simplicity as per request context.
+        storeId, // Filter by storeId
+        status: "COMPLETED",
         customerId: { not: null },
         isDeleted: false,
       },
@@ -33,6 +43,7 @@ export async function GET(req: NextRequest) {
     const customers = await prisma.customer.findMany({
       where: {
         id: { in: customerIds },
+        storeId, // Ensure customers belong to store (extra safety)
       },
     });
 
@@ -41,9 +52,9 @@ export async function GET(req: NextRequest) {
       return {
         id: group.customerId,
         name: customer?.fullName || "Unknown",
-        image: null, // Customer model has no image?
+        image: null,
         totalSpent: group._sum.total || 0,
-        orderCount: 0, // aggregate count if needed
+        orderCount: 0,
       };
     });
 
@@ -57,6 +68,7 @@ export async function GET(req: NextRequest) {
         total: true,
       },
       where: {
+        storeId, // Filter by storeId
         staffId: { not: null },
         isDeleted: false,
       },
@@ -75,6 +87,7 @@ export async function GET(req: NextRequest) {
     const staffMembers = await prisma.staff.findMany({
       where: {
         id: { in: staffIds },
+        storeId, // Ensure staff belong to store
       },
     });
 

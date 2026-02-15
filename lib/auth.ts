@@ -45,11 +45,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      if (trigger === "update" && session) {
-        return { ...token, ...session.user };
-      }
-
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -58,16 +54,32 @@ export const authOptions: NextAuthOptions = {
         token.isSetupComplete = user.isSetupComplete;
         token.trialEndsAt = user.trialEndsAt;
       }
+
+      // When frontend calls update(), re-fetch from DB This makes it impossible for a user to fake verification
+  
+      if (trigger === "update") {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+        });
+
+        if (dbUser) {
+          token.emailVerified = dbUser.emailVerified;
+          token.isSetupComplete = dbUser.isSetupComplete;
+          token.role = dbUser.role;
+          token.storeId = dbUser.storeId;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.storeId = token.storeId;
-        session.user.emailVerified = token.emailVerified;
-        session.user.isSetupComplete = token.isSetupComplete;
-        session.user.trialEndsAt = token.trialEndsAt;
+        session.user.id = token.id as string;
+        session.user.role = token.role as any;
+        session.user.storeId = token.storeId as string;
+        session.user.emailVerified = token.emailVerified as Date | null;
+        session.user.isSetupComplete = token.isSetupComplete as boolean;
+        session.user.trialEndsAt = token.trialEndsAt as Date;
       }
       return session;
     },

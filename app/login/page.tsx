@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -37,19 +38,23 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginInput) => {
     setIsLoading(true);
     setError(null);
-
+  
     try {
-      // Use NextAuth signIn
       const result = await signIn("credentials", {
         redirect: false,
         email: data.email,
         password: data.password,
       });
-
+  
       if (result?.error) {
-        setError("Invalid email or password");
+        if (result.error === "USER_NOT_VERIFIED") {
+          toast.error("Please verify your email before logging in.");
+          router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        } else {
+          setError("Invalid email or password");
+        }
       } else {
-        router.push("/"); // Middleware will handle redirect if not verified/setup
+        router.push("/"); 
       }
     } catch (err) {
       setError("An unexpected error occurred");
@@ -57,7 +62,6 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen w-full bg-white flex flex-col md:flex-row overflow-hidden">
       {/* --- LEFT COLUMN: BRAND VISUAL (MODERN SPLIT) --- */}

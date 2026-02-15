@@ -12,6 +12,7 @@ import {
   type StoreSetupInput,
 } from "@/lib/validations/auth";
 import { addDays } from "date-fns";
+import { resend } from "@/lib/resend";
 
 // --- HELPER: Generate 6-digit code ---
 function generateVerificationCode() {
@@ -35,7 +36,7 @@ export async function registerAction(data: RegisterInput) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationCode = generateVerificationCode();
-    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
 
     await prisma.user.create({
       data: {
@@ -43,19 +44,37 @@ export async function registerAction(data: RegisterInput) {
         password: hashedPassword,
         verificationCode,
         verificationCodeExpires,
-        role: "ADMIN", // First user is admin
+        role: "ADMIN",
       },
     });
 
-    // TODO: Send email with `verificationCode` using Resend/SendGrid/SMTP
-    console.log(`[DEV] Verification Code for ${email}: ${verificationCode}`);
+    // Log code for DEV/Testing
+    console.log(`[Auth] Verification Code for ${email}: ${verificationCode}`);
 
-    return {
-      success: true,
-      message: "Account created! Check your email for the code.",
-    };
+    // SEND EMAIL
+    const { error } = await resend.emails.send({
+      from: "Kund Coffee <onboarding@resend.dev>",
+      to: [email],
+      subject: "Verify your email",
+      html: `
+      <h1>Welcome to Kund Coffee</h1>
+      <p>Your verification code is: <strong>${verificationCode}</strong></p>
+      <p>This code expires in 15 minutes</p>`,
+    });
+
+    if (error) {
+      console.error("[Auth] Resend Error (Non-blocking):", error);
+      // Return success anyway so user can proceed with the console-logged code
+      return {
+        success: true,
+        message:
+          "Account created! (Check server console for code if email didn't arrive)",
+      };
+    }
+
+    return { success: true, message: "Account created! Check your email." };
   } catch (error) {
-    console.error("Registration Error:", error);
+    console.error("Register Error:", error);
     return {
       success: false,
       message: "Something went wrong during registration",
@@ -114,25 +133,51 @@ export async function verifyEmailAction(email: string, code: string) {
   }
 }
 
-// --- ACTION: RESEND CODE ---
 export async function resendCodeAction(email: string) {
   try {
+    console.log(`[Auth] Resending code for ${email}`);
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return { success: false, message: "User not found" };
     if (user.emailVerified)
       return { success: false, message: "Account already verified" };
 
     const verificationCode = generateVerificationCode();
-    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
 
     await prisma.user.update({
       where: { email },
       data: { verificationCode, verificationCodeExpires },
     });
 
-    console.log(`[DEV] NEW Code for ${email}: ${verificationCode}`);
+    console.log(
+      `[Auth] NEW Verification Code for ${email}: ${verificationCode}`,
+    );
+
+    // Send email
+    const { data, error } = await resend.emails.send({
+      from: "Kund Coffee <onboarding@resend.dev>",
+      to: [email],
+      subject: "Your new verification code",
+      html: `
+      <h1>New Verification Code</h1>
+      <p>Your new code is: <strong>${verificationCode}</strong></p>
+      <p>This code expires in 15 minutes.</p>
+      <p>If you didn't request this, you can safely ignore this email.</p>`,
+    });
+
+    if (error) {
+      console.error("[Auth] Resend Email Error (Non-blocking):", error);
+      return {
+        success: true,
+        message:
+          "New code generated! (Check server console if email didn't arrive)",
+      };
+    }
+
+    console.log(`[Auth] Code sent to ${email}. ID: ${data?.id}`);
     return { success: true, message: "New code sent!" };
   } catch (error) {
+    console.error("[Auth] Resend System Error:", error);
     return { success: false, message: "Failed to resend code" };
   }
 }
