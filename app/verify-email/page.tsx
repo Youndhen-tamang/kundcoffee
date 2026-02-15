@@ -10,15 +10,17 @@ import {
   ShieldCheck,
   Mail,
   AlertCircle,
+  Coffee,
+  RefreshCcw,
 } from "lucide-react";
 import { verifyCodeSchema, type VerifyCodeInput } from "@/lib/validations/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { verifyEmailAction, resendCodeAction } from "@/app/actions/auth";
 import { toast } from "sonner";
-import { useSession, signOut } from "next-auth/react"; // 1. Import useSession and signOut
+import { useSession, signOut } from "next-auth/react";
 
 function VerifyEmailContent() {
-  const { update } = useSession(); // 2. Initialize the update helper
+  const { update } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -45,13 +47,7 @@ function VerifyEmailContent() {
 
       if (result.success) {
         toast.success(result.message);
-
-        // 3. SECURE SESSION UPDATE
-        // This tells NextAuth: "Run the JWT callback again".
-        // Our JWT callback will then fetch the fresh 'emailVerified' status from Prisma.
         await update();
-
-        // 4. Force refresh of all server components and push to next step
         router.refresh();
         setTimeout(() => {
           router.push("/setup-store?email=" + encodeURIComponent(data.email));
@@ -81,36 +77,50 @@ function VerifyEmailContent() {
 
   if (!email) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
-          <h1 className="text-xl font-bold">Invalid Request</h1>
-          <p className="text-zinc-500">No email address provided.</p>
+      <div className="min-h-screen bg-white flex items-center justify-center p-6">
+        <div className="text-center max-w-sm">
+          <div className="w-12 h-12 bg-red-50 text-red-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle size={24} />
+          </div>
+          <h1 className="text-xl font-semibold text-zinc-900 mb-2">Invalid Session</h1>
+          <p className="text-zinc-500 text-sm mb-6">No email address was provided for verification.</p>
+          <button 
+             onClick={() => router.push('/login')}
+             className="text-sm font-semibold text-zinc-900 underline underline-offset-4"
+          >
+            Return to login
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full bg-white flex items-center justify-center p-6 relative">
-      <div className="absolute inset-0 bg-zinc-50/50" />
+    <div className="min-h-screen w-full bg-[#FAFAFA] flex flex-col items-center justify-center p-6 selection:bg-zinc-100">
+      
+      {/* --- LOGO HEADER --- */}
+      <div className="mb-10 flex flex-col items-center gap-2">
+        <div className="w-10 h-10 bg-zinc-950 flex items-center justify-center rounded-lg shadow-xl">
+          <Coffee size={22} className="text-white" />
+        </div>
+        <div className="flex flex-col items-center text-center">
+          <span className="text-sm font-bold text-zinc-900 tracking-tight leading-none uppercase">Kund</span>
+          <span className="text-[8px] font-semibold text-red-800 tracking-[0.2em] uppercase">Coffee Group</span>
+        </div>
+      </div>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-[400px] bg-white rounded-[32px] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] border border-zinc-100 p-8 lg:p-12 relative z-10"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-[420px] bg-white border border-zinc-200 rounded-2xl p-8 lg:p-12 shadow-sm"
       >
-        <div className="flex flex-col items-center mb-8 text-center">
-          <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center text-white mb-6 shadow-xl shadow-zinc-900/10">
-            <Mail size={32} />
-          </div>
-          <h1 className="text-3xl font-black text-zinc-900 tracking-tight mb-2">
-            Check Your Inbox
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight mb-2">
+            Verify your identity
           </h1>
-          <p className="text-zinc-500 font-medium text-sm leading-relaxed">
-            We've sent a 6-digit code to <br />
-            <span className="text-zinc-900 font-bold">{email}</span>
+          <p className="text-zinc-500 text-sm leading-relaxed">
+            We’ve sent a secure 6-digit code to <br />
+            <span className="text-zinc-900 font-semibold">{email}</span>
           </p>
         </div>
 
@@ -118,13 +128,13 @@ function VerifyEmailContent() {
           <AnimatePresence mode="wait">
             {error && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="bg-red-50 border border-red-100 rounded-2xl p-4 flex gap-3 text-red-600"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-red-50 border-l-2 border-red-800 p-4 flex gap-3 items-center text-red-900"
               >
-                <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                <p className="text-xs font-bold opacity-90">{error}</p>
+                <AlertCircle size={18} className="shrink-0" />
+                <p className="text-xs font-semibold">{error}</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -132,68 +142,71 @@ function VerifyEmailContent() {
           <input type="hidden" {...register("email")} />
 
           <div className="space-y-2">
-            <div className="relative">
-              <input
-                {...register("code")}
-                type="text"
-                maxLength={6}
-                className={`w-full h-16 bg-zinc-50 border ${
-                  errors.code ? "border-red-200" : "border-zinc-100"
-                } rounded-2xl text-2xl font-black text-center text-zinc-900 tracking-[0.5em] focus:outline-none focus:ring-4 focus:ring-zinc-900/5 focus:border-zinc-900 focus:bg-white transition-all placeholder:tracking-normal`}
-                placeholder="000000"
-              />
-            </div>
+            <label className="text-xs font-semibold text-zinc-700 ml-1">Verification Code</label>
+            <input
+              {...register("code")}
+              type="text"
+              maxLength={6}
+              className={`w-full h-14 bg-white border ${
+                errors.code ? "border-red-700 shadow-sm shadow-red-50" : "border-zinc-200"
+              } rounded-lg text-2xl font-semibold text-center text-zinc-900 tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-zinc-900/5 focus:border-zinc-950 transition-all placeholder:text-zinc-200 placeholder:tracking-normal`}
+              placeholder="000000"
+            />
             {errors.code && (
-              <p className="text-[10px] font-bold text-red-500 text-center">
+              <p className="text-[11px] text-red-800 font-medium mt-1 text-center">
                 {errors.code.message}
               </p>
             )}
           </div>
 
           <div className="pt-2 space-y-4">
-            <motion.button
-              whileHover={{ y: -2 }}
-              whileTap={{ y: 0, scale: 0.98 }}
+            <button
               disabled={isLoading}
               type="submit"
-              className="w-full h-14 bg-zinc-900 text-white rounded-2xl font-black text-[13px] uppercase tracking-[0.15em] shadow-lg hover:bg-zinc-800 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full h-12 bg-zinc-950 hover:bg-zinc-800 text-white rounded-lg font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-zinc-200"
             >
               {isLoading ? (
-                <Loader2 className="animate-spin" size={20} />
+                <Loader2 className="animate-spin" size={18} />
               ) : (
                 <>
                   Verify Account
-                  <ArrowRight size={18} />
+                  <ArrowRight size={16} />
                 </>
               )}
-            </motion.button>
+            </button>
 
             <button
               type="button"
               onClick={onResend}
-              className="w-full text-[11px] font-bold text-zinc-400 hover:text-zinc-900 transition-colors uppercase tracking-widest"
+              className="w-full flex items-center justify-center gap-2 text-[11px] font-bold text-zinc-400 hover:text-zinc-900 transition-colors uppercase tracking-widest"
             >
-              Didn't receive code? Resend
+              <RefreshCcw size={12} />
+              Resend code
             </button>
           </div>
         </form>
 
-        <div className="mt-10 flex flex-col items-center justify-center gap-4 text-zinc-300">
-          <div className="flex items-center gap-2">
+        <div className="mt-10 pt-8 border-t border-zinc-100 flex flex-col items-center gap-4">
+          <div className="flex items-center gap-1.5 text-zinc-300">
             <ShieldCheck size={14} />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em]">
-              Secure Verification
+            <span className="text-[10px] font-bold uppercase tracking-widest">
+              End-to-End Secure
             </span>
           </div>
 
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="text-[10px] font-bold text-zinc-400 hover:text-red-500 transition-colors"
+            className="text-[11px] font-bold text-zinc-400 hover:text-red-800 transition-colors uppercase tracking-tight"
           >
-            Wrong email? Log out
+            Wrong email? <span className="underline underline-offset-4">Sign out</span>
           </button>
         </div>
       </motion.div>
+
+      {/* Footer Branding */}
+      <footer className="mt-12 text-[10px] text-zinc-400 font-medium uppercase tracking-[0.2em]">
+        Proprietary Security Module • Kund Coffee Group
+      </footer>
     </div>
   );
 }
@@ -202,7 +215,7 @@ export default function VerifyEmailPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center bg-white">
           <Loader2 className="animate-spin text-zinc-900" size={32} />
         </div>
       }
