@@ -102,7 +102,7 @@ export default function CustomersPage() {
         onSearch={setSearchQuery}
         onExport={handleExport}
         actionButton={
-          <Button onClick={() => router.push("/customers/new")}>Add Customer</Button>
+          <Button onClick={() => router.push("/dashboard/customers/new")}>Add Customer</Button>
         }
       />
 
@@ -128,7 +128,7 @@ export default function CustomersPage() {
           { header: "Due Amount", accessor: (c: Customer) => c.dueAmount ?? 0 },
         ]}
         data={filteredCustomers}
-        onRowClick={(c: Customer) => router.push(`/customer/${c.id}`)}
+        onRowClick={(c: Customer) => router.push(`/dashboard/customer/${c.id}`)}
       />
     </div>
   );

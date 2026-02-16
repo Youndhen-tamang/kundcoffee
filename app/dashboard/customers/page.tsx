@@ -165,7 +165,7 @@ export default function CustomersPage() {
               <tr
                 key={customer.id}
                 className="hover:bg-red-50/50 transition-colors cursor-pointer group"
-                onClick={() => router.push(`/customers/${customer.id}`)}
+                onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
               >
                 <td className="px-6 py-4 font-medium text-gray-500">
                   {index + 1}

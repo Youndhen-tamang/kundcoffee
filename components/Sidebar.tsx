@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard,
   Table2,
@@ -24,6 +24,15 @@ import {
 } from "lucide-react";
 
 export default function Sidebar() {
+  const { data: session } = useSession(); // 2. Get session data
+  
+  // 3. Helper to get initials (e.g., "Bhuban Acharya" -> "BA")
+  const getInitials = (name?: string | null) => {
+    if (!name) return "??";
+    const parts = name.split(" ");
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
   const pathname = usePathname();
   const [openSection, setOpenSection] = useState<string | null>(
     pathname.includes("menu")
@@ -127,29 +136,29 @@ export default function Sidebar() {
               Menu
             </span>
             <div className="space-y-1">
-              <NavItem href="/" icon={LayoutDashboard} label="Dashboard" />
-              <NavItem href="/orders" icon={Package} label="Orders" />
+              <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+              <NavItem href="/dashboard/orders" icon={Package} label="Orders" />
 
               <AccordionItem id="menu" label="Menu" icon={UtensilsCrossed}>
                 <NavItem
-                  href="/menu/categories"
+                  href="/dashboard/menu/categories"
                   icon={Tag}
                   label="Categories"
                 />
                 <NavItem
-                  href="/menu/sub-menus"
+                  href="/dashboard/menu/sub-menus"
                   icon={Layers}
                   label="Sub Categories"
                 />
                 <NavItem
-                  href="/menu/dishes"
+                  href="/dashboard/menu/dishes"
                   icon={UtensilsCrossed}
                   label="Dishes"
                 />
 
-                <NavItem href="/menu/addons" icon={Puzzle} label="Add-ons" />
+                <NavItem href="/dashboard/menu/addons" icon={Puzzle} label="Add-ons" />
                 <NavItem
-                  href="/menu/combos"
+                  href="/dashboard/menu/combos"
                   icon={Package}
                   label="Combos Set"
                 />
@@ -157,13 +166,13 @@ export default function Sidebar() {
               </AccordionItem>
 
               <AccordionItem id="core" label="Tables" icon={Database}>
-                <NavItem href="/spaces" icon={Map} label="Spaces" />
-                <NavItem href="/tables" icon={Table2} label="Tables" />
-                <NavItem href="/qrcodes" icon={QrCode} label="QR Codes" />
+                <NavItem href="/dashboard/spaces" icon={Map} label="Spaces" />
+                <NavItem href="/dashboard/tables" icon={Table2} label="Tables" />
+                <NavItem href="/dashboard/qrcodes" icon={QrCode} label="QR Codes" />
               </AccordionItem>
 
-              <NavItem href="/customers" icon={Users} label="Customers" />
-              <NavItem href="/finance" icon={Database} label="Finance" />
+              <NavItem href="/dashboard/customers" icon={Users} label="Customers" />
+              <NavItem href="/dashboard/finance" icon={Database} label="Finance" />
             </div>
           </div>
 
@@ -172,7 +181,7 @@ export default function Sidebar() {
               Settings
             </span>
             <div className="space-y-1">
-              <NavItem href="/settings" icon={Settings} label="General" />
+              <NavItem href="/dashboard/settings" icon={Settings} label="General" />
             </div>
           </div>
         </nav>
@@ -186,10 +195,10 @@ export default function Sidebar() {
           </div>
           <div className="flex flex-col">
             <span className="text-[11px] font-black text-zinc-900 leading-none">
-              John Doe
+              {session?.user.email}
             </span>
             <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider mt-0.5">
-              Admin
+              {session?.user.role}
             </span>
           </div>
         </div>

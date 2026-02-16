@@ -6,26 +6,31 @@ export default async function middleware(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const path = req.nextUrl.pathname;
 
+  // Route Definitions
   const isAuthPage = path === "/login" || path === "/signup";
   const isVerifyPage = path === "/verify-email";
   const isSetupPage = path === "/setup-store";
+  const isDashboardPage = path.startsWith("/dashboard");
+  const isHomePage = path === "/";
 
   // 1. If user is NOT logged in
   if (!token) {
-    // If they are trying to access a protected page, send to login
-    if (!isAuthPage) {
+    // PROTECT the Dashboard and onboarding pages
+    if (isDashboardPage || isVerifyPage || isSetupPage) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
-    // If they are on login/signup, let them through
+    // ALLOW the Home page, Login, and Signup
     return NextResponse.next();
   }
 
-  // 2. If user IS logged in, don't let them see Login/Signup
+  // 2. If user IS logged in, prevent them from seeing Login/Signup
+  // Redirect them to dashboard instead of home
   if (isAuthPage) {
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   // 3. Email Verification Check
+  // We force verification even if they try to look at the public home page while logged in
   if (!token.emailVerified && !isVerifyPage) {
     const url = new URL("/verify-email", req.url);
     if (token.email) url.searchParams.set("email", token.email as string);
@@ -37,20 +42,18 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/setup-store", req.url));
   }
 
-  // 5. Cleanup: Prevent accessing verify/setup if already finished
+  // 5. Cleanup: If they are finished with onboarding, don't let them go back
   if (token.emailVerified && isVerifyPage) {
-    const target = token.isSetupComplete ? "/" : "/setup-store";
-    return NextResponse.redirect(new URL(target, req.url));
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
   
   if (token.isSetupComplete && isSetupPage) {
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   return NextResponse.next();
 }
 
-// Ensure the middleware runs for these paths
 export const config = {
   matcher: [
     "/",
