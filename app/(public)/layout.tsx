@@ -7,6 +7,8 @@ import { useCartStore } from "../store/useCartStore";
 import { useLocationStore } from "../store/useLocationStore";
 import { useState } from "react";
 import LocationPicker from "@/components/LocationPicker";
+import { Metadata } from "next";
+
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

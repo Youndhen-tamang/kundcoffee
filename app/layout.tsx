@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { SettingsProvider } from "@/components/providers/SettingsProvider";
+import AuthProvider from "@/components/providers/SessionProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,14 +14,20 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
 export const metadata: Metadata = {
-  title: "Kund Coffee",
-  description: "POS System for Resturants",
+  title: "Raj Biryani | Kathmandu",
+  description: "POS System for Restaurants",
+  icons: {
+    icon: [
+      {
+        url: "/logo.jpeg",
+        href: "/logo.jpeg",
+      },
+    ],
+    shortcut: "/logo.jpeg",
+    apple: "/logo.jpeg",
+  },
 };
-
-import { SettingsProvider } from "@/components/providers/SettingsProvider";
-import AuthProvider from "@/components/providers/SessionProvider";
 
 export default function RootLayout({
   children,
