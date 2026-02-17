@@ -6,10 +6,10 @@ import { useLocationStore } from "../app/store/useLocationStore";
 export default function LocationPicker({ onSelect }: { onSelect?: () => void }) {
   const { address, setLocation } = useLocationStore();
   const [loading, setLoading] = useState(false);
-  const areas = ["New Road", "Thamel", "Baneshwor", "Koteshwor", "Balaju", "Lalitpur", "Bhaktapur"];
+  const areas = ["Golfutar", "Budhanilkantha", "Tokha", "Maharajgunj", "Lazimpat", "Baluwatar", "Sukedhara","Kapan","Mandikhatar"];
 
   const handleGPS = () => {
-    setLoading(true);
+    setLoading(true)
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
