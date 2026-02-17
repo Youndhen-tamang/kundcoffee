@@ -20,12 +20,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/logo.jpeg",
-        href: "/logo.jpeg",
+        url: "/Logo.jpeg",
+        href: "/Logo.jpeg",
       },
     ],
-    shortcut: "/logo.jpeg",
-    apple: "/logo.jpeg",
+    shortcut: "/Logo.jpeg",
+    apple: "/Logo.jpeg",
   },
 };
 
@@ -40,10 +40,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-        <SettingsProvider>
-          {children}
-          <Toaster position="top-right" richColors duration={2000} />
-        </SettingsProvider>
+          <SettingsProvider>
+            {children}
+            <Toaster position="top-right" richColors duration={2000} />
+          </SettingsProvider>
         </AuthProvider>
       </body>
     </html>
