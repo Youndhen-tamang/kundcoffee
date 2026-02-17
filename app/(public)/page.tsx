@@ -5,7 +5,7 @@ import { Plus, Minus } from "lucide-react";
 import { useCartStore } from "../store/useCartStore";
 export default function Home() {
   const { cart, addItem, decrementItem } = useCartStore();
-  
+
   // HYDRATION FIX: Ensures client-side data matches server-side initial render
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -13,26 +13,29 @@ export default function Home() {
   }, []);
 
   const menuItems = [
-    { 
-      id: 1, 
-      name: "Chicken Dum Biryani", 
-      description: "Fragrant basmati rice layered with tender, spiced marinated chicken, slow-cooked to perfection and served with refreshing raita.", 
-      price: "Rs 590", 
-      image: "/food/Chicken.jpg" 
+    {
+      id: 1,
+      name: "Chicken Dum Biryani",
+      description:
+        "Fragrant basmati rice layered with tender, spiced marinated chicken, slow-cooked to perfection and served with refreshing raita.",
+      price: "Rs 590",
+      image: "/food/Chicken.jpg",
     },
-    { 
-      id: 2, 
-      name: "Royal Mutton Biryani", 
-      description: "Aromatic basmati rice layered with tender, slow-cooked mutton and rich spices, infused with deep flavors and served with refreshing raita..", 
-      price: "Rs 850", 
-      image: "/food/Mutton.jpg" 
+    {
+      id: 2,
+      name: "Royal Mutton Biryani",
+      description:
+        "Aromatic basmati rice layered with tender, slow-cooked mutton and rich spices, infused with deep flavors and served with refreshing raita..",
+      price: "Rs 850",
+      image: "/food/Mutton.jpg",
     },
-    { 
-      id: 3, 
-      name: "Paneer Tikka Biryani", 
-      description: "Fragrant basmati rice layered with soft, spiced paneer cubes and aromatic herbs, slow-cooked for rich flavor and served with refreshing raita.", 
-      price: "Rs 590", 
-      image: "/food/Panner.jpg" 
+    {
+      id: 3,
+      name: "Paneer Biryani",
+      description:
+        "Fragrant basmati rice layered with soft, spiced paneer cubes and aromatic herbs, slow-cooked for rich flavor and served with refreshing raita.",
+      price: "Rs 590",
+      image: "/food/Panner.jpg",
     },
   ];
 
@@ -56,25 +59,38 @@ export default function Home() {
 
       {/* MENU SECTION */}
       <div className="px-6 mt-10">
-        <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400 mb-6">Our Menu</h3>
-        
+        <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400 mb-6">
+          Our Menu
+        </h3>
+
         <div className="space-y-8">
           {menuItems.map((item) => {
             // Check quantity safely after mounting
-            const quantity = mounted ? cart.find(i => i.id === item.id)?.quantity || 0 : 0;
-            
+            const quantity = mounted
+              ? cart.find((i) => i.id === item.id)?.quantity || 0
+              : 0;
+
             return (
-              <div key={item.id} className="bg-white rounded-3xl overflow-hidden border border-zinc-100 shadow-sm">
-                
+              <div
+                key={item.id}
+                className="bg-white rounded-3xl overflow-hidden border border-zinc-100 shadow-sm"
+              >
                 {/* 1. IMAGE AT TOP */}
                 <div className="relative h-52 w-full">
-                  <Image src={item.image} alt={item.name} fill className="object-cover" />
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
 
                 <div className="p-5">
                   {/* 2. TITLE */}
-                  <h4 className=" font-kanit font-semibold text-lg text-gray-800 " >{item.name}</h4>
-                  
+                  <h4 className=" font-kanit font-semibold text-lg text-gray-800 ">
+                    {item.name}
+                  </h4>
+
                   {/* 3. LESS DESCRIPTION */}
                   <p className="text-slate-500 text-sm mt-1 leading-relaxed">
                     {item.description}
@@ -82,28 +98,32 @@ export default function Home() {
 
                   {/* 4. PRICE & ADD BUTTON (FLEX ROW) */}
                   <div className="flex items-center justify-between mt-5 pt-4 border-t border-zinc-50">
-                    <span className="font-semibold text-md text-gray-700">{item.price}</span>
+                    <span className="font-semibold text-md text-gray-700">
+                      {item.price}
+                    </span>
 
                     <div className="flex items-center bg-zinc-50 rounded-xl border border-zinc-200 overflow-hidden h-10">
                       {quantity > 0 ? (
                         <>
-                          <button 
-                            onClick={() => decrementItem(item.id)} 
+                          <button
+                            onClick={() => decrementItem(item.id)}
                             className="px-3 h-full text-orange-600 hover:bg-zinc-100 transition-colors"
                           >
                             <Minus size={16} strokeWidth={2.5} />
                           </button>
-                          <span className="px-2 font-bold text-slate-800 text-sm">{quantity}</span>
-                          <button 
-                            onClick={() => addItem(item)} 
+                          <span className="px-2 font-bold text-slate-800 text-sm">
+                            {quantity}
+                          </span>
+                          <button
+                            onClick={() => addItem(item)}
                             className="px-3 h-full text-orange-600 hover:bg-zinc-100 transition-colors"
                           >
                             <Plus size={16} strokeWidth={2.5} />
                           </button>
                         </>
                       ) : (
-                        <button 
-                          onClick={() => addItem(item)} 
+                        <button
+                          onClick={() => addItem(item)}
                           className="px-6 h-full font-bold text-orange-600 text-xs uppercase tracking-wider hover:bg-orange-50 transition-colors"
                         >
                           Add
@@ -120,5 +140,3 @@ export default function Home() {
     </div>
   );
 }
-
-      
