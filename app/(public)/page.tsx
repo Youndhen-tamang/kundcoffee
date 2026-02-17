@@ -16,30 +16,30 @@ export default function Home() {
     { 
       id: 1, 
       name: "Chicken Dum Biryani", 
-      description: "Fragrant basmati rice layered with spiced chicken and aromatics.", 
+      description: "Fragrant basmati rice layered with tender, spiced marinated chicken, slow-cooked to perfection and served with refreshing raita.", 
       price: "Rs 590", 
-      image: "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?q=80&w=800&auto=format&fit=crop" 
+      image: "/food/Chicken.jpg" 
     },
     { 
       id: 2, 
       name: "Royal Mutton Biryani", 
-      description: "Traditional slow-cooked succulent mutton with saffron rice.", 
+      description: "Aromatic basmati rice layered with tender, slow-cooked mutton and rich spices, infused with deep flavors and served with refreshing raita..", 
       price: "Rs 850", 
-      image: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?q=80&w=800&auto=format&fit=crop" 
+      image: "/food/Mutton.jpg" 
     },
     { 
       id: 3, 
       name: "Paneer Tikka Biryani", 
-      description: "Marinated paneer cubes with saffron-infused long grain rice.", 
+      description: "Fragrant basmati rice layered with soft, spiced paneer cubes and aromatic herbs, slow-cooked for rich flavor and served with refreshing raita.", 
       price: "Rs 590", 
-      image: "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?q=80&w=800&auto=format&fit=crop" 
+      image: "/food/Panner.jpg" 
     },
   ];
 
   return (
     <div className="pb-32">
       {/* HERO SECTION */}
-      <div className="px-6 pt-6">
+      {/* <div className="px-6 pt-6">
         <div className="relative h-48 rounded-3xl overflow-hidden shadow-sm border border-zinc-100">
            <Image 
              src="https://images.unsplash.com/photo-1633945274405-b6c8069047b0?q=80&w=800&auto=format&fit=crop" 
@@ -52,11 +52,11 @@ export default function Home() {
               <h2 className="text-white text-xl font-semibold">Free Raita & Fresh Salad</h2>
            </div>
         </div>
-      </div>
+      </div> */}
 
       {/* MENU SECTION */}
       <div className="px-6 mt-10">
-        <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400 mb-6">Signature Menu</h3>
+        <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-400 mb-6">Our Menu</h3>
         
         <div className="space-y-8">
           {menuItems.map((item) => {

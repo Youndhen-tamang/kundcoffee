@@ -64,7 +64,7 @@ export default function PublicLayout({
             </div>
           </button>
 
-          <div className="relative w-20 h-12">
+          <div className="relative w-20 h-16">
             <Image
               src="/Logo.jpeg"
               alt="Logo"
