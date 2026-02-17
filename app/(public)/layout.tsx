@@ -110,7 +110,7 @@ export default function PublicLayout({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <a
-                  href="https://wa.me/9763681946"
+                  href="https://wa.me/9763681795"
                   target="_blank"
                   className="flex flex-col items-center gap-3 p-4 rounded-3xl bg-emerald-50 border border-emerald-100"
                 >
@@ -122,7 +122,7 @@ export default function PublicLayout({
                   </span>
                 </a>
                 <a
-                  href="tel:9763681946"
+                  href="tel:9763681795"
                   className="flex flex-col items-center gap-3 p-4 rounded-3xl bg-zinc-50 border border-zinc-100"
                 >
                   <div className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-white">

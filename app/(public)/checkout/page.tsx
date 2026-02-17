@@ -61,12 +61,12 @@ export default function CheckoutPage() {
     
     // Use the coordinates if it's an Auto/GPS location
     const gpsLink = (isAuto && coords) 
-      ? `%0A%0A*📍 Live Location:* https://www.google.com/maps?q=${coords.lat},${coords.lng}` 
+      ? `Live Location:* https://www.google.com/maps?q=${coords.lat},${coords.lng}` 
       : "";
 
-    const message = `*RAJ BIRYANI - NEW ORDER*%0A--------------------------%0A*Customer:* ${form.name}%0A*Phone:* ${form.phone}%0A*Area:* ${address}%0A*Details:* ${form.details}${gpsLink}%0A--------------------------%0A*Items:*%0A${orderItems}%0A--------------------------%0A*Total Amount:* Rs ${getTotal()}%0A--------------------------%0A_Please confirm my order!_`;
+    const message = `*RAJ BIRYANI - NEW ORDER*%0A--------------------------%0A*Customer:* ${form.name}%0A*Phone:* ${form.phone}%0A*Area:* ${address}%0A*Details:* ${form.details}${gpsLink}%0A--------------------------%0A*Items:*%0A${orderItems}%0A--------------------------%0A_Please confirm my order!_`;
 
-    window.open(`https://wa.me/9843094860?text=${message}`, "_blank");
+    window.open(`https://wa.me/9763681795?text=${message}`, "_blank");
     
     clearCart();
     router.push('/');
