@@ -50,7 +50,7 @@ export function KOTCard({
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case "PENDING":
-        return "bg-red-50 text-red-600 border-red-100 font-medium";
+        return "bg-emerald-50 text-emerald-600 border-emerald-100 font-medium";
       case "PREPARING":
         return "bg-zinc-50 text-zinc-600 border-zinc-100 font-medium";
       case "READYTOPICK":
@@ -129,7 +129,7 @@ export function KOTCard({
         <Popover
           align="left"
           trigger={
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-zinc-200 rounded-xl text-[10px] font-medium uppercase tracking-widest text-zinc-600 hover:text-red-500 hover:border-red-100 transition-all shadow-sm">
+            <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-zinc-200 rounded-xl text-[10px] font-medium uppercase tracking-widest text-zinc-600 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm">
               Manage KOT <MoreVertical size={14} className="text-zinc-400" />
             </button>
           }

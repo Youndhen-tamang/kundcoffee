@@ -65,7 +65,7 @@ export function OrderDetailView({
   const getStatusStyle = (status: OrderStatus) => {
     switch (status) {
       case "PENDING":
-        return "border-red-100 text-red-600 bg-red-50";
+        return "border-emerald-100 text-emerald-600 bg-emerald-50";
       case "PREPARING":
         return "border-zinc-200 text-zinc-600 bg-zinc-50";
       case "READYTOPICK":
@@ -95,7 +95,7 @@ export function OrderDetailView({
       {/* HEADER */}
       <div className="bg-white border-b border-zinc-100 p-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-zinc-900 rounded-lg flex items-center justify-center text-white">
+          <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-emerald-200">
             <Package size={20} />
           </div>
           <div>
@@ -138,7 +138,7 @@ export function OrderDetailView({
           <div className="h-6 w-px bg-zinc-200 mx-1" />
           <button
             onClick={onClose}
-            className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
+            className="p-2 text-zinc-400 hover:text-emerald-500 transition-colors"
           >
             <X size={20} strokeWidth={1.5} />
           </button>
@@ -274,10 +274,10 @@ export function OrderDetailView({
                   <span className="text-zinc-900">04</span>
                 </div>
                 <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest text-zinc-400">
-                  <span className="flex items-center gap-2 text-red-500">
+                  <span className="flex items-center gap-2 text-emerald-500">
                     <Clock size={12} /> Pending
                   </span>
-                  <span className="text-red-600 font-black">
+                  <span className="text-emerald-600 font-black">
                     {pendingItems.length} Items
                   </span>
                 </div>
@@ -337,19 +337,19 @@ export function OrderDetailView({
                 </Button>
                 <Button
                   onClick={() => onCheckout(order)}
-                  className="w-full bg-zinc-900 hover:bg-black text-white font-black text-[10px] h-12 uppercase tracking-widest flex items-center justify-center gap-2"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] h-12 uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 border-none"
                 >
                   <CheckCircle2 size={18} /> Checkout
                 </Button>
               </>
             ) : (
-              <div className="w-full py-4 bg-zinc-100 rounded-xl border border-zinc-200 flex flex-col items-center gap-1">
+              <div className="w-full py-4 bg-emerald-50 rounded-xl border border-emerald-100 flex flex-col items-center gap-1 shadow-sm">
                 {order.status === "COMPLETED" ? (
                   <CheckCircle2 className="text-emerald-500" size={20} />
                 ) : (
-                  <Ban className="text-red-400" size={20} />
+                  <Ban className="text-emerald-400" size={20} />
                 )}
-                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                <span className="text-[10px] font-black text-emerald-600/70 uppercase tracking-widest">
                   Order {order.status}
                 </span>
               </div>

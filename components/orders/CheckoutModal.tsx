@@ -107,6 +107,7 @@ export function CheckoutModal({
     openingBalance: 0,
   });
 
+  const [tenderAmount, setTenderAmount] = useState<number>(0);
   const [showQrImage, setShowQrImage] = useState(false);
 
   const fetchData = async () => {
@@ -142,6 +143,7 @@ export function CheckoutModal({
       fetchMenuData();
     }
   }, [isSelectingFreeItems]);
+
   const handleCreateCustomer = async () => {
     if (!formData.fullName) return;
     const res = await addCustomer(formData);
@@ -196,24 +198,6 @@ export function CheckoutModal({
     0,
   );
 
-  // const discountAmount = useMemo(() => {
-  //   let totalDiscount = 0;
-
-  //   // 1️⃣ Loyalty discount (percent only)
-  //   if (loyaltyDiscountPercent > 0) {
-  //     totalDiscount += (calculatedSubtotal * loyaltyDiscountPercent) / 100;
-  //   }
-
-  //   // 2️⃣ Manual discount
-  //   if (discountType === "PERCENT") {
-  //     totalDiscount += (calculatedSubtotal * discountValue) / 100;
-  //   } else {
-  //     totalDiscount += discountValue;
-  //   }
-
-  //   return Math.min(totalDiscount, calculatedSubtotal);
-  // }, [calculatedSubtotal, discountValue, discountType, loyaltyDiscountPercent]);
-
   const taxRate = 0.13;
   const serviceChargeRate = 0.1;
 
@@ -228,6 +212,10 @@ export function CheckoutModal({
 
   const grandTotal =
     subtotalAfterDiscount + taxAmount + serviceChargeAmount + customTaxesTotal;
+
+  const returnAmount = useMemo(() => {
+    return Math.max(0, tenderAmount - grandTotal);
+  }, [tenderAmount, grandTotal]);
 
   const handleAddTax = () => {
     if (!newTaxName || !newTaxPercent) return;
@@ -244,43 +232,6 @@ export function CheckoutModal({
     window.print();
   };
 
-  // const handleProcessCheckout = async () => {
-  //   setIsProcessing(true);
-  //   try {
-  //     const res = await fetch("/api/checkout", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         tableId: order.tableId,
-  //         paymentMethod,
-  //         amount: grandTotal,
-  //         customerId: selectedCustomer?.id,
-  //         subtotal: calculatedSubtotal,
-  //         tax: taxAmount,
-  //         serviceCharge: serviceChargeAmount,
-  //         discount: totalDiscount,
-  //         manualDiscount: manualDiscountAmount,
-  //         loyaltyDiscount: loyaltyDiscountAmount,
-  //       }),
-  //     });
-
-  //     const data = await res.json();
-  //     if (data.success) {
-  //       setStep("SUCCESS");
-  //       setTimeout(() => {
-  //         onCheckoutComplete(data.data);
-  //         onClose();
-  //       }, 2000);
-  //     } else {
-  //       alert(data.message || "Checkout failed");
-  //     }
-  //   } catch (error) {
-  //     console.error("Checkout Error:", error);
-  //     alert("An error occurred during checkout");
-  //   } finally {
-  //     setIsProcessing(false);
-  //   }
-  // };
   const handleProcessCheckout = async () => {
     setIsProcessing(true);
 
@@ -291,10 +242,10 @@ export function CheckoutModal({
         body: JSON.stringify({
           tableId: order.tableId,
           sessionId: order.sessionId,
-          paymentMethod, // This will be "QR", "CASH", or "CARD"
+          paymentMethod,
           amount: grandTotal,
           customerId: selectedCustomer?.id,
-          subtotal: calculatedSubtotal, // This is net subtotal after complimentary
+          subtotal: calculatedSubtotal,
           tax: taxAmount + customTaxesTotal,
           serviceCharge: serviceChargeAmount,
           discount: totalDiscount,
@@ -311,10 +262,7 @@ export function CheckoutModal({
       const data = await res.json();
 
       if (data.success) {
-        // SUCCESS FOR ALL METHODS (CASH, CARD, AND QR)
         setStep("SUCCESS");
-
-        // Wait 2 seconds then close
         setTimeout(() => {
           onCheckoutComplete(data.data);
           onClose();
@@ -391,28 +339,17 @@ export function CheckoutModal({
 
   const renderPrepare = () => (
     <div className="space-y-6">
-      {/* Items Table */}
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
         <div className="flex justify-between items-center p-4 border-b border-zinc-100 bg-zinc-50/50">
           <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
             Order Items
           </h3>
-          <Button
-            onClick={() => setIsSelectingFreeItems(true)}
-            variant="secondary"
-            className="h-8 px-3 text-[10px] font-black uppercase tracking-widest border-2 border-emerald-100 text-emerald-600 hover:bg-emerald-50"
-          >
-            <PlusCircle size={14} className="mr-1.5" /> Select Free Items
-          </Button>
         </div>
         <table className="w-full text-left text-xs">
           <thead className="bg-zinc-50 border-b border-zinc-200 uppercase tracking-widest text-[10px] text-zinc-400 font-black">
             <tr>
               <th className="px-4 py-3 font-black">Item</th>
               <th className="px-4 py-3 font-black text-center">Qty</th>
-              <th className="px-4 py-3 font-black text-center w-28">
-                Comp Qty
-              </th>
               <th className="px-4 py-3 font-black text-right">Rate</th>
               <th className="px-4 py-3 font-black text-right">Total</th>
               <th className="px-4 py-3 font-black text-center w-12"></th>
@@ -424,36 +361,20 @@ export function CheckoutModal({
               return (
                 <tr
                   key={item.id}
-                  className={`${compQty > 0 ? "bg-emerald-50/30" : ""}`}
+                  className={`${compQty > 0 ? "bg-zinc-50/50" : ""}`}
                 >
                   <td className="px-4 py-4">
                     <p className="font-bold text-zinc-900">
                       {item.dish?.name || item.combo?.name || "Dish"}
                     </p>
                     {compQty > 0 && (
-                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-1 mt-1">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600 flex items-center gap-1 mt-1">
                         <Gift size={10} /> {compQty} complimentary
                       </span>
                     )}
                   </td>
                   <td className="px-4 py-4 text-center font-medium text-zinc-600">
                     {item.quantity}
-                  </td>
-                  <td className="px-4 py-4 flex justify-center">
-                    <input
-                      type="number"
-                      min="0"
-                      max={item.quantity}
-                      value={compQty}
-                      onChange={(e) =>
-                        setCompQty(
-                          item.id,
-                          parseInt(e.target.value) || 0,
-                          item.quantity,
-                        )
-                      }
-                      className="w-16 h-8 bg-white border border-zinc-200 rounded-lg text-center text-xs font-bold focus:ring-1 ring-emerald-500 outline-none"
-                    />
                   </td>
                   <td className="px-4 py-4 text-right font-medium text-zinc-600">
                     {settings.currency} {item.unitPrice.toFixed(2)}
@@ -462,19 +383,19 @@ export function CheckoutModal({
                     <span
                       className={
                         compQty >= item.quantity
-                          ? "line-through text-zinc-400 decoration-2"
+                          ? "line-through text-zinc-300 decoration-2"
                           : ""
                       }
                     >
                       {settings.currency}{" "}
                       {(item.quantity * item.unitPrice).toFixed(2)}
                     </span>
-                    {compQty > 0 && (
-                      <span className="ml-2 text-emerald-600">
+                    {compQty > 0 && compQty < item.quantity && (
+                      <span className="ml-2 text-zinc-900">
                         {settings.currency}{" "}
-                        {(
-                          Math.max(0, item.quantity - compQty) * item.unitPrice
-                        ).toFixed(2)}
+                        {((item.quantity - compQty) * item.unitPrice).toFixed(
+                          2,
+                        )}
                       </span>
                     )}
                   </td>
@@ -482,50 +403,11 @@ export function CheckoutModal({
                 </tr>
               );
             })}
-
-            {extraFreeItems.map((item) => (
-              <tr key={item.id} className="bg-emerald-50/50">
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-2">
-                    <Gift size={14} className="text-emerald-500" />
-                    <p className="font-black text-emerald-700 uppercase tracking-tight">
-                      {item.name}
-                    </p>
-                  </div>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600/70">
-                    Extra Free Item
-                  </span>
-                </td>
-                <td className="px-4 py-4 text-center font-black text-emerald-700">
-                  {item.quantity}
-                </td>
-                <td className="px-4 py-4 text-center">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">
-                    Free
-                  </span>
-                </td>
-                <td className="px-4 py-4 text-right font-medium text-emerald-600/60">
-                  {settings.currency} {item.unitPrice.toFixed(2)}
-                </td>
-                <td className="px-4 py-4 text-right font-black text-emerald-600">
-                  {settings.currency} 0.00
-                </td>
-                <td className="px-4 py-4 text-center">
-                  <button
-                    onClick={() => removeFreeItem(item.id)}
-                    className="p-1 text-zinc-300 hover:text-red-500 transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
-                </td>
-              </tr>
-            ))}
           </tbody>
         </table>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Discounts & Toggles */}
         <div className="space-y-4">
           <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
@@ -558,7 +440,10 @@ export function CheckoutModal({
                 <input
                   type="number"
                   value={discountValue}
-                  onChange={(e) => setDiscountValue(Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setDiscountValue(isNaN(val) ? 0 : val);
+                  }}
                   className="w-full h-[38px] px-4 bg-white border border-zinc-200 rounded-xl text-xs font-bold focus:ring-1 focus:ring-zinc-900 outline-none"
                   placeholder="0.00"
                 />
@@ -573,7 +458,7 @@ export function CheckoutModal({
                   </span>
                   <button
                     onClick={() => setIncludeTax(!includeTax)}
-                    className={`w-6 h-3 rounded-full transition-colors relative ${includeTax ? "bg-red-500" : "bg-zinc-300"}`}
+                    className={`w-6 h-3 rounded-full transition-colors relative ${includeTax ? "bg-zinc-900" : "bg-zinc-300"}`}
                   >
                     <div
                       className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${includeTax ? "left-[13px]" : "left-0.5"}`}
@@ -587,7 +472,7 @@ export function CheckoutModal({
                 </span>
                 <button
                   onClick={() => setIncludeServiceCharge(!includeServiceCharge)}
-                  className={`w-6 h-3 rounded-full transition-colors relative ${includeServiceCharge ? "bg-red-500" : "bg-zinc-300"}`}
+                  className={`w-6 h-3 rounded-full transition-colors relative ${includeServiceCharge ? "bg-zinc-900" : "bg-zinc-300"}`}
                 >
                   <div
                     className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${includeServiceCharge ? "left-[13px]" : "left-0.5"}`}
@@ -596,76 +481,6 @@ export function CheckoutModal({
               </div>
             </div>
           </div>
-
-          {settings.includeTaxByDefault === "true" && (
-            <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                  Custom Taxes
-                </h4>
-                {!isAddingTax ? (
-                  <button
-                    onClick={() => setIsAddingTax(true)}
-                    className="text-[10px] font-bold text-red-600 uppercase tracking-wider hover:text-red-700"
-                  >
-                    + Add
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setIsAddingTax(false)}
-                    className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-
-              {isAddingTax && (
-                <div className="flex gap-2 items-center bg-white p-2 rounded-lg animate-in slide-in-from-top-2 border border-zinc-200">
-                  <input
-                    placeholder="Tax Name"
-                    className="text-[10px] p-2 rounded border bg-zinc-50 flex-1 outline-none focus:border-zinc-900"
-                    value={newTaxName}
-                    onChange={(e) => setNewTaxName(e.target.value)}
-                  />
-                  <input
-                    placeholder="%"
-                    type="number"
-                    className="text-[10px] p-2 rounded border bg-zinc-50 w-14 outline-none focus:border-zinc-900"
-                    value={newTaxPercent}
-                    onChange={(e) => setNewTaxPercent(e.target.value)}
-                  />
-                  <button
-                    onClick={handleAddTax}
-                    className="bg-zinc-900 text-white p-2 rounded shadow-sm hover:bg-zinc-800"
-                  >
-                    <CheckCircle2 size={14} />
-                  </button>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                {customTaxes.map((tax, idx) => (
-                  <div
-                    key={idx}
-                    className="flex justify-between items-center text-[10px] font-bold text-zinc-600 bg-white p-2 rounded border border-zinc-100"
-                  >
-                    <span>
-                      {tax.name} ({tax.percentage}%)
-                    </span>
-                    <button
-                      onClick={() =>
-                        setCustomTaxes(customTaxes.filter((_, i) => i !== idx))
-                      }
-                      className="text-zinc-300 hover:text-red-500"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
@@ -686,7 +501,7 @@ export function CheckoutModal({
             {selectedCustomer ? (
               <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-zinc-200">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-zinc-100 text-zinc-600 rounded-lg flex items-center justify-center">
                     <User size={16} />
                   </div>
                   <p className="font-bold text-xs">
@@ -695,7 +510,7 @@ export function CheckoutModal({
                 </div>
                 <button
                   onClick={() => setSelectedCustomer(null)}
-                  className="text-zinc-300 hover:text-red-500 transition-colors"
+                  className="text-zinc-300 hover:text-zinc-600 transition-colors"
                 >
                   <X size={14} />
                 </button>
@@ -765,7 +580,6 @@ export function CheckoutModal({
           </div>
         </div>
 
-        {/* Right: Calculations Summary */}
         <div className="bg-zinc-900 rounded-2xl p-6 text-white space-y-4 flex flex-col justify-center">
           <div className="space-y-3">
             <div className="flex justify-between text-xs text-zinc-400 uppercase tracking-widest font-black">
@@ -775,7 +589,7 @@ export function CheckoutModal({
               </span>
             </div>
             {loyaltyDiscountAmount > 0 && (
-              <div className="flex justify-between text-xs text-red-400 uppercase tracking-widest font-black">
+              <div className="flex justify-between text-xs text-zinc-400 uppercase tracking-widest font-black">
                 <span>Loyalty ({loyaltyDiscountPercent}%)</span>
                 <span>
                   - {settings.currency} {loyaltyDiscountAmount.toFixed(2)}
@@ -783,7 +597,7 @@ export function CheckoutModal({
               </div>
             )}
             {manualDiscountAmount > 0 && (
-              <div className="flex justify-between text-xs text-emerald-400 uppercase tracking-widest font-black">
+              <div className="flex justify-between text-xs text-zinc-400 uppercase tracking-widest font-black">
                 <span>Discount</span>
                 <span>
                   - {settings.currency} {manualDiscountAmount.toFixed(2)}
@@ -822,20 +636,53 @@ export function CheckoutModal({
               </div>
             ))}
           </div>
-          <div className="pt-4 border-t border-zinc-800">
-            <div className="flex justify-between items-baseline mb-6">
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+          <div className="space-y-6 py-6 border-t border-zinc-800">
+            <div className="space-y-3">
+              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                Tender Amount
+              </label>
+              <div className="relative">
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-xl">
+                  {settings.currency}
+                </span>
+                <input
+                  type="number"
+                  value={tenderAmount || ""}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setTenderAmount(isNaN(val) ? 0 : val);
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === "") setTenderAmount(0);
+                  }}
+                  className="w-full pl-14 pr-4 py-5 bg-zinc-800 border border-zinc-700 rounded-2xl text-2xl font-black text-white focus:ring-2 focus:ring-zinc-600 outline-none transition-all placeholder:text-zinc-600 shadow-inner flex gap-2"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div className="flex justify-between items-center py-2 px-1">
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                Return Amount
+              </span>
+              <span className="text-2xl font-black text-white">
+                {settings.currency} {returnAmount.toFixed(2)}
+              </span>
+            </div>
+          </div>
+          <div className="pt-6 border-t border-zinc-800 space-y-6">
+            <div className="flex justify-between items-baseline px-1">
+              <span className="text-[11px] font-black uppercase tracking-[0.3em] text-zinc-500">
                 Grand Total
               </span>
-              <span className="text-4xl font-black">
+              <span className="text-5xl font-black tracking-tighter">
                 {settings.currency} {grandTotal.toFixed(2)}
               </span>
             </div>
             <Button
               onClick={() => setStep("BILL")}
-              className="w-full h-14 bg-red-600 text-white hover:bg-red-700 uppercase tracking-[0.2em] font-black text-xs shadow-xl shadow-red-500/10"
+              className="w-full h-16 bg-white text-zinc-900 uppercase tracking-[0.3em] font-black text-xs shadow-2xl shadow-white/5 border-none rounded-2xl active:scale-95 transition-all"
             >
-              Confirm Checkout & Generate Bill
+              Prepare Billing & Receipt
               <ChevronRight size={18} className="ml-2" />
             </Button>
           </div>
@@ -850,7 +697,6 @@ export function CheckoutModal({
         id="printable-bill"
         className="bg-white border-2 border-dashed border-zinc-200 rounded-2xl p-6 w-full max-w-md shadow-sm print:fixed print:inset-0 print:border-none print:shadow-none print:z-50 print:bg-white"
       >
-        {/* Restaurant Header */}
         <div className="text-center mb-6 border-b border-zinc-200 pb-4">
           <h2 className="text-2xl font-black uppercase tracking-tight">
             Kund Coffee
@@ -864,7 +710,6 @@ export function CheckoutModal({
           </p>
         </div>
 
-        {/* Invoice & Table */}
         <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4">
           <div className="space-y-1">
             <p>Invoice #: {order.id.slice(-6).toUpperCase()}</p>
@@ -881,10 +726,9 @@ export function CheckoutModal({
           </div>
         </div>
 
-        {/* Items */}
         <div className="space-y-2 mb-6">
           {order.items.map((item) => {
-            const isComplimentary = complimentaryItems[item.id];
+            const compQty = complimentaryItems[item.id] || 0;
             return (
               <div
                 key={item.id}
@@ -893,9 +737,9 @@ export function CheckoutModal({
                 <div className="flex-1">
                   <p className="font-bold text-zinc-900 tracking-tight">
                     {item.dish?.name || item.combo?.name || "Dish"}
-                    {complimentaryItems[item.id] > 0 && (
-                      <span className="ml-1 text-emerald-600 text-[9px] font-black italic">
-                        ({complimentaryItems[item.id]} Complimentary)
+                    {compQty > 0 && (
+                      <span className="ml-1 text-zinc-500 text-[9px] font-black italic">
+                        ({compQty} Complimentary)
                       </span>
                     )}
                   </p>
@@ -905,19 +749,14 @@ export function CheckoutModal({
                 </div>
                 <div className="text-right">
                   <p
-                    className={`font-bold text-zinc-900 ${complimentaryItems[item.id] >= item.quantity ? "line-through text-zinc-300" : ""}`}
+                    className={`font-bold text-zinc-900 ${compQty >= item.quantity ? "line-through text-zinc-300" : ""}`}
                   >
-                    Rs. {item.totalPrice.toFixed(2)}
+                    Rs. {(item.quantity * item.unitPrice).toFixed(2)}
                   </p>
-                  {complimentaryItems[item.id] > 0 && (
-                    <p className="font-bold text-emerald-600">
+                  {compQty > 0 && compQty < item.quantity && (
+                    <p className="font-bold text-zinc-600">
                       Rs.{" "}
-                      {(
-                        Math.max(
-                          0,
-                          item.quantity - (complimentaryItems[item.id] || 0),
-                        ) * item.unitPrice
-                      ).toFixed(2)}
+                      {((item.quantity - compQty) * item.unitPrice).toFixed(2)}
                     </p>
                   )}
                 </div>
@@ -926,7 +765,6 @@ export function CheckoutModal({
           })}
         </div>
 
-        {/* Summary */}
         <div className="space-y-1 border-t border-zinc-200 pt-4 text-[10px]">
           <div className="flex justify-between font-black uppercase tracking-widest text-zinc-500">
             <span>Subtotal</span>
@@ -934,14 +772,14 @@ export function CheckoutModal({
           </div>
 
           {loyaltyDiscountAmount > 0 && (
-            <div className="flex justify-between font-black uppercase tracking-widest text-red-600">
+            <div className="flex justify-between font-black uppercase tracking-widest text-zinc-600">
               <span>Loyalty ({loyaltyDiscountPercent}%)</span>
               <span>- Rs. {loyaltyDiscountAmount.toFixed(2)}</span>
             </div>
           )}
 
           {manualDiscountAmount > 0 && (
-            <div className="flex justify-between font-black uppercase tracking-widest text-emerald-600">
+            <div className="flex justify-between font-black uppercase tracking-widest text-zinc-600">
               <span>Discount</span>
               <span>- Rs. {manualDiscountAmount.toFixed(2)}</span>
             </div>
@@ -976,7 +814,6 @@ export function CheckoutModal({
             </div>
           ))}
 
-          {/* Grand Total */}
           <div className="flex justify-between font-black text-zinc-900 text-2xl pt-2 border-t border-zinc-900 mt-2">
             <span className="uppercase tracking-[0.2em] text-[10px] self-center">
               Grand Total
@@ -985,7 +822,6 @@ export function CheckoutModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="text-center mt-6 space-y-1">
           <p className="text-[9px] text-zinc-400 uppercase font-black tracking-[0.4em]">
             Thank You!
@@ -996,7 +832,6 @@ export function CheckoutModal({
         </div>
       </div>
 
-      {/* Buttons */}
       <div className="flex gap-4 w-full max-w-md mt-4">
         <Button
           variant="secondary"
@@ -1017,68 +852,13 @@ export function CheckoutModal({
 
       <Button
         onClick={() => setStep("PAYMENT")}
-        className="w-full max-w-md h-14 bg-red-600 text-white hover:bg-red-700 uppercase tracking-[0.3em] font-black text-xs shadow-xl mt-4"
+        className="w-full max-w-md h-14 bg-zinc-900 text-white hover:bg-zinc-800 uppercase tracking-[0.3em] font-black text-xs shadow-xl mt-4 border-none"
       >
         Proceed to Payment
         <ChevronRight size={18} className="ml-2" />
       </Button>
     </div>
   );
-
-  // const renderPayment = () => (
-  //   <div className="space-y-8 max-w-2xl mx-auto py-4">
-  //     <div className="text-center space-y-2">
-  //       <h3 className="text-3xl font-black text-zinc-900 tracking-tight">
-  //         ${grandTotal.toFixed(2)}
-  //       </h3>
-  //       <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">
-  //         Select Payment Method to Finalize
-  //       </p>
-  //     </div>
-
-  //     <div className="grid grid-cols-3 gap-6">
-  //       {[
-  //         { id: "CASH", label: "Cash", icon: Banknote },
-  //         { id: "QR", label: "QR Payment", icon: QrCode },
-  //         { id: "CARD", label: "Credit Card", icon: CreditCard },
-  //       ].map((method) => (
-  //         <button
-  //           key={method.id}
-  //           onClick={() => setPaymentMethod(method.id as any)}
-  //           className={`flex flex-col items-center justify-center p-8 rounded-3xl border-2 transition-all gap-4 ${
-  //             paymentMethod === method.id
-  //               ? "border-red-500 bg-red-50 text-red-600 shadow-xl shadow-red-500/10 active:scale-95"
-  //               : "border-zinc-100 hover:border-zinc-200 text-zinc-400 bg-white"
-  //           }`}
-  //         >
-  //           <method.icon size={36} strokeWidth={1.5} />
-  //           <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-  //             {method.label}
-  //           </span>
-  //         </button>
-  //       ))}
-  //     </div>
-
-  //     <div className="flex gap-4 pt-10">
-  //       <Button
-  //         variant="secondary"
-  //         onClick={() => setStep("BILL")}
-  //         className="flex-1 h-16 uppercase tracking-widest text-[10px] font-black border-zinc-200"
-  //       >
-  //         <ArrowLeft size={16} className="mr-2" />
-  //         Review Bill
-  //       </Button>
-  //       <Button
-  //         onClick={handleProcessCheckout}
-  //         disabled={isProcessing}
-  //         className="flex-[2] h-16 bg-red-600 text-white hover:bg-red-700 uppercase tracking-[0.4em] font-black text-sm shadow-2xl shadow-red-500/20 active:scale-[0.98]"
-  //       >
-  //         {isProcessing ? "Processing..." : "Secure Finalize"}
-  //         <CheckCircle2 size={20} className="ml-3" />
-  //       </Button>
-  //     </div>
-  //   </div>
-  // );
 
   const renderPayment = () => (
     <div className="space-y-8 max-w-2xl mx-auto py-4">
@@ -1092,11 +872,8 @@ export function CheckoutModal({
       </div>
 
       {showQrImage ? (
-        /* --- STATIC QR VIEW (MANUAL VERIFY) --- */
         <div className="flex flex-col items-center justify-center space-y-6 animate-in fade-in zoom-in">
-          {/* QR Image Container */}
-          <div className="p-2 bg-white border-2 border-emerald-500 rounded-2xl shadow-xl">
-            {/* MAKE SURE 'merchant-qr.jpg' IS IN YOUR PUBLIC FOLDER */}
+          <div className="p-2 bg-white border-2 border-zinc-900 rounded-2xl shadow-xl">
             <img
               src="/merchant-qr.jpg"
               alt="Merchant QR"
@@ -1110,13 +887,12 @@ export function CheckoutModal({
             </p>
             <p className="text-[10px] text-zinc-500">
               Ask customer to pay{" "}
-              <span className="text-emerald-600 font-black">
+              <span className="text-zinc-900 font-black">
                 {settings.currency} {grandTotal.toFixed(2)}
               </span>
             </p>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-4 w-full max-w-sm">
             <Button
               variant="secondary"
@@ -1132,7 +908,7 @@ export function CheckoutModal({
             <Button
               onClick={handleProcessCheckout}
               disabled={isProcessing}
-              className="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] uppercase font-black tracking-widest h-12"
+              className="flex-[2] bg-zinc-900 hover:bg-zinc-800 text-white text-[10px] uppercase font-black tracking-widest h-12"
             >
               {isProcessing ? "Processing..." : "Payment Received"}
               <CheckCircle2 size={16} className="ml-2" />
@@ -1140,7 +916,6 @@ export function CheckoutModal({
           </div>
         </div>
       ) : (
-        /* --- STANDARD BUTTONS VIEW --- */
         <>
           <div className="grid grid-cols-2 gap-6 items-center ">
             {[
@@ -1167,7 +942,7 @@ export function CheckoutModal({
                     : ""
                 } ${
                   paymentMethod === method.id
-                    ? "border-red-500 bg-red-50 text-red-600 shadow-xl shadow-red-500/10 active:scale-95"
+                    ? "border-zinc-900 bg-zinc-50 text-zinc-900 shadow-xl shadow-zinc-500/10 active:scale-95"
                     : "border-zinc-100 hover:border-zinc-200 text-zinc-400 bg-white"
                 }`}
               >
@@ -1189,11 +964,10 @@ export function CheckoutModal({
               Review Bill
             </Button>
 
-            {/* Main Proceed Button (Only for Cash/Card now) */}
             <Button
               onClick={handleProcessCheckout}
               disabled={isProcessing}
-              className="flex-[2] h-16 bg-red-600 text-white hover:bg-red-700 uppercase tracking-[0.4em] font-black text-sm shadow-2xl shadow-red-500/20 active:scale-[0.98]"
+              className="flex-[2] h-16 bg-zinc-900 text-white hover:bg-zinc-800 uppercase tracking-[0.4em] font-black text-sm shadow-2xl shadow-zinc-500/20 active:scale-[0.98] border-none"
             >
               {isProcessing ? "Processing..." : "Secure Finalize"}
               <CheckCircle2 size={20} className="ml-3" />
@@ -1203,9 +977,10 @@ export function CheckoutModal({
       )}
     </div>
   );
+
   const renderSuccess = () => (
     <div className="flex flex-col items-center justify-center py-20 space-y-8 animate-in fade-in zoom-in duration-500">
-      <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center animate-bounce shadow-xl shadow-emerald-500/10">
+      <div className="w-24 h-24 bg-zinc-100 text-zinc-900 rounded-full flex items-center justify-center animate-bounce shadow-xl shadow-zinc-500/10">
         <CheckCircle2 size={56} />
       </div>
       <div className="text-center space-y-2">
@@ -1245,89 +1020,62 @@ export function CheckoutModal({
       >
         <div className="p-4">
           <Modal
-            isOpen={isSelectingFreeItems}
-            onClose={() => setIsSelectingFreeItems(false)}
-            title="Add Complimentary Items"
+            isOpen={isAddModalOpen}
+            onClose={() => setIsAddModalOpen(false)}
+            title="Add New Customer"
             size="lg"
           >
-            <div className="flex flex-col gap-6 p-2 max-h-[70vh]">
-              <div className="relative group">
-                <Search
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-red-500 transition-colors"
-                  size={16}
-                />
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Full Name
+                </label>
                 <input
                   type="text"
-                  placeholder="Search dishes, addons, combos..."
-                  className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:border-red-500 outline-none transition-all"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Full Name"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none transition-all"
+                  value={formData.fullName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullName: e.target.value })
+                  }
                 />
               </div>
-
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {availableItems
-                    .filter((item) =>
-                      item.name
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase()),
-                    )
-                    .map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          addFreeItem(item);
-                        }}
-                        className="group bg-white border border-zinc-100 rounded-xl p-3 shadow-sm hover:border-emerald-500 hover:shadow-md transition-all flex flex-col items-start gap-2 text-left active:scale-[0.98]"
-                      >
-                        <div className="w-full aspect-square bg-zinc-50 rounded-lg overflow-hidden border border-zinc-50 flex items-center justify-center relative">
-                          {item.image?.[0] ? (
-                            <img
-                              src={item.image[0]}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                            />
-                          ) : (
-                            <LayoutGrid size={24} className="text-zinc-200" />
-                          )}
-                          <div className="absolute top-1 right-1 bg-white/80 backdrop-blur-md px-1.5 py-0.5 rounded text-[7px] font-black border border-zinc-100 uppercase tracking-widest text-zinc-500">
-                            {item.type}
-                          </div>
-                        </div>
-                        <div>
-                          <h4 className="text-[11px] font-bold text-zinc-900 group-hover:text-emerald-700 transition-colors truncate w-full">
-                            {item.name}
-                          </h4>
-                          <p className="text-[10px] font-black text-emerald-600">
-                            {settings.currency} 0.00{" "}
-                            <span className="text-[8px] text-zinc-300 line-through ml-1">
-                              {settings.currency}{" "}
-                              {(item.price?.listedPrice || 0).toFixed(2)}
-                            </span>
-                          </p>
-                        </div>
-                        <div className="mt-auto pt-2 border-t border-zinc-50 w-full flex items-center justify-between">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">
-                            Add Free
-                          </span>
-                          <PlusCircle
-                            size={14}
-                            className="text-zinc-300 group-hover:text-emerald-500"
-                          />
-                        </div>
-                      </button>
-                    ))}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1">
+                    Phone
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Phone Number"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none transition-all"
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="Email Address"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none transition-all"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                  />
                 </div>
               </div>
-
-              <div className="pt-4 border-t border-zinc-100 flex justify-end">
-                <Button
-                  onClick={() => setIsSelectingFreeItems(false)}
-                  className="bg-zinc-900 text-white uppercase tracking-widest text-[10px] h-10 px-8"
-                >
-                  Done
-                </Button>
-              </div>
+              <Button
+                onClick={handleCreateCustomer}
+                className="w-full mt-2 bg-zinc-900 hover:bg-zinc-800 text-white shadow-lg shadow-zinc-200 border-none px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px]"
+              >
+                Create Customer
+              </Button>
             </div>
           </Modal>
 
@@ -1355,30 +1103,30 @@ export function CheckoutModal({
             <div className="flex items-center gap-3 mb-12 px-10">
               <div className="flex-1 space-y-2">
                 <div
-                  className={`h-1.5 rounded-full ${step === "PREPARE" || step === "BILL" || step === "PAYMENT" ? "bg-red-500" : "bg-zinc-100"}`}
+                  className={`h-1.5 rounded-full ${step === "PREPARE" || step === "BILL" || step === "PAYMENT" ? "bg-zinc-900" : "bg-zinc-100"}`}
                 />
                 <p
-                  className={`text-[8px] font-black uppercase tracking-widest ${step === "PREPARE" ? "text-red-500" : "text-zinc-300"}`}
+                  className={`text-[8px] font-black uppercase tracking-widest ${step === "PREPARE" ? "text-zinc-900" : "text-zinc-300"}`}
                 >
                   1. Prepare Order
                 </p>
               </div>
               <div className="flex-1 space-y-2">
                 <div
-                  className={`h-1.5 rounded-full ${step === "BILL" || step === "PAYMENT" ? "bg-red-500" : "bg-zinc-100"}`}
+                  className={`h-1.5 rounded-full ${step === "BILL" || step === "PAYMENT" ? "bg-zinc-900" : "bg-zinc-100"}`}
                 />
                 <p
-                  className={`text-[8px] font-black uppercase tracking-widest ${step === "BILL" ? "text-red-500" : "text-zinc-300"}`}
+                  className={`text-[8px] font-black uppercase tracking-widest ${step === "BILL" ? "text-zinc-900" : "text-zinc-300"}`}
                 >
                   2. View & Print Bill
                 </p>
               </div>
               <div className="flex-1 space-y-2">
                 <div
-                  className={`h-1.5 rounded-full ${step === "PAYMENT" ? "bg-red-500" : "bg-zinc-100"}`}
+                  className={`h-1.5 rounded-full ${step === "PAYMENT" ? "bg-zinc-900" : "bg-zinc-100"}`}
                 />
                 <p
-                  className={`text-[8px] font-black uppercase tracking-widest ${step === "PAYMENT" ? "text-red-500" : "text-zinc-300"}`}
+                  className={`text-[8px] font-black uppercase tracking-widest ${step === "PAYMENT" ? "text-zinc-900" : "text-zinc-300"}`}
                 >
                   3. Process Payment
                 </p>
@@ -1390,110 +1138,6 @@ export function CheckoutModal({
           {step === "BILL" && renderBill()}
           {step === "PAYMENT" && renderPayment()}
           {step === "SUCCESS" && renderSuccess()}
-        </div>
-      </Modal>
-      <Modal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title="Add New Customer"
-      >
-        <div className="flex flex-col gap-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
-              Full Name
-            </label>
-            <input
-              type="text"
-              placeholder="Full Name"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-              value={formData.fullName}
-              onChange={(e) =>
-                setFormData({ ...formData, fullName: e.target.value })
-              }
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">
-                Phone
-              </label>
-              <input
-                type="text"
-                placeholder="Phone Number"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                placeholder="Email Address"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">
-                DOB
-              </label>
-              <input
-                type="date"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-                value={formData.dob}
-                onChange={(e) =>
-                  setFormData({ ...formData, dob: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">
-                Loyalty ID
-              </label>
-              <input
-                type="text"
-                placeholder="Optional"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-                value={formData.loyaltyId}
-                onChange={(e) =>
-                  setFormData({ ...formData, loyaltyId: e.target.value })
-                }
-              />
-            </div>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
-              Opening Balance
-            </label>
-            <input
-              type="number"
-              placeholder="0.00"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
-              value={formData.openingBalance}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  openingBalance: parseFloat(e.target.value) || 0,
-                })
-              }
-            />
-          </div>
-          <Button
-            onClick={handleCreateCustomer}
-            className="w-full mt-2 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
-          >
-            Create Customer
-          </Button>
         </div>
       </Modal>
     </>

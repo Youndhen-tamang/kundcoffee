@@ -132,12 +132,14 @@ export default function Sidebar() {
 
         <nav className="space-y-8">
           <div>
-            <span className="px-4 text-[9px] font-semibold text-zinc-500 uppercase tracking-widest mb-4 block">
+            {/* <span className="px-4 text-[9px] font-semibold text-zinc-500 uppercase tracking-widest mb-4 block">
               Menu
-            </span>
+            </span> */}
             <div className="space-y-1">
-              <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+              <div className="mb-8 border-b flex flex-col gap-2">
+                <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
               <NavItem href="/dashboard/orders" icon={Package} label="Orders" />
+              </div>
 
               <AccordionItem id="menu" label="Menu" icon={UtensilsCrossed}>
                 <NavItem

@@ -104,7 +104,7 @@ function SortableTableCard({ table, occupiedTable, handleTableClick }: any) {
       className={`relative group rounded-xl p-5 border transition-all duration-200 flex flex-col items-center gap-3 ${
         isOccupied
           ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-          : "bg-zinc-100 border-zinc-200 text-zinc-400 hover:border-red-500 hover:bg-white"
+          : "bg-zinc-100 border-zinc-200 text-zinc-400 hover:border-emerald-500 hover:bg-white"
       }`}
     >
       {/* Table Drag Handle */}
@@ -521,14 +521,14 @@ export default function OrdersPage() {
               <input
                 type="text"
                 placeholder="Search..."
-                className="w-full pl-9 pr-4 py-2 bg-white border border-zinc-200 rounded-lg text-xs outline-none focus:border-red-500 transition-all"
+                className="w-full pl-9 pr-4 py-2 bg-white border border-zinc-200 rounded-lg text-xs outline-none focus:border-emerald-500 transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Button
               onClick={() => setShowOrderTypeSelector(true)}
-              className="bg-red-600 text-white h-10 px-6 uppercase tracking-widest text-[10px]"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-6 uppercase tracking-widest text-[10px]"
             >
               <Plus size={14} className="mr-2" /> Add New Order
             </Button>
@@ -549,7 +549,7 @@ export default function OrdersPage() {
                   key={order.id}
                   order={order}
                   onClick={setSelectedOrder}
-                  onQuickCheckout={handleQuickCheckout}
+                  onQuickCheckout={setCheckoutOrder}
                   onPrint={() => window.print()}
                   onCopy={handleCopyOrder}
                   onAddItems={setExistingOrderForAdding}
@@ -560,6 +560,54 @@ export default function OrdersPage() {
 
         {activeTab === "TABLES" && (
           <div className="space-y-10">
+            {/* Ongoing Orders Section */}
+            {orders.filter(
+              (o) => o.status !== "COMPLETED" && o.status !== "CANCELLED",
+            ).length > 0 && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between border-b-2 border-zinc-100 pb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-zinc-900 rounded-lg flex items-center justify-center text-white">
+                      <Package size={18} />
+                    </div>
+                    <h2 className="text-[10px] font-black text-zinc-900 uppercase tracking-[0.2em]">
+                      Ongoing Orders
+                    </h2>
+                  </div>
+                  {orders.filter(
+                    (o) => o.status !== "COMPLETED" && o.status !== "CANCELLED",
+                  ).length > 6 && (
+                    <button
+                      onClick={() => setActiveTab("ORDERS")}
+                      className="text-[10px] font-black text-zinc-600 uppercase tracking-widest hover:text-zinc-900 transition-colors bg-zinc-100 px-3 py-1.5 rounded-lg border border-zinc-200"
+                    >
+                      View More
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {orders
+                    .filter(
+                      (o) =>
+                        o.status !== "COMPLETED" && o.status !== "CANCELLED",
+                    )
+                    .slice(0, 6)
+                    .map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        onClick={setSelectedOrder}
+                        onQuickCheckout={setCheckoutOrder}
+                        onPrint={() => window.print()}
+                        onCopy={handleCopyOrder}
+                        onAddItems={setExistingOrderForAdding}
+                      />
+                    ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-4 bg-white p-3 rounded-xl border border-zinc-100 shadow-sm">
               <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
                 Layout:
@@ -743,46 +791,92 @@ export default function OrdersPage() {
               return (
                 <>
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                    <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
                       <Package size={22} />
                     </div>
                     <div>
                       <h3 className="text-sm font-black text-zinc-900 uppercase">
                         Table {quickMenuTable.name}
                       </h3>
-                      <p className="text-[10px] text-zinc-400 font-bold uppercase mt-0.5">
+                      <p className="text-[10px] text-emerald-600 font-bold uppercase mt-0.5">
                         Ongoing session
                       </p>
                     </div>
                   </div>
-                  <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-6 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
-                        Total
+
+                  <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl overflow-hidden">
+                    <div className="p-4 border-b border-emerald-100 bg-emerald-50/30">
+                      <h4 className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+                        Order Details
+                      </h4>
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                      {activeOrder?.items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex justify-between items-start gap-4 py-1"
+                        >
+                          <div className="space-y-0.5">
+                            <p className="text-[11px] font-bold text-zinc-800 uppercase leading-tight">
+                              {item.quantity} x{" "}
+                              {item.dish?.name || item.combo?.name || "Item"}
+                            </p>
+                            {item.selectedAddOns &&
+                              item.selectedAddOns.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {item.selectedAddOns.map(
+                                    (addon: any, aidx: number) => (
+                                      <span
+                                        key={aidx}
+                                        className="text-[8px] text-emerald-600 font-medium uppercase"
+                                      >
+                                        +{addon.addOn?.name}
+                                      </span>
+                                    ),
+                                  )}
+                                </div>
+                              )}
+                          </div>
+                          <span className="text-[11px] font-bold text-zinc-900 shrink-0">
+                            Rs. {item.totalPrice.toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                      {(!activeOrder?.items ||
+                        activeOrder.items.length === 0) && (
+                        <p className="text-[10px] text-zinc-400 text-center py-4 uppercase font-medium">
+                          No items in order
+                        </p>
+                      )}
+                    </div>
+                    <div className="p-4 bg-emerald-100/30 border-t border-emerald-100 flex items-center justify-between">
+                      <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+                        Total Amount
                       </span>
-                      <span className="text-2xl font-black text-zinc-900">
+                      <span className="text-xl font-black text-zinc-900">
                         Rs. {activeOrder?.total.toFixed(2) || "0.00"}
                       </span>
                     </div>
                   </div>
+
                   <div className="space-y-3">
                     <Button
                       onClick={() => {
                         if (activeOrder) setExistingOrderForAdding(activeOrder);
                         setQuickMenuTable(null);
                       }}
-                      className="w-full h-14 bg-red-600 text-white font-bold uppercase text-[10px]"
+                      className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] shadow-lg shadow-emerald-200 border-none"
                     >
-                      Modify / Add More
+                      Modify order
                     </Button>
                     <Button
                       onClick={() => {
                         if (activeOrder) setCheckoutOrder(activeOrder);
                         setQuickMenuTable(null);
                       }}
-                      className="w-full h-14 bg-zinc-900 text-white font-bold uppercase text-[10px]"
+                      className="w-full h-14 bg-zinc-900 hover:bg-zinc-800 text-white font-bold uppercase text-[10px] shadow-lg shadow-zinc-200 border-none"
                     >
-                      Direct Checkout
+                      Direct checkout
                     </Button>
                     <Button
                       variant="secondary"
@@ -790,7 +884,7 @@ export default function OrdersPage() {
                         if (activeOrder) setSelectedOrder(activeOrder);
                         setQuickMenuTable(null);
                       }}
-                      className="w-full h-12 border-zinc-200 text-zinc-600 font-bold text-[10px] uppercase"
+                      className="w-full h-12 border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-bold text-[10px] uppercase transition-colors"
                     >
                       View Order
                     </Button>
@@ -824,7 +918,7 @@ export default function OrdersPage() {
                         setActiveTable(table);
                         setShowTableSelector(false);
                       }}
-                      className="p-4 rounded-lg border bg-white hover:border-red-500 transition-all font-bold text-sm"
+                      className="p-4 rounded-lg border bg-white hover:border-emerald-500 transition-all font-bold text-sm"
                     >
                       {table.name}
                     </button>
@@ -850,7 +944,7 @@ export default function OrdersPage() {
             <button
               key={t.id}
               onClick={() => handleNewOrder(t.id as any)}
-              className="flex flex-col items-center p-6 bg-zinc-50 border rounded-xl hover:border-red-500 transition-all gap-3"
+              className="flex flex-col items-center p-6 bg-zinc-50 border rounded-xl hover:border-emerald-500 transition-all gap-3"
             >
               <t.icon size={24} className="text-zinc-400" />
               <span className="text-[10px] font-black uppercase">

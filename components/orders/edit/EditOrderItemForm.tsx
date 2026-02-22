@@ -14,14 +14,13 @@ interface EditOrderItemFormProps {
   onSave: (updatedItem: Partial<OrderItem>) => void;
   onCancel: () => void;
   onDelete: (id: string) => void; // <--- Added
-  
 }
 
 export function EditOrderItemForm({
   item,
   onSave,
   onCancel,
-  onDelete
+  onDelete,
 }: EditOrderItemFormProps) {
   const [quantity, setQuantity] = useState(item.quantity);
   const [remarks, setRemarks] = useState(item.remarks || "");
@@ -43,8 +42,6 @@ export function EditOrderItemForm({
   useEffect(() => {
     fetchAddOns();
   }, [fetchAddOns]);
-
-
 
   const handleToggleAddOn = (id: string) => {
     setSelectedAddOnIds((prev) =>
@@ -69,29 +66,35 @@ export function EditOrderItemForm({
   };
 
   // Helper for your schema's image array
-  const dishImage = Array.isArray(item.dish?.image) ? item.dish?.image[0] : item.dish?.image;
+  const dishImage = Array.isArray(item.dish?.image)
+    ? item.dish?.image[0]
+    : item.dish?.image;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between bg-white p-2 rounded-lg">
         <div className="flex items-center gap-3">
           <div className="relative w-16 h-16 rounded-lg overflow-hidden border">
-            <Image 
-              src={dishImage || "/placeholder.png"} 
-              alt={item.dish?.name || ""} 
-              fill 
+            <Image
+              src={dishImage || "/placeholder.png"}
+              alt={item.dish?.name || ""}
+              fill
               className="object-cover"
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-gray-800">{item.dish?.name}</span>
-            <span className="text-xs text-gray-500">${item.dish?.price?.listedPrice}</span>
+            <span className="text-sm font-bold text-gray-800">
+              {item.dish?.name}
+            </span>
+            <span className="text-xs text-gray-500">
+              ${item.dish?.price?.listedPrice}
+            </span>
           </div>
         </div>
 
         <button
           onClick={() => onDelete(item.id)}
-          className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-md border border-red-100"
+          className="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-md border border-emerald-100"
         >
           Remove Item
         </button>
@@ -100,19 +103,21 @@ export function EditOrderItemForm({
       {/* Quantity Control */}
       <div className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-gray-100 shadow-inner">
         <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Quantity</span>
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            Quantity
+          </span>
           <span className="text-xl font-black text-gray-900">{quantity}</span>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center hover:text-red-600"
+            className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center hover:text-emerald-600"
           >
             <Minus size={20} />
           </button>
           <button
             onClick={() => setQuantity(quantity + 1)}
-            className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center hover:text-red-600"
+            className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center hover:text-emerald-600"
           >
             <Plus size={20} />
           </button>
@@ -131,15 +136,19 @@ export function EditOrderItemForm({
               onClick={() => handleToggleAddOn(addon.id)}
               className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
                 selectedAddOnIds.includes(addon.id)
-                  ? "border-red-600 bg-red-50 text-red-700"
+                  ? "border-emerald-600 bg-emerald-50 text-emerald-700"
                   : "border-gray-100 bg-white text-gray-600"
               }`}
             >
               <div className="flex flex-col items-start px-1 text-left">
                 <span className="text-xs font-bold truncate">{addon.name}</span>
-                <span className="text-[10px] opacity-70">${addon.price?.listedPrice.toFixed(2)}</span>
+                <span className="text-[10px] opacity-70">
+                  ${addon.price?.listedPrice.toFixed(2)}
+                </span>
               </div>
-              {selectedAddOnIds.includes(addon.id) && <Check size={14} className="text-red-600" />}
+              {selectedAddOnIds.includes(addon.id) && (
+                <Check size={14} className="text-emerald-600" />
+              )}
             </button>
           ))}
         </div>
@@ -147,10 +156,12 @@ export function EditOrderItemForm({
 
       {/* Remarks */}
       <div className="space-y-2">
-        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Remarks</label>
+        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
+          Remarks
+        </label>
         <textarea
           placeholder="Specific instructions..."
-          className="w-full p-4 bg-slate-50 border border-gray-100 rounded-xl text-xs outline-none focus:bg-white focus:border-red-500 h-24 resize-none"
+          className="w-full p-4 bg-slate-50 border border-gray-100 rounded-xl text-xs outline-none focus:bg-white focus:border-emerald-500 h-24 resize-none"
           value={remarks}
           onChange={(e) => setRemarks(e.target.value)}
         />
@@ -158,12 +169,16 @@ export function EditOrderItemForm({
 
       {/* Footer Buttons */}
       <div className="pt-4 border-t border-gray-100 flex gap-3">
-        <Button variant="secondary" onClick={onCancel} className="flex-1 font-bold h-11">
+        <Button
+          variant="secondary"
+          onClick={onCancel}
+          className="flex-1 font-bold h-11"
+        >
           Cancel
         </Button>
         <Button
           onClick={handleSave}
-          className="flex-[2] bg-red-600 hover:bg-red-700 text-white font-black h-11 shadow-lg"
+          className="flex-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black h-11 shadow-lg border-none"
         >
           Save Changes
         </Button>

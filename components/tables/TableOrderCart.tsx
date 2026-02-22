@@ -70,7 +70,7 @@ export function TableOrderCart({ table, onClose }: TableOrderCartProps) {
       {/* Header Info (Mock) */}
       <div className="p-4 border-b border-zinc-100 bg-zinc-50/50">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-medium px-2.5 py-1 bg-red-50 text-red-600 rounded-md border border-red-50 uppercase tracking-widest">
+          <span className="text-[10px] font-medium px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-md border border-emerald-50 uppercase tracking-widest">
             Order #{order.id.substr(-6)}
           </span>
           <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-widest">
@@ -85,7 +85,7 @@ export function TableOrderCart({ table, onClose }: TableOrderCartProps) {
           <span
             className={`font-semibold ${
               order.status === "PENDING"
-                ? "text-red-600"
+                ? "text-emerald-600"
                 : order.status === "COMPLETED"
                   ? "text-emerald-600"
                   : "text-zinc-600"
@@ -109,7 +109,7 @@ export function TableOrderCart({ table, onClose }: TableOrderCartProps) {
           order.items.map((item) => (
             <div
               key={item.id}
-              className="flex items-start justify-between p-4 rounded-xl border border-zinc-200 bg-white shadow-sm hover:border-red-400 transition-all"
+              className="flex items-start justify-between p-4 rounded-xl border border-zinc-200 bg-white shadow-sm hover:border-emerald-400 transition-all"
             >
               <div className="flex-1">
                 <h4 className="font-medium text-zinc-900 text-[13px] uppercase tracking-tight">
@@ -121,7 +121,7 @@ export function TableOrderCart({ table, onClose }: TableOrderCartProps) {
                       item.status === "SERVED"
                         ? "bg-zinc-50 text-zinc-500 border-zinc-100"
                         : item.status === "PREPARING"
-                          ? "bg-red-50 text-red-600 border-red-100"
+                          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                           : "bg-zinc-100 text-zinc-600 border-zinc-200"
                     }`}
                   >

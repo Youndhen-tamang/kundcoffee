@@ -329,7 +329,7 @@ model MenuSetSubMenu {
 
 model ComboOffer {
   id              String   @id @default(uuid())
-  name            String
+  name            String 
   image           String[]
   hscode          String?
   preparationTime Int

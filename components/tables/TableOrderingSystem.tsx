@@ -82,10 +82,6 @@ export function TableOrderingSystem({
       setSubMenus(smData);
       setAvailableAddOns(aData);
     };
-    console.log("testing", categories);
-    console.log(dishes);
-    console.log(subMenus);
-    console.log(availableAddOns);
     fetchData();
   }, []);
 
@@ -162,11 +158,11 @@ export function TableOrderingSystem({
 
   return (
     <div
-      className={`flex flex-col h-[85vh] w-full overflow-hidden rounded-xl border ${isAddingToExisting ? "bg-red-50/30 border-red-200" : "bg-zinc-50 border-zinc-200"}`}
+      className={`flex flex-col h-[85vh] w-full overflow-hidden rounded-xl border ${isAddingToExisting ? "bg-zinc-50 border-zinc-200" : "bg-zinc-50 border-zinc-200"}`}
     >
       {/* Top Header */}
       <div
-        className={`border-b p-4 flex items-center justify-between shadow-sm px-8 ${isAddingToExisting ? "bg-red-600 text-white" : "bg-white text-zinc-900 border-zinc-100"}`}
+        className={`border-b p-4 flex items-center justify-between shadow-sm px-8 ${isAddingToExisting ? "bg-zinc-900 text-white" : "bg-white text-zinc-900 border-zinc-100"}`}
       >
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
@@ -185,14 +181,14 @@ export function TableOrderingSystem({
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <p
-                  className={`text-[9px] font-bold uppercase tracking-widest ${isAddingToExisting ? "text-red-100" : "text-zinc-500"}`}
+                  className={`text-[9px] font-bold uppercase tracking-widest ${isAddingToExisting ? "text-zinc-400" : "text-zinc-500"}`}
                 >
                   {isAddingToExisting
                     ? `Table ${table?.name || ""} • Ongoing Session`
                     : table?.tableType?.name || "Standard Order"}
                 </p>
                 {isAddingToExisting && (
-                  <span className="text-[9px] bg-white text-red-600 px-1.5 py-0.5 rounded font-black uppercase tracking-widest">
+                  <span className="text-[9px] bg-white text-zinc-900 px-1.5 py-0.5 rounded font-black uppercase tracking-widest">
                     Active
                   </span>
                 )}
@@ -200,14 +196,14 @@ export function TableOrderingSystem({
             </div>
           </div>
           <div
-            className={`h-6 w-px ${isAddingToExisting ? "bg-red-400" : "bg-zinc-200"}`}
+            className={`h-6 w-px ${isAddingToExisting ? "bg-zinc-800" : "bg-zinc-200"}`}
           />
           <Popover
             trigger={
-              <button className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 rounded-lg border border-zinc-200 hover:border-red-500 transition-all group">
+              <button className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 rounded-lg border border-zinc-200 hover:border-zinc-400 transition-all group">
                 <UserPlus
                   size={12}
-                  className="text-zinc-400 group-hover:text-red-600"
+                  className="text-zinc-400 group-hover:text-zinc-900"
                 />
                 <span className="text-[9px] font-medium text-zinc-600 uppercase tracking-widest">
                   Staff
@@ -231,7 +227,7 @@ export function TableOrderingSystem({
         </div>
         <button
           onClick={onClose}
-          className={`p-2 transition-all ${isAddingToExisting ? "text-red-100 hover:text-white" : "text-zinc-400 hover:text-red-500"}`}
+          className={`p-2 transition-all ${isAddingToExisting ? "text-zinc-400 hover:text-white" : "text-zinc-400 hover:text-zinc-900"}`}
         >
           <X size={20} />
         </button>
@@ -244,13 +240,13 @@ export function TableOrderingSystem({
             <div className="flex items-center justify-between gap-4">
               <div className="relative flex-1 group">
                 <Search
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-red-600 transition-colors"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-900 transition-colors"
                   size={16}
                 />
                 <input
                   type="text"
                   placeholder="Search and add dishes..."
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-xs transition-all outline-none font-normal placeholder:text-zinc-400 ${isAddingToExisting ? "bg-white border-red-200 focus:border-red-500 text-red-900" : "bg-zinc-50 border-zinc-200 focus:border-red-500 text-zinc-900"}`}
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-xs transition-all outline-none font-normal placeholder:text-zinc-400 ${isAddingToExisting ? "bg-white border-zinc-200 focus:border-zinc-900 text-zinc-900" : "bg-zinc-50 border-zinc-200 focus:border-zinc-900 text-zinc-900"}`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -259,11 +255,11 @@ export function TableOrderingSystem({
                 trigger={
                   <Button
                     variant="secondary"
-                    className={`h-10 px-4 bg-white border shadow-sm text-zinc-600 flex items-center gap-2 rounded-xl ${isAddingToExisting ? "border-red-200 hover:border-red-400" : "border-zinc-200 hover:border-red-400"}`}
+                    className={`h-10 px-4 bg-white border shadow-sm text-zinc-600 flex items-center gap-2 rounded-xl border-zinc-200 hover:border-zinc-400`}
                   >
                     <Filter
                       size={14}
-                      className={isAddingToExisting ? "text-red-400" : ""}
+                      className={isAddingToExisting ? "text-zinc-400" : ""}
                     />
                     <span className="text-[10px] font-medium uppercase tracking-widest">
                       Sub-Menus
@@ -317,7 +313,7 @@ export function TableOrderingSystem({
                 <div
                   key={dish.id}
                   onClick={() => setActiveDish(dish)}
-                  className="group bg-white border border-zinc-100 rounded-md shadow-sm hover:shadow-md hover:border-red-400 transition-all cursor-pointer aspect-square flex flex-col p-3"
+                  className="group bg-white border border-zinc-100 rounded-md shadow-sm hover:shadow-md hover:border-zinc-900 transition-all cursor-pointer aspect-square flex flex-col p-3"
                 >
                   {/* Image */}
                   <div className="flex-1 rounded-md bg-zinc-50 overflow-hidden border border-zinc-100 mb-2">
@@ -349,7 +345,7 @@ export function TableOrderingSystem({
                     <span className="text-[11px] font-bold text-zinc-900">
                       Rs. {dish.price?.listedPrice.toFixed(2)}
                     </span>
-                    <div className="p-1 rounded-md text-zinc-400 group-hover:text-red-500 transition-colors">
+                    <div className="p-1 rounded-md text-zinc-400 group-hover:text-zinc-900 transition-colors">
                       <PlusCircle size={16} />
                     </div>
                   </div>
@@ -362,13 +358,13 @@ export function TableOrderingSystem({
         {/* Right Side: Cart Summary */}
         <div className="w-[380px] bg-zinc-50/50 flex flex-col border-l border-zinc-100 shadow-sm z-10">
           <div
-            className={`p-6 border-b flex items-center justify-between sticky top-0 backdrop-blur-sm z-20 ${isAddingToExisting ? "bg-red-600/5 text-zinc-900 border-red-100" : "bg-white/50 border-zinc-100"}`}
+            className={`p-6 border-b flex items-center justify-between sticky top-0 backdrop-blur-sm z-20 ${isAddingToExisting ? "bg-zinc-100 text-zinc-900 border-zinc-200" : "bg-white/50 border-zinc-100"}`}
           >
             <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">
               {isAddingToExisting ? "Current Order Addition" : "Draft Order"}
             </h3>
             <span
-              className={`text-[9px] px-2.5 py-1 rounded font-bold uppercase tracking-widest ${isAddingToExisting ? "bg-red-100 text-red-700" : "bg-zinc-200 text-zinc-700"}`}
+              className={`text-[9px] px-2.5 py-1 rounded font-bold uppercase tracking-widest ${isAddingToExisting ? "bg-zinc-200 text-zinc-900" : "bg-zinc-200 text-zinc-700"}`}
             >
               {cart.length} New Items
             </span>
@@ -377,26 +373,26 @@ export function TableOrderingSystem({
           <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
             {isAddingToExisting && existingItems.length > 0 && (
               <div className="mb-6 space-y-3">
-                <h4 className="text-[9px] font-black text-red-400 uppercase tracking-widest px-1">
+                <h4 className="text-[9px] font-black text-zinc-400 uppercase tracking-widest px-1">
                   Already in Order
                 </h4>
                 <div className="space-y-2 opacity-60">
                   {existingItems.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex justify-between items-center text-[10px] bg-red-50/50 p-2 rounded-lg border border-red-100/50"
+                      className="flex justify-between items-center text-[10px] bg-zinc-100/50 p-2 rounded-lg border border-zinc-200/50"
                     >
-                      <span className="font-medium text-red-900">
+                      <span className="font-medium text-zinc-900">
                         {item.quantity} x{" "}
                         {item.dish?.name || item.combo?.name || "Item"}
                       </span>
-                      <span className="text-red-600 font-bold">
+                      <span className="text-zinc-600 font-bold">
                         Rs. {item.totalPrice.toFixed(2)}
                       </span>
                     </div>
                   ))}
                 </div>
-                <div className="h-px bg-red-100 mx-1" />
+                <div className="h-px bg-zinc-200 mx-1" />
               </div>
             )}
             {cart.map((item, idx) => (
@@ -417,7 +413,7 @@ export function TableOrderingSystem({
                         {item.addons.map((a) => (
                           <span
                             key={a.id}
-                            className="text-[8px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-50 font-medium uppercase"
+                            className="text-[8px] bg-zinc-100 text-zinc-600 px-1.5 py-0.5 rounded border border-zinc-100 font-medium uppercase"
                           >
                             +{a.name}
                           </span>
@@ -432,7 +428,7 @@ export function TableOrderingSystem({
                     <div className="flex items-center gap-3 bg-zinc-50 rounded-lg p-1 border border-zinc-100">
                       <button
                         onClick={() => updateCartQty(idx, -1)}
-                        className="p-1 text-zinc-500 hover:text-red-600 transition-colors"
+                        className="p-1 text-zinc-500 hover:text-zinc-900 transition-colors"
                       >
                         <Minus size={10} strokeWidth={2} />
                       </button>
@@ -441,7 +437,7 @@ export function TableOrderingSystem({
                       </span>
                       <button
                         onClick={() => updateCartQty(idx, 1)}
-                        className="p-1 text-zinc-500 hover:text-red-600 transition-colors"
+                        className="p-1 text-zinc-500 hover:text-zinc-900 transition-colors"
                       >
                         <Plus size={10} strokeWidth={2} />
                       </button>
@@ -452,7 +448,7 @@ export function TableOrderingSystem({
                   <input
                     type="text"
                     placeholder="Add specific notes..."
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-2 text-[9px] font-normal uppercase outline-none focus:bg-white focus:border-red-400 transition-all text-zinc-600 placeholder:text-zinc-400"
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-2 text-[9px] font-normal uppercase outline-none focus:bg-white focus:border-zinc-900 transition-all text-zinc-600 placeholder:text-zinc-400"
                     value={item.remarks}
                     onChange={(e) => updateCartItemRemarks(idx, e.target.value)}
                   />
@@ -489,10 +485,16 @@ export function TableOrderingSystem({
                   <input
                     type="number"
                     min="1"
-                    className="w-full pl-8 pr-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] outline-none focus:border-red-400 transition-all font-medium text-zinc-900"
+                    className="w-full pl-8 pr-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] outline-none focus:border-zinc-900 transition-all font-medium text-zinc-900"
                     value={guests}
                     max={table?.capacity}
-                    onChange={(e) => setGuests(parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setGuests(isNaN(val) ? 1 : val);
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === "") setGuests(1);
+                    }}
                   />
                 </div>
               </div>
@@ -507,7 +509,7 @@ export function TableOrderingSystem({
                   />
                   <input
                     placeholder="General notes..."
-                    className="w-full pl-8 pr-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] outline-none focus:border-red-400 transition-all font-medium text-zinc-900"
+                    className="w-full pl-8 pr-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] outline-none focus:border-zinc-900 transition-all font-medium text-zinc-900"
                     value={kotRemarks}
                     onChange={(e) => setKotRemarks(e.target.value)}
                   />
@@ -549,7 +551,7 @@ export function TableOrderingSystem({
                 </button>
                 <Button
                   onClick={() => onConfirm(cart, guests, kotRemarks)}
-                  className={`h-12 text-white font-bold text-[10px] uppercase tracking-widest border-none rounded-xl shadow-lg transition-all active:scale-95 ${isAddingToExisting ? "bg-red-600 hover:bg-red-700 shadow-red-500/20" : "bg-red-600 hover:bg-red-700 shadow-red-500/20"}`}
+                  className={`h-12 text-white font-bold text-[10px] uppercase tracking-widest border-none rounded-xl shadow-lg transition-all active:scale-95 bg-zinc-900 hover:bg-zinc-800 shadow-zinc-500/20`}
                 >
                   {isAddingToExisting
                     ? "Update & Print KOT"
@@ -569,7 +571,7 @@ export function TableOrderingSystem({
       >
         {activeDish && (
           <div className="p-4 space-y-8">
-            <div className="w-full aspect-2/1 bg-zinc-50 rounded-lg overflow-hidden border border-zinc-200 flex items-center justify-center relative">
+            <div className="w-full aspect-[2/1] bg-zinc-50 rounded-lg overflow-hidden border border-zinc-200 flex items-center justify-center relative">
               {activeDish.image?.[0] ? (
                 <img
                   src={activeDish.image[0]}
@@ -635,7 +637,7 @@ export function TableOrderingSystem({
                       onClick={() =>
                         setQuantityToAdd(Math.max(1, quantityToAdd - 1))
                       }
-                      className="w-8 h-8 rounded bg-white border border-zinc-100 flex items-center justify-center text-zinc-500 hover:text-red-500"
+                      className="w-8 h-8 rounded bg-white border border-zinc-100 flex items-center justify-center text-zinc-500 hover:text-zinc-900"
                     >
                       <Minus size={14} />
                     </button>
@@ -644,7 +646,7 @@ export function TableOrderingSystem({
                     </span>
                     <button
                       onClick={() => setQuantityToAdd(quantityToAdd + 1)}
-                      className="w-8 h-8 rounded bg-white border border-zinc-100 flex items-center justify-center text-zinc-500 hover:text-red-500"
+                      className="w-8 h-8 rounded bg-white border border-zinc-100 flex items-center justify-center text-zinc-500 hover:text-zinc-900"
                     >
                       <Plus size={14} />
                     </button>
@@ -656,7 +658,7 @@ export function TableOrderingSystem({
                   </label>
                   <input
                     placeholder="e.g. Extra spicy"
-                    className="w-full h-[50px] bg-zinc-50 border border-zinc-200 rounded-lg px-3 text-[10px] outline-none focus:border-red-400 font-medium uppercase text-zinc-700"
+                    className="w-full h-[50px] bg-zinc-50 border border-zinc-200 rounded-lg px-3 text-[10px] outline-none focus:border-zinc-900 font-medium uppercase text-zinc-700"
                     value={itemRemarks}
                     onChange={(e) => setItemRemarks(e.target.value)}
                   />
@@ -673,7 +675,7 @@ export function TableOrderingSystem({
                   selectedAddOnIds,
                 )
               }
-              className="w-full h-14 bg-red-600 hover:bg-red-700 text-white font-medium text-[10px] uppercase tracking-widest rounded-xl transition-all active:scale-[0.98]"
+              className="w-full h-14 bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-[10px] uppercase tracking-widest rounded-xl transition-all active:scale-[0.98]"
             >
               Add — Rs.{" "}
               {(

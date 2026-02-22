@@ -269,7 +269,7 @@ export function CheckoutModal({
     return (
       <Modal isOpen={isOpen} onClose={onClose} title="Preparing Checkout">
         <div className="flex flex-col items-center justify-center p-12 gap-4">
-          <Loader2 className="animate-spin text-red-500" size={40} />
+          <Loader2 className="animate-spin text-emerald-500" size={40} />
           <p className="text-sm text-zinc-500 font-medium animate-pulse">
             Calculating totals...
           </p>
@@ -292,7 +292,7 @@ export function CheckoutModal({
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                   step === s
-                    ? "bg-red-600 text-white scale-110 shadow-lg"
+                    ? "bg-emerald-600 text-white scale-110 shadow-lg"
                     : step > s
                       ? "bg-emerald-500 text-white"
                       : "bg-zinc-100 text-zinc-400"
@@ -330,7 +330,7 @@ export function CheckoutModal({
                   />
                   <button
                     onClick={() => setIsAddingCustomer(true)}
-                    className="flex items-center gap-2 text-[10px] font-bold text-red-600 uppercase tracking-widest hover:text-red-700 transition-colors ml-1"
+                    className="flex items-center gap-2 text-[10px] font-bold text-emerald-600 uppercase tracking-widest hover:text-emerald-700 transition-colors ml-1"
                   >
                     <UserPlus size={14} /> Add New Customer
                   </button>
@@ -339,13 +339,13 @@ export function CheckoutModal({
                 <div className="space-y-4 bg-white p-4 rounded-xl border border-zinc-200">
                   <input
                     placeholder="Full Name"
-                    className="w-full bg-zinc-50 border-none rounded-lg p-3 text-sm focus:ring-1 ring-red-500"
+                    className="w-full bg-zinc-50 border-none rounded-lg p-3 text-sm focus:ring-1 ring-emerald-500"
                     value={newCustomerName}
                     onChange={(e) => setNewCustomerName(e.target.value)}
                   />
                   <input
                     placeholder="Phone Number"
-                    className="w-full bg-zinc-50 border-none rounded-lg p-3 text-sm focus:ring-1 ring-red-500"
+                    className="w-full bg-zinc-50 border-none rounded-lg p-3 text-sm focus:ring-1 ring-emerald-500"
                     value={newCustomerPhone}
                     onChange={(e) => setNewCustomerPhone(e.target.value)}
                   />
@@ -369,7 +369,7 @@ export function CheckoutModal({
             </div>
             <Button
               onClick={() => setStep(2)}
-              className="w-full h-14 bg-red-600 hover:bg-red-700 text-white rounded-2xl shadow-xl shadow-red-100 group transition-all"
+              className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-xl shadow-emerald-100 group transition-all"
             >
               <span className="flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-[11px]">
                 Proceed to Bill{" "}
@@ -496,7 +496,7 @@ export function CheckoutModal({
                       </span>
                       <button
                         onClick={() => removeFreeItem(item.id)}
-                        className="no-print p-1 text-zinc-300 hover:text-red-500 transition-colors"
+                        className="no-print p-1 text-zinc-300 hover:text-emerald-500 transition-colors"
                       >
                         <X size={14} />
                       </button>
@@ -573,7 +573,7 @@ export function CheckoutModal({
                 {!isAddingTax ? (
                   <button
                     onClick={() => setIsAddingTax(true)}
-                    className="text-[10px] font-bold text-red-600 uppercase tracking-wider flex items-center gap-1 hover:text-red-700"
+                    className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1 hover:text-emerald-700"
                   >
                     + Add Custom Tax
                   </button>
@@ -629,7 +629,7 @@ export function CheckoutModal({
               </h3>
               <p className="text-xs text-zinc-500">
                 Amount to be paid:{" "}
-                <span className="font-bold text-red-600">
+                <span className="font-bold text-emerald-600">
                   {settings.currency} {calculateSummary().grandTotal.toFixed(2)}
                 </span>
               </p>
@@ -639,12 +639,12 @@ export function CheckoutModal({
               <button
                 onClick={() => handleFinalize("CASH")}
                 disabled={loading}
-                className="flex flex-col items-center justify-center p-8 bg-white border-2 border-zinc-100 rounded-3xl hover:border-red-500 hover:bg-red-50 transition-all group shadow-sm active:scale-95"
+                className="flex flex-col items-center justify-center p-8 bg-white border-2 border-zinc-100 rounded-3xl hover:border-emerald-500 hover:bg-emerald-50 transition-all group shadow-sm active:scale-95"
               >
-                <div className="w-16 h-16 rounded-2xl bg-zinc-50 flex items-center justify-center mb-4 group-hover:bg-red-100 transition-colors">
-                  <Wallet
+                <div className="w-16 h-16 rounded-2xl bg-zinc-50 flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
+                  <QrCode
                     size={32}
-                    className="text-zinc-400 group-hover:text-red-600"
+                    className="text-zinc-400 group-hover:text-emerald-600"
                   />
                 </div>
                 <span className="font-black text-zinc-900 text-xs uppercase tracking-widest">
@@ -655,12 +655,12 @@ export function CheckoutModal({
               <button
                 onClick={() => handleFinalize("QR")}
                 disabled={loading}
-                className="flex flex-col items-center justify-center p-8 bg-white border-2 border-zinc-100 rounded-3xl hover:border-red-500 hover:bg-red-50 transition-all group shadow-sm active:scale-95"
+                className={`flex flex-col items-center justify-center p-8 bg-white border-2 border-zinc-100 rounded-3xl transition-all group shadow-sm active:scale-95 ${!selectedCustomerId ? "opacity-50 cursor-not-allowed" : "hover:border-emerald-500 hover:bg-emerald-50"}`}
               >
-                <div className="w-16 h-16 rounded-2xl bg-zinc-50 flex items-center justify-center mb-4 group-hover:bg-red-100 transition-colors">
-                  <QrCode
+                <div className="w-16 h-16 rounded-2xl bg-zinc-50 flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
+                  <CreditCard
                     size={32}
-                    className="text-zinc-400 group-hover:text-red-600"
+                    className="text-zinc-400 group-hover:text-emerald-600"
                   />
                 </div>
                 <span className="font-black text-zinc-900 text-xs uppercase tracking-widest">
@@ -671,17 +671,17 @@ export function CheckoutModal({
               <button
                 onClick={() => handleFinalize("CREDIT")}
                 disabled={loading || !selectedCustomerId}
-                className={`flex flex-col items-center justify-center p-8 bg-white border-2 border-zinc-100 rounded-3xl transition-all group shadow-sm active:scale-95 ${!selectedCustomerId ? "opacity-50 cursor-not-allowed" : "hover:border-red-500 hover:bg-red-50"}`}
+                className={`flex flex-col items-center justify-center p-8 bg-white border-2 border-zinc-100 rounded-3xl transition-all group shadow-sm active:scale-95 ${!selectedCustomerId ? "opacity-50 cursor-not-allowed" : "hover:border-emerald-500 hover:bg-emerald-50"}`}
                 title={
                   !selectedCustomerId
                     ? "Please select a customer for credit payment"
                     : ""
                 }
               >
-                <div className="w-16 h-16 rounded-2xl bg-zinc-50 flex items-center justify-center mb-4 group-hover:bg-red-100 transition-colors">
+                <div className="w-16 h-16 rounded-2xl bg-zinc-50 flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
                   <CreditCard
                     size={32}
-                    className="text-zinc-400 group-hover:text-red-600"
+                    className="text-zinc-400 group-hover:text-emerald-600"
                   />
                 </div>
                 <span className="font-black text-zinc-900 text-xs uppercase tracking-widest">
@@ -707,13 +707,13 @@ export function CheckoutModal({
         <div className="flex flex-col gap-6 p-2 max-h-[70vh]">
           <div className="relative group">
             <Search
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-red-600 transition-colors"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-emerald-600 transition-colors"
               size={16}
             />
             <input
               type="text"
               placeholder="Search dishes, addons, combos..."
-              className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:border-red-500 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:border-emerald-500 outline-none transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

@@ -13,8 +13,12 @@ import { useSettings } from "@/components/providers/SettingsProvider";
 export function PriceForm({ value, onChange }: PriceFormProps) {
   const { settings } = useSettings();
   const handleChange = (field: keyof Price, val: string) => {
-    const num = parseFloat(val) || 0;
-    onChange({ ...value, [field]: num });
+    if (val === "") {
+      onChange({ ...value, [field]: 0 });
+      return;
+    }
+    const num = parseFloat(val);
+    onChange({ ...value, [field]: isNaN(num) ? 0 : num });
   };
 
   return (
@@ -29,7 +33,7 @@ export function PriceForm({ value, onChange }: PriceFormProps) {
           </label>
           <input
             type="number"
-            className="w-full border rounded px-2 py-1 text-sm"
+            className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
             value={value?.actualPrice || ""}
             onChange={(e) => handleChange("actualPrice", e.target.value)}
           />
@@ -40,7 +44,7 @@ export function PriceForm({ value, onChange }: PriceFormProps) {
           </label>
           <input
             type="number"
-            className="w-full border rounded px-2 py-1 text-sm"
+            className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
             value={value?.discountPrice || ""}
             onChange={(e) => handleChange("discountPrice", e.target.value)}
           />
@@ -51,7 +55,7 @@ export function PriceForm({ value, onChange }: PriceFormProps) {
           </label>
           <input
             type="number"
-            className="w-full border rounded px-2 py-1 text-sm"
+            className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
             value={value?.listedPrice || ""}
             onChange={(e) => handleChange("listedPrice", e.target.value)}
           />
@@ -62,7 +66,7 @@ export function PriceForm({ value, onChange }: PriceFormProps) {
           </label>
           <input
             type="number"
-            className="w-full border rounded px-2 py-1 text-sm"
+            className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
             value={value?.cogs || ""}
             onChange={(e) => handleChange("cogs", e.target.value)}
           />
@@ -73,7 +77,7 @@ export function PriceForm({ value, onChange }: PriceFormProps) {
           </label>
           <input
             type="number"
-            className="w-full border rounded px-2 py-1 text-sm"
+            className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
             value={value?.grossProfit || ""}
             onChange={(e) => handleChange("grossProfit", e.target.value)}
           />
@@ -130,7 +134,7 @@ export function StockConsumptionForm({
                 Stock Item
               </label>
               <select
-                className="w-full border rounded px-2 py-1 text-sm"
+                className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
                 value={row.stockId}
                 onChange={(e) => updateRow(index, "stockId", e.target.value)}
               >
@@ -149,11 +153,15 @@ export function StockConsumptionForm({
               <input
                 type="number"
                 step="0.1"
-                className="w-full border rounded px-2 py-1 text-sm"
+                className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
                 value={row.quantity}
-                onChange={(e) =>
-                  updateRow(index, "quantity", parseFloat(e.target.value))
-                }
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  updateRow(index, "quantity", isNaN(val) ? 0 : val);
+                }}
+                onBlur={(e) => {
+                  if (e.target.value === "") updateRow(index, "quantity", 0);
+                }}
               />
             </div>
             <Button
@@ -176,7 +184,6 @@ export function StockConsumptionForm({
   );
 }
 
-// Simple Rich Text Placeholder
 // Simple Rich Text Placeholder
 export function RichTextEditor({
   label,
@@ -215,7 +222,7 @@ export function RichTextEditor({
       <label className="text-sm font-medium text-gray-700 block mb-1">
         {label}
       </label>
-      <div className="border border-gray-300 rounded-lg p-1 bg-white focus-within:ring-2 focus-within:ring-red-500/20 focus-within:border-red-500 transition-all">
+      <div className="border border-gray-300 rounded-lg p-1 bg-white focus-within:ring-2 focus-within:ring-zinc-900/10 focus-within:border-zinc-900 transition-all">
         <div className="flex gap-1 border-b border-gray-100 pb-2 mb-2 px-1">
           <button
             type="button"
