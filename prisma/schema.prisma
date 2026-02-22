@@ -27,6 +27,9 @@ model TableSession {
   tableId String
   table   Table  @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
+  storeId String?
+  store   Store?  @relation(fields: [storeId], references: [id])
+
   startedAt DateTime  @default(now())
   endedAt   DateTime?
 
@@ -41,6 +44,7 @@ model TableSession {
   orders   Order[]
 
   @@index([tableId])
+  @@index([storeId])
 }
 
 model TableType {
@@ -480,6 +484,7 @@ enum PaymentMethod {
   CASH
   ESEWA
   QR
+  CARD
   BANK_TRANSFER
   CREDIT
 }
@@ -534,6 +539,9 @@ model CustomerLedger {
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id])
 
+  storeId String?
+  store   Store?  @relation(fields: [storeId], references: [id])
+
   txnNo          String     @unique
   type           LedgerType
   amount         Float
@@ -545,6 +553,7 @@ model CustomerLedger {
   createdAt DateTime @default(now())
 
   @@index([customerId])
+  @@index([storeId])
 }
 
 enum LedgerType {
@@ -728,6 +737,8 @@ model Store {
   stocks      Stock[]
   payments    Payment[]
   staff       Staff[]
+  tableSessions TableSession[]
+  ledgers       CustomerLedger[]
   expenses    Expense[]
   purchases   Purchase[]
   salesReturns SalesReturn[]

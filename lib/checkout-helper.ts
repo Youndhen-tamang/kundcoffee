@@ -35,26 +35,41 @@ export async function finalizeSessionTransaction(data: {
 
   return await prisma.$transaction(async (tx) => {
     // 0. Resolve the mandatory Store ID
-    // If not passed from the frontend, we must fetch it from the Table
     let finalStoreId = storeId;
     if (!finalStoreId) {
-      const table = await tx.table.findUnique({
-        where: { id: tableId },
-        select: { storeId: true },
-      });
-      if (!table || !table.storeId) {
-        throw new Error("Store identification failed for this table");
+      if (tableId) {
+        const table = await tx.table.findUnique({
+          where: { id: tableId },
+          select: { storeId: true },
+        });
+        finalStoreId = table?.storeId || undefined;
       }
-      finalStoreId = table.storeId;
+
+      if (!finalStoreId && sessionId) {
+        // Try to get storeId from session
+        const session = await tx.tableSession.findUnique({
+          where: { id: sessionId },
+          select: { storeId: true },
+        });
+        finalStoreId = session?.storeId || undefined;
+      }
+
+      if (!finalStoreId) {
+        throw new Error("Store identification failed. storeId is required.");
+      }
     }
 
     // 1. Update or Create Payment inside the transaction
-    const existingPayment = await tx.payment.findUnique({
-      where: { sessionId: sessionId },
-    });
-
     let payment;
-    const paymentStatus = (paymentMethod === "CREDIT" ? "CREDIT" : "PAID") as any;
+    const paymentStatus = (
+      paymentMethod === "CREDIT" ? "CREDIT" : "PAID"
+    ) as any;
+
+    const existingPayment = sessionId
+      ? await tx.payment.findUnique({
+          where: { sessionId: sessionId },
+        })
+      : null;
 
     if (existingPayment) {
       payment = await tx.payment.update({
@@ -65,7 +80,7 @@ export async function finalizeSessionTransaction(data: {
           status: paymentStatus,
           transactionUuid: null,
           esewaRefId: null,
-          storeId: finalStoreId, // Ensure Store Isolation
+          storeId: finalStoreId,
         },
       });
     } else {
@@ -74,8 +89,7 @@ export async function finalizeSessionTransaction(data: {
           amount,
           method: paymentMethod as any,
           status: paymentStatus,
-          // FIX: Use scalar fields (sessionId/storeId) to avoid "Mixed Types" error
-          sessionId: sessionId, 
+          sessionId: sessionId || null,
           storeId: finalStoreId,
         },
       });
@@ -85,13 +99,18 @@ export async function finalizeSessionTransaction(data: {
 
     // 2. Update all orders in this session to COMPLETED
     const orders = await tx.order.findMany({
-      where: { sessionId },
+      where: {
+        sessionId: sessionId || undefined,
+        storeId: finalStoreId,
+        // If no sessionId, we might be finalizing a specific order if we had an orderId,
+        // but this helper seems session-centric. For Take Away, API should pass sessionId.
+      },
       include: { items: true },
     });
 
     for (const order of orders) {
       await tx.order.update({
-        where: { id: order.id },
+        where: { id: order.id, storeId: finalStoreId },
         data: {
           status: "COMPLETED",
           customerId: customerId || null,
@@ -115,10 +134,10 @@ export async function finalizeSessionTransaction(data: {
     if (extraFreeItems.length > 0) {
       await tx.order.create({
         data: {
-          sessionId,
-          tableId,
-          storeId: finalStoreId, // MANDATORY: Orders now require storeId
-          type: "DINE_IN",
+          sessionId: sessionId || null,
+          tableId: tableId || null,
+          storeId: finalStoreId,
+          type: tableId ? "DINE_IN" : "TAKE_AWAY",
           status: "COMPLETED",
           customerId: customerId || null,
           paymentId: finalPaymentId,
@@ -138,52 +157,64 @@ export async function finalizeSessionTransaction(data: {
       });
     }
 
-    // 4. Handle stray orders on the table (not yet linked to session)
-    await tx.order.updateMany({
-      where: {
-        tableId,
-        status: { in: ["PENDING", "PREPARING", "READYTOPICK", "SERVED"] },
-        sessionId: null,
-      },
-      data: {
-        status: "COMPLETED",
-        customerId: customerId || null,
-        paymentId: finalPaymentId,
-        sessionId: sessionId,
-        storeId: finalStoreId,
-      },
-    });
+    // 4. Handle stray orders on the table (not yet linked to session) - ONLY if tableId exists
+    if (tableId) {
+      await tx.order.updateMany({
+        where: {
+          tableId,
+          storeId: finalStoreId,
+          status: { in: ["PENDING", "PREPARING", "READYTOPICK", "SERVED"] },
+          sessionId: null,
+        },
+        data: {
+          status: "COMPLETED",
+          customerId: customerId || null,
+          paymentId: finalPaymentId,
+          sessionId: sessionId || null,
+        },
+      });
+    }
 
-    // 5. Close the TableSession
-    await tx.tableSession.update({
-      where: { id: sessionId },
-      data: {
-        isActive: false,
-        endedAt: new Date(),
-        total: subtotal || 0,
-        discount: discount || 0,
-        serviceCharge: serviceCharge || 0,
-        tax: tax || 0,
-        grandTotal: amount,
-      },
-    });
+    // 5. Close the TableSession if exists
+    if (sessionId) {
+      const sessionExists = await tx.tableSession.findUnique({
+        where: { id: sessionId, storeId: finalStoreId },
+      });
 
-    // 6. Reset Table status to ACTIVE
-    await tx.table.update({
-      where: { id: tableId },
-      data: { status: "ACTIVE" },
-    });
+      if (sessionExists) {
+        await tx.tableSession.update({
+          where: { id: sessionId, storeId: finalStoreId },
+          data: {
+            isActive: false,
+            endedAt: new Date(),
+            total: subtotal || 0,
+            discount: discount || 0,
+            serviceCharge: serviceCharge || 0,
+            tax: tax || 0,
+            grandTotal: amount,
+          },
+        });
+      }
+    }
+
+    // 6. Reset Table status to ACTIVE if exists
+    if (tableId) {
+      await tx.table.update({
+        where: { id: tableId, storeId: finalStoreId },
+        data: { status: "ACTIVE" },
+      });
+    }
 
     // 7. Handle Customer Ledger and Loyalty
     if (customerId) {
       const pointsEarned = Math.floor(amount / 100);
       await tx.customer.update({
-        where: { id: customerId },
+        where: { id: customerId, storeId: finalStoreId },
         data: { loyaltyPoints: { increment: pointsEarned } },
       });
 
       const lastLedger = await tx.customerLedger.findFirst({
-        where: { customerId },
+        where: { customerId, storeId: finalStoreId },
         orderBy: { createdAt: "desc" },
       });
 
@@ -193,12 +224,15 @@ export async function finalizeSessionTransaction(data: {
       await tx.customerLedger.create({
         data: {
           customerId,
-          txnNo: `SALE-${Date.now()}-${sessionId.substring(0, 4)}`,
+          storeId: finalStoreId,
+          txnNo: `SALE-${Date.now()}-${(sessionId || "TA").substring(0, 4)}`,
           type: "SALE",
           amount: amount,
           closingBalance: newBalance,
-          referenceId: sessionId,
-          remarks: `Table Checkout - ${tableId} (${paymentMethod})`,
+          referenceId: sessionId || finalPaymentId,
+          remarks: tableId
+            ? `Table Checkout - ${tableId} (${paymentMethod})`
+            : `Take Away Checkout (${paymentMethod})`,
         },
       });
 
@@ -206,12 +240,15 @@ export async function finalizeSessionTransaction(data: {
         await tx.customerLedger.create({
           data: {
             customerId,
-            txnNo: `PAY-${Date.now()}-${sessionId.substring(0, 4)}`,
+            storeId: finalStoreId,
+            txnNo: `PAY-${Date.now()}-${(sessionId || "TA").substring(0, 4)}`,
             type: "PAYMENT_IN",
             amount: amount,
             closingBalance: newBalance - amount,
             referenceId: finalPaymentId,
-            remarks: `Payment for Table Checkout (${paymentMethod})`,
+            remarks: tableId
+              ? `Payment for Table Checkout (${paymentMethod})`
+              : `Payment for Take Away Checkout (${paymentMethod})`,
           },
         });
       }

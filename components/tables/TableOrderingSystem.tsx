@@ -10,7 +10,6 @@ import {
 } from "@/services/menu";
 import { Button } from "@/components/ui/Button";
 import { Popover } from "@/components/ui/Popover";
-import { Modal } from "@/components/ui/Modal";
 import {
   Search,
   Plus,
@@ -64,11 +63,6 @@ export function TableOrderingSystem({
     settings.includeTaxByDefault === "true",
   );
 
-  const [quantityToAdd, setQuantityToAdd] = useState(1);
-  const [itemRemarks, setItemRemarks] = useState("");
-  const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
-  const [activeDish, setActiveDish] = useState<Dish | null>(null);
-
   useEffect(() => {
     const fetchData = async () => {
       const [cData, dData, smData, aData] = await Promise.all([
@@ -96,34 +90,30 @@ export function TableOrderingSystem({
     return matchesSearch && matchesCategory && matchesSubMenu;
   });
 
-  const addToCart = (
-    dish: Dish,
-    qty: number,
-    remarks: string,
-    addonIds: string[],
-  ) => {
-    const selectedAddons = availableAddOns.filter((a) =>
-      addonIds.includes(a.id),
-    );
-    const addonsTotal = selectedAddons.reduce(
-      (sum, a) => sum + (a.price?.listedPrice || 0),
-      0,
-    );
-
+  const addToCartDirectly = (dish: Dish) => {
     const newItem: CartItem = {
       dishId: dish.id,
       dish: dish,
-      quantity: qty,
+      quantity: 1,
       unitPrice: dish.price?.listedPrice || 0,
-      totalPrice: ((dish.price?.listedPrice || 0) + addonsTotal) * qty,
-      remarks: remarks,
-      addons: selectedAddons,
+      totalPrice: dish.price?.listedPrice || 0,
+      remarks: "",
+      addons: [],
     };
-    setCart([...cart, newItem]);
-    setActiveDish(null);
-    setQuantityToAdd(1);
-    setItemRemarks("");
-    setSelectedAddOnIds([]);
+
+    // Check if item already in cart (without addons/remarks) to increment qty instead
+    const existingIndex = cart.findIndex(
+      (item) =>
+        item.dishId === dish.id &&
+        (!item.addons || item.addons.length === 0) &&
+        !item.remarks,
+    );
+
+    if (existingIndex > -1) {
+      updateCartQty(existingIndex, 1);
+    } else {
+      setCart([...cart, newItem]);
+    }
   };
 
   const updateCartQty = (index: number, delta: number) => {
@@ -158,7 +148,7 @@ export function TableOrderingSystem({
 
   return (
     <div
-      className={`flex flex-col h-[85vh] w-full overflow-hidden rounded-xl border ${isAddingToExisting ? "bg-zinc-50 border-zinc-200" : "bg-zinc-50 border-zinc-200"}`}
+      className={`flex flex-col h-[85vh] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50`}
     >
       {/* Top Header */}
       <div
@@ -234,45 +224,50 @@ export function TableOrderingSystem({
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Side: Product Selection */}
-        <div className="flex-1 flex flex-col bg-white border-r border-zinc-100 p-8 space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="relative flex-1 group">
-                <Search
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-900 transition-colors"
-                  size={16}
-                />
-                <input
-                  type="text"
-                  placeholder="Search and add dishes..."
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-xs transition-all outline-none font-normal placeholder:text-zinc-400 ${isAddingToExisting ? "bg-white border-zinc-200 focus:border-zinc-900 text-zinc-900" : "bg-zinc-50 border-zinc-200 focus:border-zinc-900 text-zinc-900"}`}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+        {/* Left Column: Sidebar (Search + Categories) */}
+        <div className="w-72 bg-white border-r border-zinc-100 flex flex-col p-6 space-y-8 overflow-hidden">
+          {/* Search Section */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] px-1">
+              Search Dishes
+            </label>
+            <div className="relative group">
+              <Search
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-900 transition-colors"
+                size={16}
+              />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs outline-none focus:border-zinc-900 focus:bg-white transition-all font-medium placeholder:text-zinc-400"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Categories Section */}
+          <div className="flex-1 flex flex-col min-h-0 space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">
+                Categories
+              </label>
               <Popover
                 trigger={
-                  <Button
-                    variant="secondary"
-                    className={`h-10 px-4 bg-white border shadow-sm text-zinc-600 flex items-center gap-2 rounded-xl border-zinc-200 hover:border-zinc-400`}
-                  >
-                    <Filter
-                      size={14}
-                      className={isAddingToExisting ? "text-zinc-400" : ""}
-                    />
-                    <span className="text-[10px] font-medium uppercase tracking-widest">
-                      Sub-Menus
-                    </span>
-                  </Button>
+                  <button className="text-zinc-400 hover:text-zinc-900 transition-colors">
+                    <Filter size={14} />
+                  </button>
                 }
                 content={
                   <div className="w-56 p-1">
+                    <p className="px-3 py-2 text-[8px] font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-100 mb-1">
+                      Filter by Sub-Menu
+                    </p>
                     <button
                       onClick={() => setSelectedSubMenuId("ALL")}
                       className={`w-full text-left px-3 py-2 text-[9px] font-medium rounded mb-0.5 transition-all uppercase ${selectedSubMenuId === "ALL" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50"}`}
                     >
-                      All
+                      All Sub-Menus
                     </button>
                     {subMenus.map((sm) => (
                       <button
@@ -288,86 +283,106 @@ export function TableOrderingSystem({
               />
             </div>
 
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-1.5">
               <button
                 onClick={() => setSelectedCategoryId("ALL")}
-                className={`px-4 py-1.5 rounded-lg text-[9px] font-semibold uppercase tracking-widest whitespace-nowrap transition-all border ${selectedCategoryId === "ALL" ? "bg-zinc-900 text-white border-zinc-900" : "bg-white text-zinc-500 border-zinc-100 hover:border-zinc-200"}`}
+                className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border ${selectedCategoryId === "ALL" ? "bg-zinc-900 text-white border-zinc-900 shadow-lg shadow-zinc-900/10" : "bg-zinc-50 text-zinc-500 border-zinc-100 hover:border-zinc-200"}`}
               >
-                All
+                All Items
               </button>
               {categories.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedCategoryId(c.id)}
-                  className={`px-4 py-1.5 rounded-lg text-[9px] font-semibold uppercase tracking-widest whitespace-nowrap transition-all border ${selectedCategoryId === c.id ? "bg-zinc-900 text-white border-zinc-900" : "bg-white text-zinc-500 border-zinc-100 hover:border-zinc-200"}`}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border ${selectedCategoryId === c.id ? "bg-zinc-900 text-white border-zinc-900 shadow-lg shadow-zinc-900/10" : "bg-zinc-50 text-zinc-500 border-zinc-100 hover:border-zinc-200"}`}
                 >
                   {c.name}
                 </button>
               ))}
             </div>
           </div>
-
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {filteredDishes.map((dish) => (
-                <div
-                  key={dish.id}
-                  onClick={() => setActiveDish(dish)}
-                  className="group bg-white border border-zinc-100 rounded-md shadow-sm hover:shadow-md hover:border-zinc-900 transition-all cursor-pointer aspect-square flex flex-col p-3"
-                >
-                  {/* Image */}
-                  <div className="flex-1 rounded-md bg-zinc-50 overflow-hidden border border-zinc-100 mb-2">
-                    {dish.image?.[0] ? (
-                      <img
-                        src={dish.image[0]}
-                        alt={dish.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-zinc-300">
-                        <LayoutGrid size={24} />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Text */}
-                  <div className="text-center space-y-0.5">
-                    <h4 className="text-[11px] font-bold text-zinc-900 uppercase truncate">
-                      {dish.name}
-                    </h4>
-                    <p className="text-[8px] text-zinc-500 font-medium uppercase tracking-widest truncate">
-                      {dish.type}
-                    </p>
-                  </div>
-
-                  {/* Bottom */}
-                  <div className="mt-auto pt-2 border-t border-zinc-100 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-zinc-900">
-                      Rs. {dish.price?.listedPrice.toFixed(2)}
-                    </span>
-                    <div className="p-1 rounded-md text-zinc-400 group-hover:text-zinc-900 transition-colors">
-                      <PlusCircle size={16} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {/* Right Side: Cart Summary */}
-        <div className="w-[380px] bg-zinc-50/50 flex flex-col border-l border-zinc-100 shadow-sm z-10">
+        {/* Center Column: Items Grid */}
+        <div className="flex-1 overflow-y-auto bg-white p-8 custom-scrollbar">
+          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {filteredDishes.map((dish) => (
+              <div
+                key={dish.id}
+                onClick={() => addToCartDirectly(dish)}
+                className="group bg-white border border-zinc-100 rounded-2xl shadow-sm hover:shadow-xl hover:border-zinc-900 transition-all cursor-pointer aspect-square flex flex-col p-4 relative overflow-hidden"
+              >
+                {/* Image */}
+                <div className="flex-1 rounded-xl bg-zinc-50 overflow-hidden border border-zinc-50 mb-4">
+                  {dish.image?.[0] ? (
+                    <img
+                      src={dish.image[0]}
+                      alt={dish.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-zinc-200">
+                      <LayoutGrid size={32} strokeWidth={1.5} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Text Content */}
+                <div className="space-y-1">
+                  <h4 className="text-[12px] font-bold text-zinc-900 uppercase truncate">
+                    {dish.name}
+                  </h4>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-zinc-900">
+                      Rs. {(dish.price?.listedPrice ?? 0).toFixed(2)}
+                    </span>
+                    <span className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">
+                      {dish.type}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Hover Add Indicator */}
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0 translate-x-4">
+                  <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white shadow-lg">
+                    <Plus size={16} strokeWidth={3} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {filteredDishes.length === 0 && (
+            <div className="h-full flex flex-col items-center justify-center py-40 opacity-20">
+              <Search size={48} className="text-zinc-400 mb-4" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                No items found
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Cart Summary */}
+        <div className="w-[400px] bg-zinc-50/50 flex flex-col border-l border-zinc-100 shadow-sm z-10">
           <div
             className={`p-6 border-b flex items-center justify-between sticky top-0 backdrop-blur-sm z-20 ${isAddingToExisting ? "bg-zinc-100 text-zinc-900 border-zinc-200" : "bg-white/50 border-zinc-100"}`}
           >
-            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">
-              {isAddingToExisting ? "Current Order Addition" : "Draft Order"}
-            </h3>
-            <span
-              className={`text-[9px] px-2.5 py-1 rounded font-bold uppercase tracking-widest ${isAddingToExisting ? "bg-zinc-200 text-zinc-900" : "bg-zinc-200 text-zinc-700"}`}
-            >
-              {cart.length} New Items
-            </span>
+            <div>
+              <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">
+                {isAddingToExisting ? "Updating Session" : "Active Selection"}
+              </h3>
+              <p className="text-[9px] font-medium text-zinc-400 uppercase tracking-widest mt-0.5">
+                {totalQty} Items in Cart
+              </p>
+            </div>
+            {cart.length > 0 && (
+              <button
+                onClick={() => setCart([])}
+                className="text-[9px] font-bold text-zinc-400 hover:text-red-500 uppercase tracking-widest transition-colors"
+              >
+                Clear
+              </button>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
@@ -380,14 +395,14 @@ export function TableOrderingSystem({
                   {existingItems.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex justify-between items-center text-[10px] bg-zinc-100/50 p-2 rounded-lg border border-zinc-200/50"
+                      className="flex justify-between items-center text-[10px] bg-zinc-100/50 p-2.5 rounded-xl border border-zinc-200/50"
                     >
                       <span className="font-medium text-zinc-900">
                         {item.quantity} x{" "}
                         {item.dish?.name || item.combo?.name || "Item"}
                       </span>
                       <span className="text-zinc-600 font-bold">
-                        Rs. {item.totalPrice.toFixed(2)}
+                        Rs. {(item.totalPrice ?? 0).toFixed(2)}
                       </span>
                     </div>
                   ))}
@@ -395,97 +410,87 @@ export function TableOrderingSystem({
                 <div className="h-px bg-zinc-200 mx-1" />
               </div>
             )}
+
             {cart.map((item, idx) => (
               <div
                 key={idx}
-                className="bg-white rounded-xl p-4 border border-zinc-200 shadow-sm group relative"
+                className="bg-white rounded-2xl p-4 border border-zinc-200 shadow-sm group relative"
               >
                 <div className="flex justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-[12px] font-medium text-zinc-900 leading-tight truncate uppercase tracking-tight">
+                    <h4 className="text-[12px] font-bold text-zinc-900 leading-tight truncate uppercase tracking-tight">
                       {item.dish?.name}
                     </h4>
-                    <span className="text-[10px] text-zinc-500 font-medium">
-                      Rs. {item.unitPrice?.toFixed(2)}
+                    <span className="text-[10px] text-zinc-400 font-bold">
+                      Rs. {(item.unitPrice ?? 0).toFixed(2)}
                     </span>
-                    {item.addons && item.addons.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {item.addons.map((a) => (
-                          <span
-                            key={a.id}
-                            className="text-[8px] bg-zinc-100 text-zinc-600 px-1.5 py-0.5 rounded border border-zinc-100 font-medium uppercase"
-                          >
-                            +{a.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
-                    <span className="text-[12px] font-medium text-zinc-900">
-                      Rs. {item.totalPrice?.toFixed(2)}
+                    <span className="text-[12px] font-black text-zinc-900">
+                      Rs. {(item.totalPrice ?? 0).toFixed(2)}
                     </span>
                     <div className="flex items-center gap-3 bg-zinc-50 rounded-lg p-1 border border-zinc-100">
                       <button
                         onClick={() => updateCartQty(idx, -1)}
-                        className="p-1 text-zinc-500 hover:text-zinc-900 transition-colors"
+                        className="p-1 text-zinc-400 hover:text-zinc-900 transition-colors"
                       >
-                        <Minus size={10} strokeWidth={2} />
+                        <Minus size={10} strokeWidth={3} />
                       </button>
-                      <span className="text-[10px] font-medium w-4 text-center text-zinc-900">
+                      <span className="text-[10px] font-black w-4 text-center text-zinc-900">
                         {item.quantity}
                       </span>
                       <button
                         onClick={() => updateCartQty(idx, 1)}
-                        className="p-1 text-zinc-500 hover:text-zinc-900 transition-colors"
+                        className="p-1 text-zinc-400 hover:text-zinc-900 transition-colors"
                       >
-                        <Plus size={10} strokeWidth={2} />
+                        <Plus size={10} strokeWidth={3} />
                       </button>
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 relative">
+                <div className="mt-3">
                   <input
                     type="text"
-                    placeholder="Add specific notes..."
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-2 text-[9px] font-normal uppercase outline-none focus:bg-white focus:border-zinc-900 transition-all text-zinc-600 placeholder:text-zinc-400"
+                    placeholder="Short note..."
+                    className="w-full bg-zinc-50 border border-zinc-100 rounded-lg px-2.5 py-1.5 text-[9px] font-medium uppercase outline-none focus:bg-white focus:border-zinc-900 transition-all text-zinc-600 placeholder:text-zinc-300"
                     value={item.remarks}
                     onChange={(e) => updateCartItemRemarks(idx, e.target.value)}
                   />
                   <button
                     onClick={() => removeFromCart(idx)}
-                    className="absolute -top-1 -right-1 p-1 bg-zinc-900 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-md scale-75"
+                    className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-zinc-900 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg flex items-center justify-center scale-90"
                   >
                     <X size={10} strokeWidth={3} />
                   </button>
                 </div>
               </div>
             ))}
+
             {cart.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center py-20 opacity-20">
                 <LayoutGrid size={48} className="text-zinc-400 mb-4" />
-                <p className="text-[10px] font-medium uppercase tracking-[0.2em]">
-                  Cart is empty
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                  No items selected
                 </p>
               </div>
             )}
           </div>
 
-          <div className="p-6 bg-white border-t border-zinc-100 space-y-6">
+          <div className="p-8 bg-white border-t border-zinc-100 space-y-6">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[8px] font-medium text-zinc-500 uppercase tracking-widest px-1">
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest px-1">
                   Guests
                 </label>
                 <div className="relative">
                   <Users
-                    size={12}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                    size={14}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"
                   />
                   <input
                     type="number"
                     min="1"
-                    className="w-full pl-8 pr-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] outline-none focus:border-zinc-900 transition-all font-medium text-zinc-900"
+                    className="w-full pl-10 pr-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs outline-none focus:border-zinc-900 transition-all font-bold text-zinc-900"
                     value={guests}
                     max={table?.capacity}
                     onChange={(e) => {
@@ -498,18 +503,18 @@ export function TableOrderingSystem({
                   />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[8px] font-medium text-zinc-500 uppercase tracking-widest px-1">
-                  KOT Remarks
+              <div className="space-y-2">
+                <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest px-1">
+                  KOT Note
                 </label>
                 <div className="relative">
                   <MessageSquare
-                    size={12}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                    size={14}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"
                   />
                   <input
-                    placeholder="General notes..."
-                    className="w-full pl-8 pr-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] outline-none focus:border-zinc-900 transition-all font-medium text-zinc-900"
+                    placeholder="General..."
+                    className="w-full pl-10 pr-3 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs outline-none focus:border-zinc-900 transition-all font-bold text-zinc-900"
                     value={kotRemarks}
                     onChange={(e) => setKotRemarks(e.target.value)}
                   />
@@ -517,178 +522,41 @@ export function TableOrderingSystem({
               </div>
             </div>
 
-            <div className="space-y-4 pt-2 border-t border-zinc-100">
-              {settings.includeTaxByDefault === "true" && (
-                <div className="flex items-center justify-between pb-2">
-                  <span className="text-[9px] font-medium text-zinc-400 uppercase tracking-widest px-1">
-                    Tax Status: {includeTax ? "Enabled (13%)" : "Disabled"}
-                  </span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-widest text-zinc-600 px-1">
-                <span>Sub-Total ({totalQty} pkts)</span>
-                <span className="text-zinc-900">
-                  Rs. {totalAmount.toFixed(2)}
-                </span>
-              </div>
-
+            <div className="pt-4 border-t border-zinc-100 space-y-4">
               <div className="flex justify-between items-end px-1">
-                <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-[0.2em] leading-none mb-1">
-                  Grand Total
-                </span>
-                <span className="text-3xl font-medium text-zinc-900 leading-none tracking-tight">
-                  Rs. {grandTotal.toFixed(2)}
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] block mb-1">
+                    Grand Total
+                  </span>
+                  <p className="text-[10px] font-medium text-zinc-400 uppercase">
+                    Inc. Tax 13%: Rs. {(taxAmount ?? 0).toFixed(2)}
+                  </p>
+                </div>
+                <span className="text-4xl font-black text-zinc-900 leading-none tracking-tighter">
+                  Rs. {(grandTotal ?? 0).toFixed(2)}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <button
-                  className="h-12 flex items-center justify-center border border-zinc-200 text-zinc-500 rounded-xl hover:bg-zinc-50 transition-colors"
+                <Button
+                  variant="secondary"
+                  className="h-14 border border-zinc-200 text-zinc-500 rounded-2xl hover:bg-zinc-50 transition-colors"
                   onClick={() => onConfirm(cart, guests, kotRemarks)}
                 >
-                  <Printer size={16} />
-                </button>
+                  <Printer size={18} />
+                </Button>
                 <Button
                   onClick={() => onConfirm(cart, guests, kotRemarks)}
-                  className={`h-12 text-white font-bold text-[10px] uppercase tracking-widest border-none rounded-xl shadow-lg transition-all active:scale-95 bg-zinc-900 hover:bg-zinc-800 shadow-zinc-500/20`}
+                  disabled={cart.length === 0}
+                  className={`h-14 text-white font-black text-[10px] uppercase tracking-widest border-none rounded-2xl shadow-xl transition-all active:scale-95 bg-zinc-900 hover:bg-zinc-800 shadow-zinc-900/10 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  {isAddingToExisting
-                    ? "Update & Print KOT"
-                    : "Confirm & Send to Kitchen"}
+                  {isAddingToExisting ? "Update Order" : "Send KOT"}
                 </Button>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <Modal
-        isOpen={!!activeDish}
-        onClose={() => setActiveDish(null)}
-        title=""
-        size="sm"
-      >
-        {activeDish && (
-          <div className="p-4 space-y-8">
-            <div className="w-full aspect-[2/1] bg-zinc-50 rounded-lg overflow-hidden border border-zinc-200 flex items-center justify-center relative">
-              {activeDish.image?.[0] ? (
-                <img
-                  src={activeDish.image[0]}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <LayoutGrid size={40} className="text-zinc-300" />
-              )}
-              <div className="absolute top-2 right-2 bg-white/80 backdrop-blur-md px-2 py-1 rounded text-[8px] font-medium border border-zinc-200 uppercase tracking-widest text-zinc-600">
-                {activeDish.type}
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="flex items-center justify-between px-1">
-                <div>
-                  <h3 className="text-lg font-medium text-zinc-900 tracking-tight uppercase">
-                    {activeDish.name}
-                  </h3>
-                  <p className="text-[10px] text-zinc-600 font-medium uppercase mt-1 tracking-widest">
-                    {activeDish.kotType} • {activeDish.preparationTime} Mins
-                    Prep
-                  </p>
-                </div>
-                <span className="text-2xl font-medium text-zinc-900">
-                  Rs. {activeDish.price?.listedPrice.toFixed(2)}
-                </span>
-              </div>
-
-              {availableAddOns.length > 0 && (
-                <div className="space-y-3 px-1">
-                  <label className="text-[8px] font-medium text-zinc-500 uppercase tracking-widest block">
-                    Pick Add-ons
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {availableAddOns.map((addon) => (
-                      <button
-                        key={addon.id}
-                        onClick={() =>
-                          setSelectedAddOnIds((prev) =>
-                            prev.includes(addon.id)
-                              ? prev.filter((id) => id !== addon.id)
-                              : [...prev, addon.id],
-                          )
-                        }
-                        className={`px-3 py-1.5 rounded-lg border text-[9px] font-medium uppercase tracking-widest transition-all ${selectedAddOnIds.includes(addon.id) ? "bg-zinc-900 text-white border-zinc-900" : "bg-white text-zinc-500 border-zinc-100 hover:border-zinc-200"}`}
-                      >
-                        {addon.name} (+Rs. {addon.price?.listedPrice.toFixed(2)}
-                        )
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-6 px-1">
-                <div className="space-y-3">
-                  <label className="text-[8px] font-medium text-zinc-500 uppercase tracking-widest block">
-                    Qty
-                  </label>
-                  <div className="flex items-center justify-between bg-zinc-50 p-2 rounded-lg border border-zinc-200">
-                    <button
-                      onClick={() =>
-                        setQuantityToAdd(Math.max(1, quantityToAdd - 1))
-                      }
-                      className="w-8 h-8 rounded bg-white border border-zinc-100 flex items-center justify-center text-zinc-500 hover:text-zinc-900"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="text-lg font-medium text-zinc-900">
-                      {quantityToAdd}
-                    </span>
-                    <button
-                      onClick={() => setQuantityToAdd(quantityToAdd + 1)}
-                      className="w-8 h-8 rounded bg-white border border-zinc-100 flex items-center justify-center text-zinc-500 hover:text-zinc-900"
-                    >
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[8px] font-medium text-zinc-500 uppercase tracking-widest block">
-                    Custom Note
-                  </label>
-                  <input
-                    placeholder="e.g. Extra spicy"
-                    className="w-full h-[50px] bg-zinc-50 border border-zinc-200 rounded-lg px-3 text-[10px] outline-none focus:border-zinc-900 font-medium uppercase text-zinc-700"
-                    value={itemRemarks}
-                    onChange={(e) => setItemRemarks(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Button
-              onClick={() =>
-                addToCart(
-                  activeDish,
-                  quantityToAdd,
-                  itemRemarks,
-                  selectedAddOnIds,
-                )
-              }
-              className="w-full h-14 bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-[10px] uppercase tracking-widest rounded-xl transition-all active:scale-[0.98]"
-            >
-              Add — Rs.{" "}
-              {(
-                ((activeDish.price?.listedPrice || 0) +
-                  availableAddOns
-                    .filter((a) => selectedAddOnIds.includes(a.id))
-                    .reduce((s, a) => s + (a.price?.listedPrice || 0), 0)) *
-                quantityToAdd
-              ).toFixed(2)}
-            </Button>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }

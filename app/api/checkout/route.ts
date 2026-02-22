@@ -32,9 +32,9 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // --- 1. VALIDATION ---
-    if (!tableId || !paymentMethod) {
+    if (!paymentMethod) {
       return NextResponse.json(
-        { success: false, message: "Missing required fields" },
+        { success: false, message: "Missing payment method" },
         { status: 400 },
       );
     }
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Fallback search by tableId
+    // Fallback search by tableId (only if tableId exists)
     if (!session && tableId) {
       session = await prisma.tableSession.findFirst({
         where: { tableId, isActive: true },
@@ -56,34 +56,41 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // DINE_IN must have a session. TAKE_AWAY/DIRECT might not if we implement direct order creation,
+    // but current flow seems to expect a session even for takeaway.
     if (!session || !session.isActive) {
       return NextResponse.json(
-        { success: false, message: "Active session not found for this table" },
+        {
+          success: false,
+          message: "Active session not found. Please ensure an order exists.",
+        },
         { status: 400 },
       );
     }
 
     // Ensure the session belongs to the authenticated store
-    // Only if we have a logged in user with storeId.
-    if (storeId && session.table.storeId !== storeId) {
+    if (storeId && session.storeId !== storeId) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized access to this table" },
+        { success: false, message: "Unauthorized access to this session" },
         { status: 401 },
       );
     }
 
-    // Use the storeId from the table if we didn't get it from session (rare fallback)
-    const effectiveStoreId = storeId || session.table.storeId;
+    const effectiveStoreId = storeId || session.storeId;
+
+    if (!effectiveStoreId) {
+      return NextResponse.json(
+        { success: false, message: "Store identification failed." },
+        { status: 400 },
+      );
+    }
 
     const activeSessionId = session.id;
 
     // --- 2. BRANCHING LOGIC ---
 
-    // === OPTION A: ESEWA GATEWAY (Only for actual ESEWA integration) ===
+    // === OPTION A: ESEWA GATEWAY ===
     if (paymentMethod === "ESEWA") {
-      console.log(
-        `[Checkout] Processing ESEWA for session: ${activeSessionId}`,
-      );
       const transactionUuid = `${Date.now()}-${uuidv4()}`;
 
       const existing = await prisma.payment.findUnique({
@@ -98,38 +105,23 @@ export async function POST(req: NextRequest) {
       }
 
       const payment = await prisma.payment.upsert({
-        where: {
-          sessionId: activeSessionId,
-        },
+        where: { sessionId: activeSessionId },
         update: {
-          method: "ESEWA",
-          amount,
+          method: paymentMethod,
+          amount: parseFloat(amount),
           status: "PENDING",
           transactionUuid,
-          // In update, we can use the raw ID field
-          storeId: effectiveStoreId, 
+          storeId: effectiveStoreId as string,
         },
         create: {
-          method: "ESEWA",
-          amount,
+          sessionId: activeSessionId,
+          method: paymentMethod,
+          amount: parseFloat(amount),
           status: "PENDING",
           transactionUuid,
-          // Use 'connect' for the relations. 
-          // DO NOT include 'storeId: effectiveStoreId' here.
-          session: { connect: { id: activeSessionId } },
-          store: { connect: { id: effectiveStoreId } },
+          storeId: effectiveStoreId as string,
         },
       });
-
-      if (payment.status === "PAID" && payment.method !== "ESEWA") {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "This order is already paid.",
-          },
-          { status: 400 },
-        );
-      }
 
       return NextResponse.json({
         success: true,
@@ -144,11 +136,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // === OPTION B: INSTANT PAYMENT (CASH / CARD / MANUAL QR / CREDIT) ===
-    if (["CASH", "QR", "CARD", "CREDIT"].includes(paymentMethod)) {
-      console.log(
-        `[Checkout] Processing ${paymentMethod} payment for session: ${activeSessionId}`,
-      );
+    // === OPTION B: INSTANT PAYMENT ===
+    if (
+      ["CASH", "QR", "CARD", "CREDIT", "BANK_TRANSFER"].includes(paymentMethod)
+    ) {
       if (paymentMethod === "CREDIT" && !customerId) {
         return NextResponse.json(
           {
@@ -159,10 +150,9 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // 3. Finalize Session (Payment logic moved inside for atomicity)
       const result = await finalizeSessionTransaction({
         sessionId: activeSessionId,
-        tableId,
+        tableId: tableId || session.tableId || null,
         amount,
         subtotal,
         tax,
@@ -172,17 +162,20 @@ export async function POST(req: NextRequest) {
         paymentMethod,
         complimentaryItems,
         extraFreeItems,
-        storeId: effectiveStoreId, // Pass storeId
+        storeId: effectiveStoreId,
       });
 
       return NextResponse.json({
         success: true,
         message:
-          paymentMethod === "CREDIT"
-            ? "Saved as Credit"
-            : "Payment completed and session closed",
+          paymentMethod === "CREDIT" ? "Saved as Credit" : "Payment completed",
       });
     }
+
+    return NextResponse.json(
+      { success: false, message: "Invalid Payment Method" },
+      { status: 400 },
+    );
 
     return NextResponse.json(
       { success: false, message: "Invalid Payment Method" },

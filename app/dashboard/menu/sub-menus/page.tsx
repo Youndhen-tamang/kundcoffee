@@ -105,6 +105,15 @@ export default function SubMenusPage() {
     setEditingValue((s as any).sortOrder ?? 0);
   };
 
+  const handleSortOrderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = e.target.value;
+    if (editingValue === 0 && newVal.length > 1 && newVal.startsWith("0")) {
+      setEditingValue(parseInt(newVal.substring(1)) || 0);
+    } else {
+      setEditingValue(parseInt(newVal) || 0);
+    }
+  };
+
   const handleSortOrderBlur = async (id: string) => {
     const current = subMenus.find((s) => s.id === id);
     if (current && (current as any).sortOrder === editingValue) {
@@ -310,9 +319,7 @@ export default function SubMenusPage() {
                       <input
                         type="number"
                         value={editingValue}
-                        onChange={(e) =>
-                          setEditingValue(parseInt(e.target.value) || 0)
-                        }
+                        onChange={handleSortOrderChange}
                         onBlur={() => handleSortOrderBlur(s.id)}
                         onKeyDown={(e) => handleSortOrderKeyDown(e, s.id)}
                         className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-red-500 outline-none font-mono"
@@ -396,9 +403,20 @@ export default function SubMenusPage() {
               </label>
               <input
                 type="number"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 outline-none"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 outline-none font-mono"
                 value={sortOrder}
-                onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  const newVal = e.target.value;
+                  if (
+                    sortOrder === 0 &&
+                    newVal.length > 1 &&
+                    newVal.startsWith("0")
+                  ) {
+                    setSortOrder(parseInt(newVal.substring(1)) || 0);
+                  } else {
+                    setSortOrder(parseInt(newVal) || 0);
+                  }
+                }}
               />
             </div>
             <div>

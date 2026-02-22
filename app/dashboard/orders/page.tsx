@@ -397,7 +397,10 @@ export default function OrdersPage() {
     if (!activeTable) return;
     const orderData = {
       tableId: activeTable.id === "DIRECT" ? null : activeTable.id,
-      type: "DINE_IN",
+      type:
+        activeTable.id === "DIRECT"
+          ? (activeTable.name.toUpperCase().replace(" ", "_") as OrderType)
+          : "DINE_IN",
       items: cart.map((i) => ({
         dishId: i.dishId,
         comboId: i.comboId,
@@ -444,8 +447,10 @@ export default function OrdersPage() {
 
   const handleTableClick = (table: Table) => {
     const session = occupiedTable.find((o) => o.tableId === table.id);
-    if (session) setQuickMenuTable(table);
-    else {
+    if (session) {
+      setQuickMenuTable(table);
+    } else {
+      // Safety check: sometimes local state might lag, but we should be safe here
       setPendingTable(table);
       setShowOrderTypeSelector(true);
     }
@@ -838,7 +843,7 @@ export default function OrdersPage() {
                               )}
                           </div>
                           <span className="text-[11px] font-bold text-zinc-900 shrink-0">
-                            Rs. {item.totalPrice.toFixed(2)}
+                            Rs. {(item.totalPrice ?? 0).toFixed(2)}
                           </span>
                         </div>
                       ))}
@@ -849,14 +854,16 @@ export default function OrdersPage() {
                         </p>
                       )}
                     </div>
-                    <div className="p-4 bg-emerald-100/30 border-t border-emerald-100 flex items-center justify-between">
-                      <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
-                        Total Amount
-                      </span>
-                      <span className="text-xl font-black text-zinc-900">
-                        Rs. {activeOrder?.total.toFixed(2) || "0.00"}
-                      </span>
-                    </div>
+                    {activeOrder && (
+                      <div className="p-4 bg-emerald-100/30 border-t border-emerald-100 flex items-center justify-between">
+                        <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+                          Total Amount
+                        </span>
+                        <span className="text-xl font-black text-zinc-900">
+                          Rs. {activeOrder?.total?.toFixed(2) || "0.00"}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-3">
@@ -867,7 +874,7 @@ export default function OrdersPage() {
                       }}
                       className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase text-[10px] shadow-lg shadow-emerald-200 border-none"
                     >
-                      Modify order
+                      Add Item
                     </Button>
                     <Button
                       onClick={() => {
@@ -915,10 +922,26 @@ export default function OrdersPage() {
                     <button
                       key={table.id}
                       onClick={() => {
+                        const isOccupied = occupiedTable.some(
+                          (o) => o.tableId === table.id,
+                        );
+                        if (isOccupied) {
+                          toast.error(
+                            "This table has an ongoing order. Please complete it first.",
+                          );
+                          return;
+                        }
                         setActiveTable(table);
                         setShowTableSelector(false);
                       }}
-                      className="p-4 rounded-lg border bg-white hover:border-emerald-500 transition-all font-bold text-sm"
+                      disabled={occupiedTable.some(
+                        (o) => o.tableId === table.id,
+                      )}
+                      className={`p-4 rounded-lg border transition-all font-bold text-sm ${
+                        occupiedTable.some((o) => o.tableId === table.id)
+                          ? "bg-zinc-50 text-zinc-300 border-zinc-100 cursor-not-allowed"
+                          : "bg-white text-zinc-900 hover:border-emerald-500"
+                      }`}
                     >
                       {table.name}
                     </button>

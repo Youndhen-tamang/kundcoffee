@@ -121,7 +121,13 @@ export default function SpacesPage() {
   };
 
   const handleSortOrderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditingValue(parseInt(e.target.value) || 0);
+    const newVal = e.target.value;
+    // If current value is 0 and we type a number, replace it
+    if (editingValue === 0 && newVal.length > 1 && newVal.startsWith("0")) {
+      setEditingValue(parseInt(newVal.substring(1)) || 0);
+    } else {
+      setEditingValue(parseInt(newVal) || 0);
+    }
   };
 
   const handleSortOrderBlur = async (spaceId: string) => {
@@ -423,7 +429,18 @@ export default function SpacesPage() {
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-mono"
               placeholder="e.g. 1"
               value={sortOrder}
-              onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
+              onChange={(e) => {
+                const newVal = e.target.value;
+                if (
+                  sortOrder === 0 &&
+                  newVal.length > 1 &&
+                  newVal.startsWith("0")
+                ) {
+                  setSortOrder(parseInt(newVal.substring(1)) || 0);
+                } else {
+                  setSortOrder(parseInt(newVal) || 0);
+                }
+              }}
             />
             <p className="mt-1.5 text-xs text-zinc-500 italic">
               Leave as 0 to automatically place at the end.
