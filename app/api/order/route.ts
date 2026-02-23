@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
           data: {
             tableId,
             isActive: true,
+            storeId,
           },
         });
 

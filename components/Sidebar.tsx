@@ -136,7 +136,7 @@ export default function Sidebar() {
               Menu
             </span> */}
             <div className="space-y-1">
-              <div className="mb-8 border-b flex flex-col gap-2">
+              <div className="mb-8 border-b border-gray-300 flex flex-col gap-2 pb-4">
                 <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
               <NavItem href="/dashboard/orders" icon={Package} label="Orders" />
               </div>

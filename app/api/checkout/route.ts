@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Ensure the session belongs to the authenticated store
-    if (storeId && session.storeId !== storeId) {
+    if (storeId && session.storeId && session.storeId !== storeId) {
       return NextResponse.json(
         { success: false, message: "Unauthorized access to this session" },
         { status: 401 },

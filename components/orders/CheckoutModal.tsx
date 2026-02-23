@@ -22,6 +22,7 @@ import {
   Loader2,
   PlusCircle,
   LayoutGrid,
+  Check,
 } from "lucide-react";
 import {
   getCategories,
@@ -232,8 +233,9 @@ export function CheckoutModal({
     window.print();
   };
 
-  const handleProcessCheckout = async () => {
+  const handleProcessCheckout = async (method?: string) => {
     setIsProcessing(true);
+    const resolvedMethod = method ?? paymentMethod;
 
     try {
       const res = await fetch("/api/checkout", {
@@ -242,7 +244,7 @@ export function CheckoutModal({
         body: JSON.stringify({
           tableId: order.tableId,
           sessionId: order.sessionId,
-          paymentMethod,
+          paymentMethod: resolvedMethod,
           amount: grandTotal,
           customerId: selectedCustomer?.id,
           subtotal: calculatedSubtotal,
@@ -906,7 +908,7 @@ export function CheckoutModal({
             </Button>
 
             <Button
-              onClick={handleProcessCheckout}
+              onClick={() => handleProcessCheckout()}
               disabled={isProcessing}
               className="flex-[2] bg-zinc-900 hover:bg-zinc-800 text-white text-[10px] uppercase font-black tracking-widest h-12"
             >
@@ -965,8 +967,8 @@ export function CheckoutModal({
             </Button>
 
             <Button
-              onClick={handleProcessCheckout}
-              disabled={isProcessing}
+  onClick={() => handleProcessCheckout()} // <--- Wrap in arrow function
+  disabled={isProcessing}
               className="flex-[2] h-16 bg-zinc-900 text-white hover:bg-zinc-800 uppercase tracking-[0.4em] font-black text-sm shadow-2xl shadow-zinc-500/20 active:scale-[0.98] border-none"
             >
               {isProcessing ? "Processing..." : "Secure Finalize"}
@@ -1016,7 +1018,7 @@ export function CheckoutModal({
         isOpen={isOpen}
         onClose={onClose}
         title={step !== "SUCCESS" ? "Secure Checkout Process" : ""}
-        size={step === "PREPARE" ? "xl" : "lg"}
+        size="5xl"
       >
         <div className="p-4">
           <Modal
@@ -1134,10 +1136,596 @@ export function CheckoutModal({
             </div>
           )}
 
-          {step === "PREPARE" && renderPrepare()}
-          {step === "BILL" && renderBill()}
-          {step === "PAYMENT" && renderPayment()}
-          {step === "SUCCESS" && renderSuccess()}
+          {step === "SUCCESS" ? (
+            renderSuccess()
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full -p-2">
+              {/* Left Column: Items, Discounts & Customer */}
+              <div className="flex flex-col gap-4">
+                {/* Order Items */}
+                <div className="bg-white border-2 border-dashed border-zinc-200 rounded-3xl p-5 shadow-sm flex flex-col flex-1 max-h-[55vh]">
+                  <h3 className="text-[10px] items-center mb-4 font-black uppercase tracking-widest text-zinc-400 shrink-0">
+                    Order Items
+                  </h3>
+
+                  <div className="overflow-y-auto custom-scrollbar flex-1">
+                    <table className="w-full text-sm">
+                      <thead className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                        <tr>
+                          <th className="text-left py-2 border-b border-zinc-100">
+                            Item
+                          </th>
+                          <th className="text-right py-2 border-b border-zinc-100 pr-2">
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-50">
+                        {order?.items.map((item) => {
+                          const compQty = complimentaryItems[item.id] || 0;
+                          return (
+                            <tr
+                              key={item.id}
+                              className="group hover:bg-zinc-50/50 transition-colors"
+                            >
+                              <td className="py-3">
+                                <p className="font-bold text-zinc-900 flex items-center gap-2">
+                                  {item.dish?.name ||
+                                    item.combo?.name ||
+                                    "Item"}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-[10px] font-bold text-zinc-400">
+                                    {item.quantity} × {settings.currency}{" "}
+                                    {item.unitPrice.toFixed(2)}
+                                  </span>
+                                  {true && (
+                                    <div className="flex items-center gap-1.5 bg-emerald-50 rounded px-1.5 py-0.5">
+                                      <span className="text-[8px] uppercase font-black text-emerald-600">
+                                        Comp
+                                      </span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max={item.quantity}
+                                        value={compQty}
+                                        onChange={(e) =>
+                                          setCompQty(
+                                            item.id,
+                                            parseInt(e.target.value) || 0,
+                                            item.quantity,
+                                          )
+                                        }
+                                        className="w-8 h-4 bg-transparent text-center text-[10px] font-black text-emerald-700 outline-none"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3 text-right font-bold text-zinc-900 align-top pt-4">
+                                <span
+                                  className={
+                                    compQty >= item.quantity
+                                      ? "line-through text-zinc-300 decoration-2"
+                                      : ""
+                                  }
+                                >
+                                  {settings.currency}{" "}
+                                  {(item.quantity * item.unitPrice).toFixed(2)}
+                                </span>
+                                {compQty > 0 && compQty < item.quantity && (
+                                  <span className="block text-emerald-600 text-[10px]">
+                                    {settings.currency}{" "}
+                                    {(
+                                      (item.quantity - compQty) *
+                                      item.unitPrice
+                                    ).toFixed(2)}
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Discounts */}
+                <div className="p-5 rounded-3xl bg-zinc-50 border border-zinc-100 shrink-0">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3">
+                    Discounts & Settings
+                  </h4>
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <div className="flex bg-white p-1 rounded-xl border border-zinc-200">
+                        <button
+                          onClick={() => setDiscountType("PERCENT")}
+                          className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${discountType === "PERCENT" ? "bg-zinc-900 text-white shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
+                        >
+                          %
+                        </button>
+                        <button
+                          onClick={() => setDiscountType("AMOUNT")}
+                          className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${discountType === "AMOUNT" ? "bg-zinc-900 text-white shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
+                        >
+                          Rs.
+                        </button>
+                      </div>
+                    </div>
+                    <div className="w-24">
+                      <input
+                        type="number"
+                        value={discountValue}
+                        onChange={(e) =>
+                          setDiscountValue(Number(e.target.value) || 0)
+                        }
+                        className="w-full h-[32px] px-3 bg-white border border-zinc-200 rounded-xl text-xs font-bold focus:ring-1 focus:ring-zinc-900 outline-none"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 mt-3">
+                    {settings.includeTaxByDefault === "true" && (
+                      <button
+                        onClick={() => setIncludeTax(!includeTax)}
+                        className={`flex items-center gap-2 text-[9px] font-black uppercase tracking-widest ${includeTax ? "text-zinc-900" : "text-zinc-400"}`}
+                      >
+                        <div
+                          className={`w-4 h-4 rounded-sm border flex items-center justify-center ${includeTax ? "bg-zinc-900 border-zinc-900 text-white" : "border-zinc-300"}`}
+                        >
+                          {includeTax && <Check size={10} />}
+                        </div>{" "}
+                        Tax
+                      </button>
+                    )}
+                    <button
+                      onClick={() =>
+                        setIncludeServiceCharge(!includeServiceCharge)
+                      }
+                      className={`flex items-center gap-2 text-[9px] font-black uppercase tracking-widest ${includeServiceCharge ? "text-zinc-900" : "text-zinc-400"}`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-sm border flex items-center justify-center ${includeServiceCharge ? "bg-zinc-900 border-zinc-900 text-white" : "border-zinc-300"}`}
+                      >
+                        {includeServiceCharge && <Check size={10} />}
+                      </div>{" "}
+                      SVC
+                    </button>
+                  </div>
+                </div>
+
+                {/* Customer */}
+                <div className="p-5 rounded-3xl bg-zinc-50 border border-zinc-100 shrink-0">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3">
+                    Customer (Optional)
+                  </h4>
+                  {!selectedCustomer && !showAddCustomer && (
+                    <div className="space-y-3">
+                      <CustomDropdown
+                        label="Customer"
+                        options={customers.map((c) => ({
+                          id: c.id,
+                          name: c.fullName,
+                        }))}
+                        value={undefined}
+                        onChange={(val) =>
+                          setSelectedCustomer(
+                            customers.find((c) => c.id === val) ?? null,
+                          )
+                        }
+                        placeholder="Search..."
+                        onAddNew={() => setIsAddModalOpen(true)}
+                      />
+                    </div>
+                  )}
+                  {selectedCustomer && (
+                    <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-zinc-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-zinc-100 text-zinc-600 rounded-lg flex items-center justify-center">
+                          <User size={16} />
+                        </div>
+                        <p className="font-bold text-xs">
+                          {selectedCustomer.fullName}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedCustomer(null)}
+                        className="text-zinc-300 hover:text-zinc-600"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Middle Column: Payment Methods */}
+              <div className="flex flex-col gap-4 bg-zinc-50/50 p-5 rounded-3xl border border-zinc-100">
+                <div className="text-center">
+                  <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">
+                    Payment Method
+                  </h3>
+                  <p className="text-[10px] text-zinc-500 mt-1 font-medium">
+                    Select a method then confirm
+                  </p>
+                </div>
+
+                {/* Method Selector Pills */}
+                <div className="grid grid-cols-3 gap-2 bg-white p-1.5 rounded-2xl border border-zinc-200">
+                  {[
+                    { id: "CASH", label: "Cash", icon: <Banknote size={18} /> },
+                    { id: "QR", label: "QR Scan", icon: <QrCode size={18} /> },
+                    {
+                      id: "CREDIT",
+                      label: "Credit",
+                      icon: <CreditCard size={18} />,
+                    },
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() =>
+                        setPaymentMethod(m.id as "CASH" | "QR" | "CREDIT")
+                      }
+                      disabled={m.id === "CREDIT" && !selectedCustomer}
+                      className={`flex flex-col items-center gap-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        paymentMethod === m.id
+                          ? "bg-zinc-900 text-white shadow-md"
+                          : m.id === "CREDIT" && !selectedCustomer
+                            ? "opacity-40 cursor-not-allowed text-zinc-400"
+                            : "text-zinc-500 hover:bg-zinc-50"
+                      }`}
+                    >
+                      {m.icon}
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Cash UI */}
+                {paymentMethod === "CASH" && (
+                  <div className="space-y-4 mt-2">
+                    <div>
+                      <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500 block mb-1.5">
+                        Tender Amount
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-400">
+                          {settings.currency}
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={tenderAmount || ""}
+                          onChange={(e) =>
+                            setTenderAmount(Number(e.target.value) || 0)
+                          }
+                          placeholder="0.00"
+                          className="w-full pl-12 pr-4 py-4 bg-white border-2 border-zinc-200 rounded-2xl text-xl font-black text-zinc-900 focus:border-emerald-500 focus:outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center p-4 bg-white rounded-2xl border-2 border-dashed border-zinc-200">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                        Return Amount
+                      </span>
+                      <span
+                        className={`text-xl font-black ${tenderAmount > 0 && tenderAmount >= grandTotal ? "text-emerald-500" : "text-zinc-300"}`}
+                      >
+                        {settings.currency}{" "}
+                        {Math.max(0, tenderAmount - grandTotal).toFixed(2)}
+                      </span>
+                    </div>
+                    <Button
+                      onClick={() => handleProcessCheckout("CASH")}
+                      disabled={isProcessing || tenderAmount < grandTotal}
+                      className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white border-none uppercase tracking-[0.15em] font-black text-[10px] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isProcessing ? (
+                        <Loader2 size={16} className="animate-spin mr-2" />
+                      ) : (
+                        <Banknote size={16} className="mr-2" />
+                      )}
+                      {isProcessing ? "Processing..." : "Confirm Cash Payment"}
+                    </Button>
+                  </div>
+                )}
+
+                {/* QR UI */}
+                {paymentMethod === "QR" && (
+                  <div className="space-y-4 mt-2 flex flex-col items-center">
+                    <div className="p-4 bg-white rounded-2xl border-2 border-zinc-200 shadow-sm">
+                      <div className="w-44 h-44 bg-zinc-100 rounded-xl flex flex-col items-center justify-center gap-2">
+                        <QrCode size={80} className="text-zinc-800" />
+                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                          Scan to Pay
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 text-center font-medium">
+                      Show the QR code to the customer.
+                      <br />
+                      Once scanned, click the button below.
+                    </p>
+                    <Button
+                      onClick={() => handleProcessCheckout("QR")}
+                      disabled={isProcessing}
+                      className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white border-none uppercase tracking-[0.15em] font-black text-[10px] shadow-lg"
+                    >
+                      {isProcessing ? (
+                        <Loader2 size={16} className="animate-spin mr-2" />
+                      ) : (
+                        <CheckCircle2 size={16} className="mr-2" />
+                      )}
+                      {isProcessing ? "Processing..." : "Payment Received"}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Credit UI */}
+                {paymentMethod === "CREDIT" && (
+                  <div className="space-y-4 mt-2">
+                    {selectedCustomer ? (
+                      <>
+                        <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border-2 border-dashed border-zinc-200">
+                          <div className="w-10 h-10 bg-zinc-100 rounded-xl flex items-center justify-center shrink-0">
+                            <User size={18} className="text-zinc-500" />
+                          </div>
+                          <div>
+                            <p className="font-black text-sm text-zinc-900">
+                              {selectedCustomer.fullName}
+                            </p>
+                            <p className="text-[10px] text-zinc-400 font-medium">
+                              {selectedCustomer.phone || "No phone"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">
+                            Credit Note
+                          </p>
+                          <p className="text-xs text-amber-600 mt-1">
+                            Amount will be added to customer ledger as a pending
+                            balance.
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => handleProcessCheckout("CREDIT")}
+                          disabled={isProcessing}
+                          className="w-full h-14 bg-zinc-900 hover:bg-zinc-800 text-white border-none uppercase tracking-[0.15em] font-black text-[10px] shadow-lg"
+                        >
+                          {isProcessing ? (
+                            <Loader2 size={16} className="animate-spin mr-2" />
+                          ) : (
+                            <CreditCard size={16} className="mr-2" />
+                          )}
+                          {isProcessing
+                            ? "Processing..."
+                            : "Confirm Store Credit"}
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3 py-6 text-center">
+                        <User size={32} className="text-zinc-300" />
+                        <p className="text-xs font-bold text-zinc-400">
+                          Select a customer in the left panel to use store
+                          credit.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Order Summary & Actions */}
+              <div className="flex flex-col bg-zinc-900 rounded-3xl p-6 text-white shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-6 shrink-0 z-10">
+                  Bill Summary
+                </h3>
+
+                <div className="space-y-4 mb-8 flex-1 z-10">
+                  <div className="flex justify-between text-[11px] font-bold text-zinc-400 tracking-wider">
+                    <span>Subtotal</span>
+                    <span className="text-white">
+                      {settings.currency} {calculatedSubtotal.toFixed(2)}
+                    </span>
+                  </div>
+                  {loyaltyDiscountAmount > 0 && (
+                    <div className="flex justify-between text-[11px] font-bold text-emerald-400 tracking-wider">
+                      <span>Loyalty ({loyaltyDiscountPercent}%)</span>
+                      <span className="text-emerald-400">
+                        - {settings.currency} {loyaltyDiscountAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {manualDiscountAmount > 0 && (
+                    <div className="flex justify-between text-[11px] font-bold text-emerald-400 tracking-wider">
+                      <span>
+                        Discount (
+                        {discountType === "PERCENT"
+                          ? `${discountValue}%`
+                          : "Manual"}
+                        )
+                      </span>
+                      <span className="text-emerald-400">
+                        - {settings.currency} {manualDiscountAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {serviceChargeAmount > 0 && (
+                    <div className="flex justify-between text-[11px] font-bold text-zinc-400 tracking-wider">
+                      <span>Service Charge (10%)</span>
+                      <span className="text-white">
+                        {settings.currency} {serviceChargeAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {taxAmount > 0 && (
+                    <div className="flex justify-between text-[11px] font-bold text-zinc-400 tracking-wider">
+                      <span>VAT (13%)</span>
+                      <span className="text-white">
+                        {settings.currency} {taxAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {totalDiscount > 0 && (
+                    <div className="flex justify-between text-[11px] font-bold text-emerald-400 tracking-wider">
+                      <span>Complimentary</span>
+                      <span className="text-emerald-400">
+                        - {settings.currency} {totalDiscount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-white/10 pt-6 mb-6 shrink-0 z-10">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                      Grand Total
+                    </span>
+                    <span className="text-4xl font-black tracking-tighter text-emerald-400 drop-shadow-md">
+                      {settings.currency} {grandTotal.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mt-auto shrink-0 z-10">
+                  <Button
+                    onClick={() => handleProcessCheckout(paymentMethod)}
+                    disabled={
+                      isProcessing ||
+                      (paymentMethod === "CASH" && tenderAmount < grandTotal) ||
+                      (paymentMethod === "CREDIT" && !selectedCustomer)
+                    }
+                    className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white border-none uppercase tracking-[0.2em] font-black text-[10px] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isProcessing ? (
+                      <Loader2 size={16} className="animate-spin mr-2" />
+                    ) : (
+                      <CheckCircle2 size={16} className="mr-2" />
+                    )}
+                    {isProcessing ? "Processing..." : "Secure Payment"}
+                  </Button>
+                  <Button
+                    onClick={() => window.print()}
+                    className="w-full h-10 bg-white/10 hover:bg-white/20 text-white border-none uppercase tracking-[0.2em] font-black text-[10px]"
+                  >
+                    <Printer size={14} className="mr-2" /> Print Bill
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="hidden">
+            <div id="printable-bill" className="bg-white p-8">
+              <div className="text-center mb-8 border-b-2 border-black pb-6 border-dashed">
+                <h2 className="text-2xl font-black tracking-tighter text-black mb-1">
+                  {settings.name}
+                </h2>
+                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">
+                  {settings.address}
+                </p>
+                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">
+                  Phone: {settings.phone}
+                </p>
+                <div className="inline-block bg-black text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                  Receipt / Table {order?.table?.name || "N/A"}
+                </div>
+              </div>
+              <div className="space-y-3 mb-8">
+                {order?.items.map((item) => {
+                  const compQty = complimentaryItems[item.id] || 0;
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex justify-between text-sm font-bold text-black group"
+                    >
+                      <div className="flex-1">
+                        <span>{item.quantity}</span>
+                        <span className="mx-2">×</span>
+                        <span>
+                          {item.dish?.name || item.combo?.name || "Item"}
+                        </span>
+                      </div>
+                      <div className="text-right whitespace-nowrap">
+                        <span
+                          className={
+                            compQty >= item.quantity
+                              ? "line-through text-zinc-300"
+                              : ""
+                          }
+                        >
+                          {settings.currency}{" "}
+                          {(item.quantity * item.unitPrice).toFixed(2)}
+                        </span>
+                        {compQty > 0 && (
+                          <span className="block text-xs mt-1">
+                            - {settings.currency}{" "}
+                            {(compQty * item.unitPrice).toFixed(2)} (Comp)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="space-y-2 border-t-2 border-black border-dashed pt-4 mb-6">
+                <div className="flex justify-between text-xs font-bold text-zinc-600 uppercase tracking-widest">
+                  <span>Subtotal</span>
+                  <span>
+                    {settings.currency} {calculatedSubtotal.toFixed(2)}
+                  </span>
+                </div>
+                {loyaltyDiscountAmount > 0 && (
+                  <div className="flex justify-between text-xs font-bold text-black uppercase tracking-widest">
+                    <span>Loyalty Discount</span>
+                    <span>
+                      - {settings.currency} {loyaltyDiscountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {manualDiscountAmount > 0 && (
+                  <div className="flex justify-between text-xs font-bold text-black uppercase tracking-widest">
+                    <span>Manual Discount</span>
+                    <span>
+                      - {settings.currency} {manualDiscountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {serviceChargeAmount > 0 && (
+                  <div className="flex justify-between text-xs font-bold text-zinc-600 uppercase tracking-widest">
+                    <span>Service Charge</span>
+                    <span>
+                      {settings.currency} {serviceChargeAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {taxAmount > 0 && (
+                  <div className="flex justify-between text-xs font-bold text-zinc-600 uppercase tracking-widest">
+                    <span>Tax ({settings.taxPercent}%)</span>
+                    <span>
+                      {settings.currency} {taxAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-between items-end border-t-4 border-black pt-4 mb-8">
+                <span className="text-sm font-black uppercase tracking-widest text-black">
+                  Total Due
+                </span>
+                <span className="text-2xl font-black text-black">
+                  {settings.currency} {grandTotal.toFixed(2)}
+                </span>
+              </div>
+              <div className="text-center text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                <p>Thank you for your visit!</p>
+                <p className="mt-1">{new Date().toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </Modal>
     </>

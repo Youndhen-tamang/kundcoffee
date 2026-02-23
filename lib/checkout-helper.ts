@@ -178,12 +178,12 @@ export async function finalizeSessionTransaction(data: {
     // 5. Close the TableSession if exists
     if (sessionId) {
       const sessionExists = await tx.tableSession.findUnique({
-        where: { id: sessionId, storeId: finalStoreId },
+        where: { id: sessionId },
       });
 
       if (sessionExists) {
         await tx.tableSession.update({
-          where: { id: sessionId, storeId: finalStoreId },
+          where: { id: sessionId },
           data: {
             isActive: false,
             endedAt: new Date(),
