@@ -23,6 +23,8 @@ import {
   PlusCircle,
   LayoutGrid,
   Check,
+  Download,
+  Receipt,
 } from "lucide-react";
 import {
   getCategories,
@@ -331,6 +333,18 @@ export function CheckoutModal({
     }
   };
 
+  const handleDownload = () => {
+    const billElement = document.getElementById("printable-bill");
+    if (!billElement) return;
+    const content = billElement.innerText;
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Bill-${order.id.slice(-6).toUpperCase()}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
   useEffect(() => {
     const customer = async () => {
       const data = await getCustomers();
@@ -1341,185 +1355,124 @@ export function CheckoutModal({
               </div>
 
               {/* Middle Column: Payment Methods */}
-              <div className="flex flex-col gap-4 bg-zinc-50/50 p-5 rounded-3xl border border-zinc-100">
-                <div className="text-center">
-                  <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest">
-                    Payment Method
-                  </h3>
-                  <p className="text-[10px] text-zinc-500 mt-1 font-medium">
-                    Select a method then confirm
-                  </p>
+              <div className="flex flex-col gap-4">
+              
+              {/* Top: Live Invoice Preview */}
+              <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col h-[380px]">
+                <div className="bg-zinc-900 p-2 text-white flex justify-between items-center shrink-0">
+                  <span className="text-[8px] font-black uppercase tracking-widest flex items-center gap-2">
+                    <Receipt size={12} /> Live Invoice Preview
+                  </span>
+                  <div className="flex gap-1">
+                    <button onClick={handleDownload} className="p-1 hover:bg-white/10 rounded transition-colors text-zinc-400 hover:text-white"><Download size={14} /></button>
+                    <button onClick={() => window.print()} className="p-1 hover:bg-white/10 rounded transition-colors text-zinc-400 hover:text-white"><Printer size={14} /></button>
+                  </div>
                 </div>
 
-                {/* Method Selector Pills */}
-                <div className="grid grid-cols-3 gap-2 bg-white p-1.5 rounded-2xl border border-zinc-200">
+                <div id="printable-bill" className="flex-1 overflow-y-auto p-6 font-mono text-[9px] leading-relaxed custom-scrollbar bg-white">
+                  <div className="text-center mb-4">
+                    <h2 className="text-sm font-black uppercase tracking-tight">{settings.name || "KUND COFFEE"}</h2>
+                    <p className="text-[7px] text-zinc-400 uppercase tracking-widest">{settings.address || "Kathmandu, Nepal"}</p>
+                  </div>
+                  <div className="border-y border-dashed border-zinc-200 py-1 my-2 flex justify-between uppercase font-bold text-zinc-400">
+                    <span>Table: {order.table?.name}</span>
+                    <span>Inv: #{order.id.slice(-4).toUpperCase()}</span>
+                  </div>
+                  <table className="w-full mb-4">
+                    <tbody>
+                      {order.items.map((item) => (
+                        <tr key={item.id}>
+                          <td className="py-1">{item.dish?.name}</td>
+                          <td className="text-center px-1">{item.quantity}</td>
+                          <td className="text-right font-bold">{((item.quantity - (complimentaryItems[item.id] || 0)) * item.unitPrice).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="space-y-1 border-t border-dashed border-zinc-200 pt-2 text-right">
+                    <div className="flex justify-between"><span>Subtotal</span><span>{calculatedSubtotal.toFixed(2)}</span></div>
+                    {totalDiscount > 0 && <div className="flex justify-between text-emerald-600 font-bold"><span>Discount</span><span>-{totalDiscount.toFixed(2)}</span></div>}
+                    <div className="flex justify-between text-sm font-black border-t-2 border-zinc-900 pt-2 mt-2">
+                      <span className="text-[8px] self-center">GRAND TOTAL</span>
+                      <span>{settings.currency} {grandTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom: Payment Selector (Compact Design) */}
+              <div className="bg-zinc-50 p-5 rounded-3xl border border-zinc-100 flex-1">
+                <div className="text-center mb-4">
+                  <h3 className="text-[10px] font-black text-zinc-900 uppercase tracking-widest">Select Payment Method</h3>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2 bg-white p-1 rounded-2xl border border-zinc-200 mb-4">
                   {[
-                    { id: "CASH", label: "Cash", icon: <Banknote size={18} /> },
-                    { id: "QR", label: "QR Scan", icon: <QrCode size={18} /> },
-                    {
-                      id: "CREDIT",
-                      label: "Credit",
-                      icon: <CreditCard size={18} />,
-                    },
-                  ].map((m) => (
+                    { id: "CASH", label: "Cash", icon: <Banknote size={16} /> },
+                    { id: "QR", label: "Scan QR", icon: <QrCode size={16} /> },
+                    { id: "CREDIT", label: "Credit", icon: <CreditCard size={16} /> },
+                  ].map((method) => (
                     <button
-                      key={m.id}
-                      onClick={() =>
-                        setPaymentMethod(m.id as "CASH" | "QR" | "CREDIT")
-                      }
-                      disabled={m.id === "CREDIT" && !selectedCustomer}
-                      className={`flex flex-col items-center gap-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                        paymentMethod === m.id
-                          ? "bg-zinc-900 text-white shadow-md"
-                          : m.id === "CREDIT" && !selectedCustomer
-                            ? "opacity-40 cursor-not-allowed text-zinc-400"
-                            : "text-zinc-500 hover:bg-zinc-50"
-                      }`}
+                      key={method.id}
+                      onClick={() => setPaymentMethod(method.id as any)}
+                      disabled={method.id === "CREDIT" && !selectedCustomer}
+                      className={`flex flex-col items-center gap-1 py-2.5 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${
+                        paymentMethod === method.id 
+                          ? "bg-zinc-900 text-white shadow-md active:scale-95" 
+                          : "text-zinc-400 hover:bg-zinc-50"
+                      } ${method.id === "CREDIT" && !selectedCustomer ? "opacity-30 cursor-not-allowed" : ""}`}
                     >
-                      {m.icon}
-                      {m.label}
+                      {method.icon}
+                      {method.label}
                     </button>
                   ))}
                 </div>
 
-                {/* Cash UI */}
-                {paymentMethod === "CASH" && (
-                  <div className="space-y-4 mt-2">
-                    <div>
-                      <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500 block mb-1.5">
-                        Tender Amount
-                      </label>
+                <div className="mt-2 h-32 overflow-hidden">
+                  {paymentMethod === "CASH" && (
+                    <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-400">
-                          {settings.currency}
-                        </span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-400">{settings.currency}</span>
                         <input
                           type="number"
-                          min={0}
                           value={tenderAmount || ""}
-                          onChange={(e) =>
-                            setTenderAmount(Number(e.target.value) || 0)
-                          }
-                          placeholder="0.00"
-                          className="w-full pl-12 pr-4 py-4 bg-white border-2 border-zinc-200 rounded-2xl text-xl font-black text-zinc-900 focus:border-emerald-500 focus:outline-none transition-all"
+                          onChange={(e) => setTenderAmount(Number(e.target.value) || 0)}
+                          placeholder="Tender Amount"
+                          className="w-full pl-10 pr-4 py-3 bg-white border-2 border-zinc-200 rounded-xl text-lg font-black text-zinc-900 focus:border-zinc-900 focus:outline-none"
                         />
                       </div>
-                    </div>
-                    <div className="flex justify-between items-center p-4 bg-white rounded-2xl border-2 border-dashed border-zinc-200">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                        Return Amount
-                      </span>
-                      <span
-                        className={`text-xl font-black ${tenderAmount > 0 && tenderAmount >= grandTotal ? "text-emerald-500" : "text-zinc-300"}`}
-                      >
-                        {settings.currency}{" "}
-                        {Math.max(0, tenderAmount - grandTotal).toFixed(2)}
-                      </span>
-                    </div>
-                    <Button
-                      onClick={() => handleProcessCheckout("CASH")}
-                      disabled={isProcessing || tenderAmount < grandTotal}
-                      className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white border-none uppercase tracking-[0.15em] font-black text-[10px] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isProcessing ? (
-                        <Loader2 size={16} className="animate-spin mr-2" />
-                      ) : (
-                        <Banknote size={16} className="mr-2" />
-                      )}
-                      {isProcessing ? "Processing..." : "Confirm Cash Payment"}
-                    </Button>
-                  </div>
-                )}
-
-                {/* QR UI */}
-                {paymentMethod === "QR" && (
-                  <div className="space-y-4 mt-2 flex flex-col items-center">
-                    <div className="p-4 bg-white rounded-2xl border-2 border-zinc-200 shadow-sm">
-                      <div className="w-44 h-44 bg-zinc-100 rounded-xl flex flex-col items-center justify-center gap-2">
-                        <QrCode size={80} className="text-zinc-800" />
-                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                          Scan to Pay
-                        </p>
+                      <div className="flex justify-between items-center px-4 py-2 bg-white rounded-xl border border-dashed border-zinc-200">
+                        <span className="text-[8px] font-black uppercase text-zinc-400 tracking-widest">Return</span>
+                        <span className="text-xl font-black text-emerald-500">{settings.currency} {Math.max(0, tenderAmount - grandTotal).toFixed(2)}</span>
                       </div>
                     </div>
-                    <p className="text-[10px] text-zinc-500 text-center font-medium">
-                      Show the QR code to the customer.
-                      <br />
-                      Once scanned, click the button below.
-                    </p>
-                    <Button
-                      onClick={() => handleProcessCheckout("QR")}
-                      disabled={isProcessing}
-                      className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white border-none uppercase tracking-[0.15em] font-black text-[10px] shadow-lg"
-                    >
-                      {isProcessing ? (
-                        <Loader2 size={16} className="animate-spin mr-2" />
-                      ) : (
-                        <CheckCircle2 size={16} className="mr-2" />
-                      )}
-                      {isProcessing ? "Processing..." : "Payment Received"}
-                    </Button>
-                  </div>
-                )}
+                  )}
 
-                {/* Credit UI */}
-                {paymentMethod === "CREDIT" && (
-                  <div className="space-y-4 mt-2">
-                    {selectedCustomer ? (
-                      <>
-                        <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border-2 border-dashed border-zinc-200">
-                          <div className="w-10 h-10 bg-zinc-100 rounded-xl flex items-center justify-center shrink-0">
-                            <User size={18} className="text-zinc-500" />
-                          </div>
-                          <div>
-                            <p className="font-black text-sm text-zinc-900">
-                              {selectedCustomer.fullName}
-                            </p>
-                            <p className="text-[10px] text-zinc-400 font-medium">
-                              {selectedCustomer.phone || "No phone"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">
-                            Credit Note
-                          </p>
-                          <p className="text-xs text-amber-600 mt-1">
-                            Amount will be added to customer ledger as a pending
-                            balance.
-                          </p>
-                        </div>
-                        <Button
-                          onClick={() => handleProcessCheckout("CREDIT")}
-                          disabled={isProcessing}
-                          className="w-full h-14 bg-zinc-900 hover:bg-zinc-800 text-white border-none uppercase tracking-[0.15em] font-black text-[10px] shadow-lg"
-                        >
-                          {isProcessing ? (
-                            <Loader2 size={16} className="animate-spin mr-2" />
-                          ) : (
-                            <CreditCard size={16} className="mr-2" />
-                          )}
-                          {isProcessing
-                            ? "Processing..."
-                            : "Confirm Store Credit"}
-                        </Button>
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center gap-3 py-6 text-center">
-                        <User size={32} className="text-zinc-300" />
-                        <p className="text-xs font-bold text-zinc-400">
-                          Select a customer in the left panel to use store
-                          credit.
-                        </p>
+                  {paymentMethod === "QR" && (
+                    <div className="flex flex-col items-center justify-center animate-in fade-in">
+                      <div className="p-2 bg-white rounded-xl border-2 border-zinc-200 shadow-sm mb-2">
+                        <QrCode size={60} className="text-zinc-800" />
                       </div>
-                    )}
-                  </div>
-                )}
+                      <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Show QR to Customer</p>
+                    </div>
+                  )}
+
+                  {paymentMethod === "CREDIT" && (
+                    <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 animate-in fade-in">
+                      <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest">Store Credit Mode</p>
+                      <p className="text-[10px] text-amber-600 mt-1 font-medium leading-relaxed">
+                        Grand total will be added as a pending balance to <span className="font-black underline">{selectedCustomer?.fullName}</span>.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
+            </div>
+
 
               {/* Right Column: Order Summary & Actions */}
               <div className="flex flex-col bg-zinc-900 rounded-3xl p-6 text-white shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+<div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
 
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-6 shrink-0 z-10">
                   Bill Summary

@@ -303,64 +303,61 @@ export function TableOrderingSystem({
           </div>
         </div>
 
-        {/* Center Column: Items Grid */}
-        <div className="flex-1 overflow-y-auto bg-white p-8 custom-scrollbar">
-          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {filteredDishes.map((dish) => (
-              <div
-                key={dish.id}
-                onClick={() => addToCartDirectly(dish)}
-                className="group bg-white border border-zinc-100 rounded-2xl shadow-sm hover:shadow-xl hover:border-zinc-900 transition-all cursor-pointer aspect-square flex flex-col p-4 relative overflow-hidden"
-              >
-                {/* Image */}
-                <div className="flex-1 rounded-xl bg-zinc-50 overflow-hidden border border-zinc-50 mb-4">
-                  {dish.image?.[0] ? (
-                    <img
-                      src={dish.image[0]}
-                      alt={dish.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-zinc-200">
-                      <LayoutGrid size={32} strokeWidth={1.5} />
-                    </div>
-                  )}
-                </div>
-
-                {/* Text Content */}
-                <div className="space-y-1">
-                  <h4 className="text-[12px] font-bold text-zinc-900 uppercase truncate">
-                    {dish.name}
-                  </h4>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black text-zinc-900">
-                      Rs. {(dish.price?.listedPrice ?? 0).toFixed(2)}
-                    </span>
-                    <span className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">
-                      {dish.type}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Hover Add Indicator */}
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0 translate-x-4">
-                  <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white shadow-lg">
-                    <Plus size={16} strokeWidth={3} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {filteredDishes.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center py-40 opacity-20">
-              <Search size={48} className="text-zinc-400 mb-4" />
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em]">
-                No items found
-              </p>
+        <div className="flex-1 overflow-y-auto bg-white p-4 custom-scrollbar">
+  {/* Increased grid columns to make items smaller */}
+  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+    {filteredDishes.map((dish) => (
+      <div
+        key={dish.id}
+        onClick={() => addToCartDirectly(dish)}
+        className="group bg-white border border-zinc-100 rounded-xl shadow-sm hover:shadow-md hover:border-zinc-900 transition-all cursor-pointer aspect-square flex flex-col p-2 overflow-hidden"
+      >
+        {/* 1. Image (Small & Square) */}
+        <div className="relative flex-1 rounded-lg bg-zinc-50 overflow-hidden mb-1.5">
+          {dish.image?.[0] ? (
+            <img
+              src={dish.image[0]}
+              alt={dish.name}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-zinc-200">
+              <LayoutGrid size={20} />
             </div>
           )}
         </div>
+
+        {/* 2. Content Stack */}
+        <div className="flex flex-col gap-0.5">
+          {/* Name - Truncated to 1 line */}
+          <h4 className="text-[10px] font-bold text-zinc-900 uppercase truncate leading-tight">
+            {dish.name}
+          </h4>
+          
+          {/* Price */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black text-zinc-900">
+              ₹{dish.price?.listedPrice ?? 0}
+            </span>
+          </div>
+
+          {/* 3. Small Add Button */}
+          <button className="w-full mt-1 bg-zinc-900 text-white text-[8px] font-bold uppercase py-1.5 rounded-md flex items-center justify-center gap-1 hover:bg-black transition-colors">
+            <Plus size={10} strokeWidth={4} />
+            Add
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {filteredDishes.length === 0 && (
+    <div className="h-full flex flex-col items-center justify-center py-20 opacity-20">
+      <Search size={32} className="text-zinc-400 mb-2" />
+      <p className="text-[9px] font-bold uppercase tracking-widest">No items</p>
+    </div>
+  )}
+</div>
 
         {/* Right Column: Cart Summary */}
         <div className="w-[400px] bg-zinc-50/50 flex flex-col border-l border-zinc-100 shadow-sm z-10">
