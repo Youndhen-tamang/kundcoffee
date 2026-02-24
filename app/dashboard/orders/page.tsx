@@ -492,6 +492,22 @@ export default function OrdersPage() {
     return kots;
   };
 
+  const handleKOTStatusUpdate = async (itemIds: string[], status: OrderStatus, order: Order) => {
+    try {
+      // 1. Update all selected items in parallel
+      await Promise.all(itemIds.map(id => updateOrderItemStatus(id, status)));
+      
+      // 2. Refresh data
+      await fetchData(); 
+      
+      // 3. Optional: Add logic here to check if the whole order 
+      // is now finished to update the main Table status.
+      toast.success(`Updated to ${status}`);
+    } catch (error) {
+      toast.error("Failed to update status");
+    }
+  };
+
   return (
     <div className="p-8 space-y-8 bg-zinc-50 min-h-screen">
       {/* Header */}
@@ -667,18 +683,20 @@ export default function OrdersPage() {
                   .filter((k) => k.type === "KITCHEN")
                   .map((kot, i) => (
                     <KOTCard
-                      key={i}
-                      order={kot.order}
-                      items={kot.items}
-                      type="KITCHEN"
-                      onUpdateStatus={async (ids, s) => {
-                        for (const id of ids)
-                          await updateOrderItemStatus(id, s as any);
-                        fetchData();
-                      }}
-                      onDownload={() => {}}
-                      onMove={() => {}}
-                    />
+        key={kot.order.id + kot.type} // Better key than just 'i'
+        order={kot.order}
+        items={kot.items}
+        type={kot.type}
+        onUpdateStatus={(ids, status) => 
+          handleKOTStatusUpdate(ids, status, kot.order)
+        }
+        onMove={(order) => {
+          // Open your transfer modal here
+          setPendingTable(order.table || null); 
+          setShowTableSelector(true);
+          toast.info(`Select target table for Order #${order.id.slice(-4)}`);
+        }}
+      />
                   ))}
               </div>
             </div>
@@ -692,18 +710,20 @@ export default function OrdersPage() {
                   .filter((k) => k.type === "BAR")
                   .map((kot, i) => (
                     <KOTCard
-                      key={i}
-                      order={kot.order}
-                      items={kot.items}
-                      type="BAR"
-                      onUpdateStatus={async (ids, s) => {
-                        for (const id of ids)
-                          await updateOrderItemStatus(id, s as any);
-                        fetchData();
-                      }}
-                      onDownload={() => {}}
-                      onMove={() => {}}
-                    />
+        key={kot.order.id + kot.type} // Better key than just 'i'
+        order={kot.order}
+        items={kot.items}
+        type={kot.type}
+        onUpdateStatus={(ids, status) => 
+          handleKOTStatusUpdate(ids, status, kot.order)
+        }
+        onMove={(order) => {
+          // Open your transfer modal here
+          setPendingTable(order.table || null); 
+          setShowTableSelector(true);
+          toast.info(`Select target table for Order #${order.id.slice(-4)}`);
+        }}
+      />
                   ))}
               </div>
             </div>

@@ -500,7 +500,7 @@ export function CheckoutModal({
 
           <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-              Customer (Optional)
+              Customer
             </h4>
 
             <CustomDropdown
@@ -526,7 +526,7 @@ export function CheckoutModal({
                 </div>
                 <button
                   onClick={() => setSelectedCustomer(null)}
-                  className="text-zinc-300 hover:text-zinc-600 transition-colors"
+                  className="text-zinc-500 hover:text-zinc-700 transition-colors"
                 >
                   <X size={14} />
                 </button>
@@ -677,7 +677,7 @@ export function CheckoutModal({
               </div>
             </div>
             <div className="flex justify-between items-center py-2 px-1">
-              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">
+              <span className="text-[16px] font-black uppercase tracking-[0.2em] text-zinc-500">
                 Return Amount
               </span>
               <span className="text-2xl font-black text-white">
@@ -1438,11 +1438,11 @@ export function CheckoutModal({
                           value={tenderAmount || ""}
                           onChange={(e) => setTenderAmount(Number(e.target.value) || 0)}
                           placeholder="Tender Amount"
-                          className="w-full pl-10 pr-4 py-3 bg-white border-2 border-zinc-200 rounded-xl text-lg font-black text-zinc-900 focus:border-zinc-900 focus:outline-none"
+                          className="w-full pl-10 pr-4 py-3 bg-white border-2 border-zinc-200 rounded-xl text-md font-black text-zinc-900 focus:border-zinc-900 focus:outline-none"
                         />
                       </div>
                       <div className="flex justify-between items-center px-4 py-2 bg-white rounded-xl border border-dashed border-zinc-200">
-                        <span className="text-[8px] font-black uppercase text-zinc-400 tracking-widest">Return</span>
+                        <span className="text-[12px] font-black uppercase text-zinc-400 tracking-widest">Return</span>
                         <span className="text-xl font-black text-emerald-500">{settings.currency} {Math.max(0, tenderAmount - grandTotal).toFixed(2)}</span>
                       </div>
                     </div>

@@ -305,7 +305,7 @@ export function TableOrderingSystem({
 
         <div className="flex-1 overflow-y-auto bg-white p-4 custom-scrollbar">
   {/* Increased grid columns to make items smaller */}
-  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
     {filteredDishes.map((dish) => (
       <div
         key={dish.id}
@@ -313,7 +313,7 @@ export function TableOrderingSystem({
         className="group bg-white border border-zinc-100 rounded-xl shadow-sm hover:shadow-md hover:border-zinc-900 transition-all cursor-pointer aspect-square flex flex-col p-2 overflow-hidden"
       >
         {/* 1. Image (Small & Square) */}
-        <div className="relative flex-1 rounded-lg bg-zinc-50 overflow-hidden mb-1.5">
+        <div className="relative flex-2 rounded-lg bg-zinc-50 overflow-hidden mb-1.5">
           {dish.image?.[0] ? (
             <img
               src={dish.image[0]}
@@ -322,7 +322,7 @@ export function TableOrderingSystem({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-zinc-200">
-              <LayoutGrid size={20} />
+              <LayoutGrid size={50} />
             </div>
           )}
         </div>

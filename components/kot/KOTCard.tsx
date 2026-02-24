@@ -3,29 +3,23 @@
 import { Order, OrderItem, OrderStatus, KOTType } from "@/lib/types";
 import {
   Clock,
-  Loader2,
-  CheckCircle2,
-  Move,
-  Download,
-  Printer,
-  User,
   ChefHat,
   Wine,
   MoreVertical,
   ArrowRightLeft,
-  ChevronDown,
+  Download,
+  Printer,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Popover } from "@/components/ui/Popover";
-import { useState } from "react";
 
 interface KOTCardProps {
   order: Order;
   items: OrderItem[];
   type: KOTType;
   onUpdateStatus: (itemIds: string[], status: OrderStatus) => void;
-  onDownload: () => void;
-  onMove: () => void;
+  onMove: (order: Order) => void;
 }
 
 export function KOTCard({
@@ -33,13 +27,8 @@ export function KOTCard({
   items,
   type,
   onUpdateStatus,
-  onDownload,
   onMove,
 }: KOTCardProps) {
-  const [activeItemStatusId, setActiveItemStatusId] = useState<string | null>(
-    null,
-  );
-
   const statuses: OrderStatus[] = [
     "PENDING",
     "PREPARING",
@@ -47,146 +36,237 @@ export function KOTCard({
     "SERVED",
   ];
 
+  const handlePrint = () => {
+    const WinPrint = window.open("", "", "width=600,height=600");
+    if (!WinPrint) return;
+
+    const content = `
+      <html>
+        <head>
+          <title>KOT - ${order.id.slice(-6)}</title>
+          <style>
+            body { font-family: 'Courier New', Courier, monospace; width: 80mm; padding: 10px; }
+            .center { text-align: center; }
+            .line { border-bottom: 1px dashed black; margin: 10px 0; }
+            table { width: 100%; border-collapse: collapse; }
+            td { padding: 5px 0; font-size: 14px; }
+            .qty { font-weight: bold; width: 30px; }
+            .header-text { font-size: 18px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            <div class="header-text">KOT: ${type}</div>
+            <div>Table: ${order.table?.name || "N/A"}</div>
+            <div>ID: #${order.id.slice(-6).toUpperCase()}</div>
+            <div>${new Date().toLocaleString()}</div>
+          </div>
+          <div class="line"></div>
+          <table>
+            ${items
+              .map(
+                (item) => `
+              <tr>
+                <td class="qty">${item.quantity}x</td>
+                <td>${item.dish?.name || item.combo?.name}</td>
+              </tr>
+              ${
+                item.remarks
+                  ? `<tr><td></td><td style="font-size:12px italic">Note: ${item.remarks}</td></tr>`
+                  : ""
+              }
+            `
+              )
+              .join("")}
+          </table>
+          <div class="line"></div>
+          <div class="center" style="font-size: 10px; margin-top: 10px;">
+            END OF KOT
+          </div>
+        </body>
+      </html>
+    `;
+
+    WinPrint.document.write(content);
+    WinPrint.document.close();
+    WinPrint.focus();
+    WinPrint.print();
+    WinPrint.close();
+  };
+
+  // --- Download (Get Ticket) Logic ---
+  const handleDownload = () => {
+    const text = `
+KOT TICKET - ${type}
+Ticket: #${order.id.slice(-6).toUpperCase()}
+Table: ${order.table?.name || "N/A"}
+Time: ${new Date(order.createdAt).toLocaleString()}
+--------------------------------
+${items
+  .map(
+    (i) =>
+      `${i.quantity} x ${i.dish?.name || i.combo?.name}${
+        i.remarks ? `\n   Note: ${i.remarks}` : ""
+      }`
+  )
+  .join("\n")}
+--------------------------------
+    `;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `KOT-${order.id.slice(-4)}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case "PENDING":
-        return "bg-emerald-50 text-emerald-600 border-emerald-100 font-medium";
+        return "bg-rose-50 text-rose-600 border-rose-100";
       case "PREPARING":
-        return "bg-zinc-50 text-zinc-600 border-zinc-100 font-medium";
+        return "bg-amber-50 text-amber-600 border-amber-100";
       case "READYTOPICK":
-        return "bg-emerald-50 text-emerald-600 border-emerald-100 font-medium";
+        return "bg-emerald-50 text-emerald-600 border-emerald-100";
       case "SERVED":
-        return "bg-zinc-100 text-zinc-400 border-zinc-200 font-medium";
+        return "bg-zinc-100 text-zinc-400 border-zinc-200";
       default:
-        return "bg-zinc-50 text-zinc-400 border-zinc-100 font-medium";
+        return "bg-zinc-50";
     }
   };
 
-  const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
-
   return (
-    <div className="bg-white rounded-xl border border-zinc-200 shadow-sm flex flex-col group relative">
-      {/* KOT Header */}
+    /* Removed 'overflow-hidden' to allow popovers to display outside the card boundaries */
+    <div className="bg-white rounded-xl border border-zinc-200 shadow-sm flex flex-col group relative z-10">
+      {/* UI Header */}
       <div className="p-4 flex items-center justify-between border-b border-zinc-100 bg-white">
         <div className="flex items-center gap-4">
           <div className="p-2 rounded-lg bg-zinc-900 text-white shadow-sm">
             {type === "BAR" ? <Wine size={16} /> : <ChefHat size={16} />}
           </div>
           <div>
-            <h3 className="text-sm font-bold text-zinc-900 leading-none tracking-tight">
-              KOT #{order.id.slice(-6)}
+            <h3 className="text-sm font-bold text-zinc-900 tracking-tight">
+              KOT #{order.id.slice(-6).toUpperCase()}
             </h3>
-            <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-1.5">
-              Table:{" "}
-              <span className="text-zinc-900">
-                {order.table?.name || "No Table"}
-              </span>
+            <p className="text-[10px] text-zinc-600 font-bold uppercase mt-1">
+              Table: {order.table?.name || "N/A"}
             </p>
           </div>
         </div>
-        <div className="text-right">
-          <div className="flex items-center gap-1.5 text-zinc-600 text-[10px] font-bold uppercase tracking-widest leading-none">
-            <Clock size={11} />
-            {new Date(order.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </div>
+        <div className="flex items-center gap-1.5 text-zinc-400 text-[10px] font-bold">
+          <Clock size={11} />
+          {new Date(order.createdAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </div>
       </div>
 
-      {/* Items List - Printable style */}
-      <div className="flex-1 p-5 space-y-2 bg-white">
-        {items.map((item, idx) => (
+      {/* Items List */}
+      <div className="flex-1 p-4 space-y-2">
+        {items.map((item) => (
           <div
-            key={item.id + idx}
-            className="flex items-start justify-between py-1.5 border-b border-zinc-100 last:border-0"
+            key={item.id}
+            className="flex items-start justify-between py-2 border-b border-zinc-50 last:border-0"
           >
             <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-medium text-zinc-900 uppercase tracking-tight">
-                  {item.quantity} x{" "}
-                  {item.dish?.name || item.combo?.name || "Unknown Item"}
-                </span>
-              </div>
+              <span className="text-[11px] font-bold text-zinc-800 uppercase">
+                {item.quantity} x {item.dish?.name || item.combo?.name}
+              </span>
               {item.remarks && (
-                <p className="text-[10px] text-zinc-600 font-bold uppercase italic mt-1 bg-zinc-50 px-2 py-0.5 rounded inline-block">
+                <p className="text-[9px] text-rose-500 font-bold mt-0.5 italic">
                   Note: {item.remarks}
                 </p>
               )}
             </div>
-            <span
-              className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-widest ${getStatusColor(item.status || "PENDING")}`}
-            >
-              {item.status || "PENDING"}
-            </span>
+
+            {/* Individual Item Status Update */}
+            <Popover
+              align="right"
+              trigger={
+                <button
+                  className={`text-[8px] px-2 py-1 rounded border font-black uppercase transition-all hover:scale-105 ${getStatusColor(
+                    item.status || "PENDING"
+                  )}`}
+                >
+                  {item.status || "PENDING"}
+                </button>
+              }
+              content={
+                /* Added background, shadow, and z-index to make the menu visible */
+                <div className="">
+                  {statuses.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => onUpdateStatus([item.id], s)}
+                      className="text-[9px] font-bold p-2 hover:bg-zinc-100 rounded text-left uppercase text-zinc-600 transition-colors"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              }
+            />
           </div>
         ))}
       </div>
 
-      {/* Actions Trigger - Centered Popover */}
-      <div className="p-4 bg-zinc-50 border-t border-zinc-200 flex items-center justify-center">
+      {/* Footer Actions */}
+      <div className="p-3 bg-zinc-50 border-t border-zinc-100 flex gap-2">
+        <Button
+          onClick={() => onUpdateStatus(items.map((i) => i.id), "READYTOPICK")}
+          className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black uppercase tracking-widest border-none gap-2"
+        >
+          <CheckCircle2 size={14} /> Ready All
+        </Button>
+
         <Popover
-          align="left"
+          align="right"
           trigger={
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-zinc-200 rounded-xl text-[10px] font-medium uppercase tracking-widest text-zinc-600 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm">
-              Manage KOT <MoreVertical size={14} className="text-zinc-400" />
-            </button>
+            <Button
+              variant="secondary"
+              className="px-3 h-9 border-zinc-200 text-zinc-400"
+            >
+              <MoreVertical size={14} />
+            </Button>
           }
           content={
-            <div className="w-52 p-2">
-              <div className="px-3 py-2 text-[8px] font-medium text-zinc-500 uppercase tracking-widest">
-                Ticket Actions
-              </div>
-              <div className="grid grid-cols-2 gap-1 p-1">
+            /* Enhanced styling to ensure Ticket Management options are not hidden */
+            <div className="">
+              <p className="text-[8px] font-black text-zinc-400 uppercase p-2 border-b border-zinc-50 mb-1 tracking-widest">
+                Ticket Management
+              </p>
+              <div className="grid grid-cols-2 gap-1 py-1">
                 {statuses.map((s) => (
                   <button
                     key={s}
-                    onClick={() =>
-                      onUpdateStatus(
-                        items.map((i) => i.id),
-                        s,
-                      )
-                    }
-                    className="text-left px-3 py-1.5 text-[9px] font-medium rounded-md hover:bg-zinc-50 text-zinc-600 uppercase tracking-tight transition-colors"
+                    onClick={() => onUpdateStatus(items.map((i) => i.id), s)}
+                    className="text-[9px] font-bold p-2 hover:bg-zinc-50 rounded text-left uppercase text-zinc-600 transition-colors"
                   >
                     {s}
                   </button>
                 ))}
               </div>
               <div className="h-px bg-zinc-100 my-2" />
-              <div className="space-y-0.5">
-                {[
-                  {
-                    icon: ArrowRightLeft,
-                    label: "Transfer KOT",
-                    action: onMove,
-                  },
-                  { icon: Download, label: "Get Ticket", action: onDownload },
-                  { icon: Printer, label: "Print Ticket", action: () => {} },
-                ].map((item, i) => (
-                  <button
-                    key={i}
-                    onClick={item.action}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-[9px] font-medium text-zinc-700 hover:bg-zinc-50 rounded-md transition-colors uppercase tracking-widest"
-                  >
-                    <item.icon size={13} className="text-zinc-400" />
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-              <div className="h-px bg-zinc-100 my-2" />
-              <Button
-                onClick={() =>
-                  onUpdateStatus(
-                    items.map((i) => i.id),
-                    "READYTOPICK",
-                  )
-                }
-                className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-[9px] h-10 uppercase tracking-widest border-none rounded-lg"
+              <button
+                onClick={() => onMove(order)}
+                className="w-full flex items-center gap-2 p-2 text-[9px] font-bold hover:bg-zinc-50 rounded uppercase text-zinc-700 transition-colors"
               >
-                Mark Ready
-              </Button>
+                <ArrowRightLeft size={14} /> Transfer Ticket
+              </button>
+              <button
+                onClick={handleDownload}
+                className="w-full flex items-center gap-2 p-2 text-[9px] font-bold hover:bg-zinc-50 rounded uppercase text-zinc-700 transition-colors"
+              >
+                <Download size={14} /> Get Ticket (.txt)
+              </button>
+              <button
+                onClick={handlePrint}
+                className="w-full flex items-center gap-2 p-2 text-[9px] font-bold hover:bg-zinc-50 rounded uppercase text-zinc-700 transition-colors"
+              >
+                <Printer size={14} /> Print KOT
+              </button>
             </div>
           }
         />
