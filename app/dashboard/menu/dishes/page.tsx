@@ -262,7 +262,7 @@ export default function DishesPage() {
   };
 
   const handleSubmit = async () => {
-    if (!name || !categoryId || !prepTime) {
+    if (!name || !categoryId ) {
       toast.error("Please fill required fields");
       return;
     }
@@ -289,7 +289,7 @@ export default function DishesPage() {
       name,
       hscode,
       image: imageUrl ? [imageUrl] : [],
-      preparationTime: parseInt(prepTime) || 0,
+      preparationTime: prepTime === "" ? 0 : parseInt(prepTime), 
       description,
       categoryId,
       subMenuId: subMenuId || undefined,
@@ -661,11 +661,12 @@ export default function DishesPage() {
                   Prep(m)
                 </label>
                 <input
-                  type="number"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none"
-                  value={prepTime}
-                  onChange={(e) => setPrepTime(e.target.value)}
-                />
+                type="number"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none"
+                value={prepTime }
+                placeholder="0" 
+                onChange={(e) => setPrepTime(e.target.value)}
+              />
               </div>
             </div>
             <ImageUpload
