@@ -110,10 +110,10 @@ export async function GET(req: NextRequest) {
           },
         }),
         prisma.purchase.aggregate({
-          _sum: { amount: true },
+          _sum: { totalAmount: true },
           where: {
             storeId,
-            date: { gte: startDate, lte: endDate },
+            txnDate: { gte: startDate, lte: endDate },
           },
         }),
         prisma.expense.aggregate({
@@ -150,7 +150,7 @@ export async function GET(req: NextRequest) {
       ]);
 
     const salesTotal = sales._sum.amount || 0;
-    const purchasesTotal = purchases._sum.amount || 0;
+    const purchasesTotal = purchases._sum.totalAmount || 0;
     const expensesTotal = expenses._sum.amount || 0;
     const paymentInTotal = paymentIn._sum.amount || 0;
     const paymentOutTotal = paymentOut._sum.amount || 0;

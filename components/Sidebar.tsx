@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Table2,
   ChevronDown,
-  ChevronRight,
   UtensilsCrossed,
   QrCode,
   Map,
@@ -21,19 +20,18 @@ import {
   Puzzle,
   Package,
   Users,
+  TrendingUp,
+  CreditCard,
+  Circle,
+  RefreshCcw,
+  Scale,
+  History,
 } from "lucide-react";
 
 export default function Sidebar() {
-  const { data: session } = useSession(); // 2. Get session data
-  
-  // 3. Helper to get initials (e.g., "Bhuban Acharya" -> "BA")
-  const getInitials = (name?: string | null) => {
-    if (!name) return "??";
-    const parts = name.split(" ");
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
+  const { data: session } = useSession();
   const pathname = usePathname();
+
   const [openSection, setOpenSection] = useState<string | null>(
     pathname.includes("menu")
       ? "menu"
@@ -41,36 +39,47 @@ export default function Sidebar() {
           pathname.includes("spaces") ||
           pathname.includes("qrcodes")
         ? "core"
-        : null,
+        : pathname.includes("customer")
+          ? "customer"
+          : pathname.includes("suppliers") || pathname.includes("purchases")
+            ? "procurement"
+            : null,
   );
 
   const isActive = (path: string) => pathname === path;
-
-  const toggleSection = (section: string) => {
-    setOpenSection(openSection === section ? null : section);
-  };
 
   const NavItem = ({
     href,
     icon: Icon,
     label,
+    isChild = false,
   }: {
     href: string;
     icon: any;
     label: string;
+    isChild?: boolean;
   }) => {
     const active = isActive(href);
     return (
       <Link
         href={href}
-        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+        className={`flex items-center gap-3 px-4 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 group relative ${
           active
-            ? "bg-zinc-500 text-white shadow-sm"
-            : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200"
-        }`}
+            ? "text-zinc-900 bg-zinc-100/80"
+            : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+        } ${isChild ? "ml-4" : ""}`}
       >
-        <Icon size={18} />
-        {label}
+        {active && (
+          <div className="absolute left-0 w-1 h-4 bg-zinc-900 rounded-r-full" />
+        )}
+        <Icon
+          size={isChild ? 14 : 18}
+          strokeWidth={active ? 2.5 : 2}
+          className={
+            active ? "text-zinc-900" : "text-zinc-400 group-hover:text-zinc-600"
+          }
+        />
+        <span className="flex-1">{label}</span>
       </Link>
     );
   };
@@ -87,135 +96,287 @@ export default function Sidebar() {
     children: React.ReactNode;
   }) => {
     const isOpen = openSection === id;
-    const hasActiveChild =
-      pathname.includes(id === "core" ? "tables" : id) ||
-      pathname.includes("spaces") ||
-      pathname.includes("qrcodes");
+    const isChildActive = pathname.includes(id === "core" ? "tables" : id);
 
     return (
       <div className="space-y-1">
         <button
-          onClick={() => toggleSection(id)}
-          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            isOpen || hasActiveChild
+          onClick={() => setOpenSection(isOpen ? null : id)}
+          className={`w-full flex items-center justify-between px-4 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+            isOpen || isChildActive
               ? "text-zinc-900 bg-zinc-50"
-              : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
+              : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
           }`}
         >
           <div className="flex items-center gap-3">
-            <Icon size={18} />
+            <Icon
+              size={18}
+              className={
+                isOpen || isChildActive ? "text-zinc-900" : "text-zinc-400"
+              }
+            />
             {label}
           </div>
-          {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-300 opacity-50 ${isOpen ? "rotate-180" : ""}`}
+          />
         </button>
-        {isOpen && <div className="ml-9 space-y-1 pr-2">{children}</div>}
+        <div
+          className={`overflow-hidden transition-all duration-300 ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}
+        >
+          <div className="ml-4 mt-1 border-l border-zinc-100 space-y-1">
+            {children}
+          </div>
+        </div>
       </div>
     );
   };
 
   return (
-    <aside className="w-64 h-screen sticky top-0 bg-white border-r border-zinc-100 flex flex-col z-20">
-      <div className="p-6">
-        <div className="flex items-center gap-3 px-2 py-1 mb-10">
-          <div className="w-10 h-10 bg-zinc-900 rounded-lg flex items-center justify-center text-white shadow-sm">
-            <Coffee size={24} />
+    <aside className="w-64 h-screen sticky top-0 bg-white border-r border-zinc-200 flex flex-col z-30">
+      {/* Brand Header */}
+      <div className="h-20 flex items-center px-6 border-b border-zinc-50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white shadow-sm">
+            <Coffee size={18} strokeWidth={2.5} />
           </div>
-          <div>
-            <h1 className="text-lg font-black text-zinc-900 leading-none">
-              Kund
-            </h1>
-            <span className="text-[10px] font-black text-red-600 uppercase tracking-[0.2em]">
-              Coffee
+          <div className="flex flex-col">
+            <span className="text-sm font-black text-zinc-900 uppercase tracking-tighter leading-none">
+              Kund ERP
+            </span>
+            <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-[0.2em] mt-1">
+              System Active
             </span>
           </div>
         </div>
-
-        <nav className="space-y-8">
-          <div>
-            {/* <span className="px-4 text-[9px] font-semibold text-zinc-500 uppercase tracking-widest mb-4 block">
-              Menu
-            </span> */}
-            <div className="space-y-1">
-              <div className="mb-8 border-b border-gray-300 flex flex-col gap-2 pb-4">
-                <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-              <NavItem href="/dashboard/orders" icon={Package} label="Orders" />
-              </div>
-
-              <AccordionItem id="menu" label="Menu" icon={UtensilsCrossed}>
-                <NavItem
-                  href="/dashboard/menu/categories"
-                  icon={Tag}
-                  label="Categories"
-                />
-                <NavItem
-                  href="/dashboard/menu/sub-menus"
-                  icon={Layers}
-                  label="Sub Categories"
-                />
-                <NavItem
-                  href="/dashboard/menu/dishes"
-                  icon={UtensilsCrossed}
-                  label="Dishes"
-                />
-
-                <NavItem href="/dashboard/menu/addons" icon={Puzzle} label="Add-ons" />
-                <NavItem
-                  href="/dashboard/menu/combos"
-                  icon={Package}
-                  label="Combos Set"
-                />
-                {/* <NavItem href="/menu/sets" icon={Coffee} label="Menu Sets" /> */}
-              </AccordionItem>
-
-              <AccordionItem id="core" label="Tables" icon={Database}>
-                <NavItem href="/dashboard/spaces" icon={Map} label="Spaces" />
-                <NavItem href="/dashboard/tables" icon={Table2} label="Tables" />
-                <NavItem href="/dashboard/qrcodes" icon={QrCode} label="QR Codes" />
-              </AccordionItem>
-
-              <NavItem href="/dashboard/customers" icon={Users} label="Customers" />
-              <NavItem href="/dashboard/finance" icon={Database} label="Finance" />
-            </div>
-          </div>
-
-          <div>
-            <span className="px-4 text-[9px] font-semibold text-zinc-500 uppercase tracking-widest mb-4 block">
-              Settings
-            </span>
-            <div className="space-y-1">
-              <NavItem href="/dashboard/settings" icon={Settings} label="General" />
-            </div>
-          </div>
-        </nav>
       </div>
 
-      <div className="mt-auto p-4 border-t border-zinc-50 space-y-2">
-        {/* User Profile Info */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-zinc-50 rounded-2xl border border-zinc-100 mb-2">
-          <div className="w-9 h-9 bg-zinc-900 rounded-xl flex items-center justify-center text-white font-black text-xs">
-            JD
+      {/* Navigation Area */}
+      <div className="flex-1 overflow-y-auto px-3 py-6 space-y-8 custom-scrollbar">
+        {/* Overview Section */}
+        <section className="space-y-1">
+          <label className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] mb-2 block">
+            Main
+          </label>
+          <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+          <NavItem
+            href="/dashboard/orders"
+            icon={Package}
+            label="Order Console"
+          />
+        </section>
+
+        {/* Management Section */}
+        <section className="space-y-1">
+          <label className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] mb-2 block">
+            Operations
+          </label>
+
+          <AccordionItem id="menu" label="Menu" icon={UtensilsCrossed}>
+            <NavItem
+              href="/dashboard/menu/categories"
+              icon={Tag}
+              label="Categories"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/menu/sub-menus"
+              icon={Layers}
+              label="Sub-Categories"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/menu/dishes"
+              icon={Circle}
+              label="Dish List"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/menu/addons"
+              icon={Puzzle}
+              label="Modifiers"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/menu/combos"
+              icon={Package}
+              label="Bundle Sets"
+              isChild
+            />
+          </AccordionItem>
+
+          <AccordionItem id="core" label="Floor Plan" icon={Database}>
+            <NavItem
+              href="/dashboard/spaces"
+              icon={Map}
+              label="Spaces"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/tables"
+              icon={Table2}
+              label="Tables"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/qrcodes"
+              icon={QrCode}
+              label="Table IDs"
+              isChild
+            />
+          </AccordionItem>
+
+          <AccordionItem id="customer" label="CRM" icon={Users}>
+            <NavItem
+              href="/dashboard/customers/add-customer"
+              icon={Users}
+              label="Add Customers"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/customers"
+              icon={Users}
+              label="Customers"
+              isChild
+            />
+          </AccordionItem>
+
+          <AccordionItem id="staffs" label="ERM" icon={Users}>
+            <NavItem
+              href="/dashboard/staff/add-staff"
+              icon={Users}
+              label="Add Staff"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/staff"
+              icon={Users}
+              label="Staffs"
+              isChild
+            />
+          </AccordionItem>
+
+          <AccordionItem id="procurement" label="Procurement" icon={Package}>
+            <NavItem
+              href="/dashboard/suppliers"
+              icon={Users}
+              label="Suppliers"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/purchases"
+              icon={CreditCard}
+              label="Purchases"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/purchases/returns"
+              icon={RefreshCcw}
+              label="Purchase Returns"
+              isChild
+            />
+          </AccordionItem>
+
+          <AccordionItem id="inventory" label="Inventory" icon={Database}>
+            <NavItem
+              href="/dashboard/inventory/stocks"
+              icon={Package}
+              label="Stock List"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/inventory/groups"
+              icon={Layers}
+              label="Stock Groups"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/inventory/consumption"
+              icon={TrendingUp}
+              label="Consumption"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/inventory/history"
+              icon={History}
+              label="Stock History"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/inventory/measuring-units"
+              icon={Scale}
+              label="Measuring Units"
+              isChild
+            />
+            <NavItem
+              href="/dashboard/suppliers"
+              icon={Users}
+              label="Suppliers"
+              isChild
+            />
+          </AccordionItem>
+
+          <NavItem
+            href="/dashboard/finance"
+            icon={TrendingUp}
+            label="Sales Analytics"
+          />
+        </section>
+
+        {/* Settings Section */}
+        <section className="space-y-1">
+          <label className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] mb-2 block">
+            System
+          </label>
+          <NavItem
+            href="/dashboard/settings"
+            icon={Settings}
+            label="Configuration"
+          />
+        </section>
+      </div>
+
+      {/* User & Footer */}
+      <div className="p-4 border-t border-zinc-100 bg-zinc-50/30">
+        <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white border border-zinc-200 shadow-[0_2px_4px_rgba(0,0,0,0.02)] mb-3">
+          <div className="w-9 h-9 bg-zinc-900 rounded-lg flex items-center justify-center text-white text-[10px] font-bold">
+            {session?.user?.name?.substring(0, 2).toUpperCase() || "AD"}
           </div>
-          <div className="flex flex-col">
-            <span className="text-[11px] font-black text-zinc-900 leading-none">
-              {session?.user.email}
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-bold text-zinc-900 truncate">
+              {session?.user?.name || "Administrator"}
             </span>
-            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider mt-0.5">
-              {session?.user.role}
+            <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-wider">
+              {session?.user?.role || "Manager"}
             </span>
           </div>
         </div>
 
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-500 hover:text-red-600 hover:bg-red-50 transition-all group"
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-widest text-zinc-500 hover:text-red-600 hover:bg-red-50/50 transition-colors group"
         >
-          <LogOut
-            size={18}
-            className="transition-transform group-hover:-translate-x-1"
-          />
-          Sign Out
+          <LogOut size={16} className="opacity-70 group-hover:opacity-100" />
+          End Session
         </button>
       </div>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #f4f4f5;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #e4e4e7;
+        }
+      `}</style>
     </aside>
   );
 }

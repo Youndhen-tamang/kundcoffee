@@ -13,11 +13,13 @@ import {
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 export default function SettingsPage() {
   const { settings, updateSetting, loading } = useSettings();
   const [currency, setCurrency] = useState(settings.currency);
   const [isSaving, setIsSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | string | null>(null);
 
   const handleSave = async () => {
     try {
@@ -30,6 +32,8 @@ export default function SettingsPage() {
       setIsSaving(false);
     }
   };
+
+  // const handleQrSubmit = async()
 
   if (loading) {
     return (
@@ -69,6 +73,21 @@ export default function SettingsPage() {
 
       <div className="grid gap-8">
         
+
+        {/*Qr Payment Confirguration Section */}
+        <section className="w-full  p-4">
+          <div>
+          <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-tight mb-1">Qr Configuration</h2>
+          <p className="text-xs text-zinc-500 font-medium leading-relaxed">
+          Upload your QR code for transaction purposes only. This QR code will be used solely to process and receive payments within the system. Kindly ensure that the QR code is valid, active, and linked to the correct payment account.</p>
+          </div>
+
+          <ImageUpload
+              label="Dish Photo"
+              value={typeof imageFile === "string" ? imageFile : undefined}
+              onChange={setImageFile}
+            />
+        </section>
         {/* --- LOCALIZATION SECTION --- */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:pt-2">

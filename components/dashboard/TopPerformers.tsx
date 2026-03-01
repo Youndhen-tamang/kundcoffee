@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { User, ShieldCheck, Trophy, ArrowRight } from "lucide-react";
 import StaffOrdersModal from "./StaffOrdersModal";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 export default function TopPerformers() {
+  const { settings } = useSettings();
   const [data, setData] = useState<any>({ topCustomers: [], topStaff: [] });
   const [loading, setLoading] = useState(true);
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
@@ -60,7 +62,7 @@ export default function TopPerformers() {
               </div>
               <div className="text-right">
                 <p className="text-xs font-black text-zinc-900">
-                  Rs. {customer.totalSpent.toLocaleString()}
+                  {settings.currency} {customer.totalSpent.toLocaleString()}
                 </p>
                 <p className="text-[10px] text-zinc-400 font-medium">
                   Total Spend

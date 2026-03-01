@@ -1,36 +1,79 @@
 import DashboardClient from "./DashboardClient";
-import { getSpaces } from "@/services/space";
-import { getTables, getTableTypes } from "@/services/table";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-// Helper to handle server-side fetch with absolute URL fallback or direct DB?
-// Since we have helper functions, let's try to use them.
-// But we know 'fetch' needs absolute URL on server.
-// Let's assume the user is running on localhost:3000 for now as per their code.
-// Ideally we should move logic to direct DB calls for server components to avoid loopback http overhead,
-// but to respect "don't change logic", we will keep using the API routes via fetch,
-// just fixing the URL issue.
-
-async function getData() {
-  const baseUrl = "http://localhost:3000";
-
+async function getData(storeId: string) {
   try {
-    const [spacesRes, tablesRes, typesRes, customersRes] = await Promise.all([
-      fetch(`${baseUrl}/api/spaces`, { cache: "no-store" }),
-      fetch(`${baseUrl}/api/tables`, { cache: "no-store" }),
-      fetch(`${baseUrl}/api/tables/type`, { cache: "no-store" }),
-      fetch(`${baseUrl}/api/customer/summary`, { cache: "no-store" }),
+    const [spaces, tables, tableTypes, customers] = await Promise.all([
+      prisma.space.findMany({
+        where: { storeId },
+        include: {
+          tables: {
+            include: {
+              tableType: true,
+              qrCode: true,
+            },
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+        orderBy: { sortOrder: "asc" },
+      }),
+      prisma.table.findMany({
+        where: { storeId },
+        include: {
+          tableType: true,
+          space: true,
+          qrCode: true,
+        },
+        orderBy: { name: "asc" },
+      }),
+      prisma.tableType.findMany({
+        where: { storeId },
+        include: {
+          tables: true,
+        },
+      }),
+      prisma.customer.findMany({
+        where: { storeId },
+        include: {
+          CustomerLedger: true,
+        },
+      }),
     ]);
 
-    const spaces = await spacesRes.json();
-    const tables = await tablesRes.json();
-    const types = await typesRes.json();
-    const customers = await customersRes.json();
+    const customerSummary = customers.map((c) => {
+      const dueAmount =
+        c.openingBalance +
+        (c.CustomerLedger?.reduce((sum, l) => {
+          if (
+            l.type === "SALE" ||
+            l.type === "ADJUSTMENT" ||
+            l.type === "PAYMENT_OUT"
+          )
+            return sum + l.amount;
+          if (l.type === "PAYMENT_IN" || l.type === "RETURN")
+            return sum - l.amount;
+          return sum;
+        }, 0) || 0);
+
+      return {
+        id: c.id,
+        fullName: c.fullName,
+        email: c.email,
+        phone: c.phone,
+        dob: c.dob,
+        loyaltyId: c.loyaltyId,
+        dueAmount,
+      };
+    });
 
     return {
-      spaces: spaces.success ? spaces.data : [],
-      tables: tables.data || [],
-      tableTypes: types.tableType || [],
-      customers: customers.success ? customers.data : [],
+      spaces: JSON.parse(JSON.stringify(spaces)),
+      tables: JSON.parse(JSON.stringify(tables)),
+      tableTypes: JSON.parse(JSON.stringify(tableTypes)),
+      customers: JSON.parse(JSON.stringify(customerSummary)),
     };
   } catch (error) {
     console.error("Failed to fetch dashboard data", error);
@@ -39,7 +82,14 @@ async function getData() {
 }
 
 export default async function DashboardPage() {
-  const { spaces, tables, tableTypes, customers } = await getData();
+  const session = await getServerSession(authOptions);
+  const storeId = session?.user?.storeId;
+
+  if (!storeId) {
+    redirect("/login");
+  }
+
+  const { spaces, tables, tableTypes, customers } = await getData(storeId);
 
   return (
     <DashboardClient

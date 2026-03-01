@@ -141,7 +141,7 @@ export function StockConsumptionForm({
                 <option value="">Select Stock</option>
                 {stocks.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} ({s.unit})
+                    {s.name} ({s.unit?.shortName || "no unit"})
                   </option>
                 ))}
               </select>

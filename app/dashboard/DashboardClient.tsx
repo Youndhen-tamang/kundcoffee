@@ -148,7 +148,7 @@ export default function DashboardClient({
       const res = await fetch("/api/staff", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newStaff),
+        body: JSON.stringify(newStaff), 
       });
       const data = await res.json();
       if (data.success) {

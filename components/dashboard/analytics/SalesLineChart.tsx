@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { DateRangeSelector } from "@/components/ui/DateRangeSelector";
 import { ChevronRight } from "lucide-react";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 type ChartDataPoint = {
   date: string;
@@ -21,6 +22,7 @@ type ChartDataPoint = {
 };
 
 export default function SalesLineChart() {
+  const { settings } = useSettings();
   const [data, setData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -147,7 +149,9 @@ export default function SalesLineChart() {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 10, fill: "#71717a" }}
-                    tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                    tickFormatter={(value) =>
+                      `${settings.currency}${(value / 1000).toFixed(0)}k`
+                    }
                     dx={-10}
                   />
                   <Tooltip
@@ -164,7 +168,7 @@ export default function SalesLineChart() {
                       fontSize: "12px",
                     }}
                     formatter={(value: number | undefined) => [
-                      `Rs. ${(value || 0).toLocaleString()}`,
+                      `${settings.currency} ${(value || 0).toLocaleString()}`,
                       "Sales",
                     ]}
                     labelFormatter={(label) =>
@@ -223,7 +227,7 @@ export default function SalesLineChart() {
                   Total Sales
                 </h4>
                 <p className="text-5xl font-black tracking-tighter text-emerald-400">
-                  Rs. {selectedPoint.total.toLocaleString()}
+                  {settings.currency} {selectedPoint.total.toLocaleString()}
                 </p>
               </div>
 

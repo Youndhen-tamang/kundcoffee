@@ -56,7 +56,7 @@ export type Category = {
   dishes?: Dish[];
   combos?: any[]; // Replace with Combo type when defined
   createdAt?: Date;
-  sortOrder?:number
+  sortOrder?: number;
 };
 
 export type Dish = {
@@ -64,7 +64,7 @@ export type Dish = {
   name: string;
   hscode?: string | null;
   image: string[];
-  sortOrder:number
+  sortOrder: number;
   preparationTime: number;
   description?: string | null;
   categoryId: string;
@@ -87,10 +87,19 @@ export type Price = {
   grossProfit: number;
 };
 
+export type MeasuringUnit = {
+  id: string;
+  name: string;
+  shortName: string;
+  description?: string;
+  createdAt: string;
+};
+
 export type Stock = {
   id: string;
   name: string;
-  unit: string;
+  unitId?: string | null;
+  unit?: MeasuringUnit | null;
   quantity: number;
   amount: number;
 };
@@ -140,7 +149,7 @@ export type ComboOffer = {
   id: string;
   name: string;
   image: string[];
-  sortOrder?:number;
+  sortOrder?: number;
   hscode?: string | null;
   preparationTime: number;
   description?: string | null;
@@ -312,8 +321,100 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
+export type Sale = {
+  date: string;
+  total: string;
+};
 
-export type Sale={
-  date:string;
-  total:string
-}
+// Procurement Module Types
+
+export type BalanceType = "DEBIT" | "CREDIT";
+
+export type Supplier = {
+  id: string;
+  fullName: string;
+  phone?: string;
+  email?: string;
+  legalName?: string;
+  taxNumber?: string;
+  address?: string;
+  openingBalance: number;
+  openingBalanceType: BalanceType;
+  createdAt: string;
+};
+
+export type SupplierLedgerType =
+  | "PURCHASE"
+  | "PAYMENT"
+  | "RETURN"
+  | "ADJUSTMENT"
+  | "OPENING_BALANCE";
+
+export type SupplierLedger = {
+  id: string;
+  supplierId: string;
+  txnNo: string;
+  type: SupplierLedgerType;
+  amount: number;
+  closingBalance: number;
+  referenceId?: string;
+  remarks?: string;
+  createdAt: string;
+};
+
+export type Purchase = {
+  id: string;
+  referenceNumber: string;
+  supplierId: string;
+  supplier?: Supplier;
+  txnDate: string;
+  items: PurchaseItem[];
+  taxableAmount: number;
+  totalAmount: number;
+  discount: number;
+  roundOff: number;
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "CREDIT";
+  paymentMode?: PaymentMethod;
+  remark?: string;
+  attachment?: string;
+  createdAt: string;
+};
+
+export type PurchaseItem = {
+  id: string;
+  purchaseId: string;
+  itemName: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+  stockId?: string;
+};
+
+export type PurchaseReturn = {
+  id: string;
+  referenceNumber: string;
+  supplierId: string;
+  supplier?: Supplier;
+  txnDate: string;
+  purchaseReference?: string;
+  items: PurchaseReturnItem[];
+  taxableAmount: number;
+  totalAmount: number;
+  discount: number;
+  roundOff: number;
+  paymentStatus: ReturnPaymentStatus;
+  paymentMode?: PaymentMethod;
+  remark?: string;
+  attachment?: string;
+  createdAt: string;
+};
+
+export type PurchaseReturnItem = {
+  id: string;
+  purchaseReturnId: string;
+  itemName: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+  stockId?: string;
+};

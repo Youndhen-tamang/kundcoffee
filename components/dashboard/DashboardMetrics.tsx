@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { useSettings } from "@/components/providers/SettingsProvider";
+import { DateRangeSelector } from "@/components/ui/DateRangeSelector";
 
 type MetricType =
   | "SALES"
@@ -27,10 +28,32 @@ export default function DashboardMetrics() {
   const [loading, setLoading] = useState(true);
   const [activeType, setActiveType] = useState<MetricType>("SALES");
 
+  // Date states
+  const [currentDate, setCurrentDate] = useState("");
+  const [currentMonth, setCurrentMonth] = useState(
+    (new Date().getMonth() + 1).toString(),
+  );
+  const [currentYear, setCurrentYear] = useState(
+    new Date().getFullYear().toString(),
+  );
+
   useEffect(() => {
     async function fetchMetrics() {
+      setLoading(true);
       try {
-        const res = await fetch("/api/dashboard/metrics?filter=this_month");
+        const params = new URLSearchParams();
+        if (currentDate) {
+          params.append("date", currentDate);
+          params.append("filter", "custom");
+        } else if (currentMonth && currentYear) {
+          params.append("month", currentMonth);
+          params.append("year", currentYear);
+          params.append("filter", "custom");
+        } else {
+          params.append("filter", "this_month");
+        }
+
+        const res = await fetch(`/api/dashboard/metrics?${params.toString()}`);
         const data = await res.json();
         if (data.success) {
           setMetrics(data.data);
@@ -42,7 +65,7 @@ export default function DashboardMetrics() {
       }
     }
     fetchMetrics();
-  }, []);
+  }, [currentDate, currentMonth, currentYear]);
 
   const metricConfig = {
     SALES: {
@@ -89,30 +112,62 @@ export default function DashboardMetrics() {
     },
   };
 
+  const getFilterLabel = () => {
+    if (currentDate) return new Date(currentDate).toLocaleDateString();
+    if (currentMonth && currentYear) {
+      const monthName = new Date(
+        parseInt(currentYear),
+        parseInt(currentMonth) - 1,
+      ).toLocaleString("default", { month: "long" });
+      return `${monthName} ${currentYear}`;
+    }
+    return "This Month";
+  };
+
   return (
     <div className="space-y-6">
-      {/* Toggles */}
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(metricConfig) as MetricType[]).map((type) => (
-          <button
-            key={type}
-            onClick={() => setActiveType(type)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
-              activeType === type
-                ? "bg-zinc-900 text-white border-zinc-900 shadow-lg shadow-zinc-200"
-                : "bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
-            }`}
-          >
-            {type.replace("_", " ")}
-          </button>
-        ))}
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(metricConfig) as MetricType[]).map((type) => (
+            <button
+              key={type}
+              onClick={() => setActiveType(type)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
+                activeType === type
+                  ? "bg-zinc-900 text-white border-zinc-900 shadow-lg shadow-zinc-200"
+                  : "bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+              }`}
+            >
+              {type.replace("_", " ")}
+            </button>
+          ))}
+        </div>
+        <DateRangeSelector
+          currentDate={currentDate}
+          currentMonth={currentMonth}
+          currentYear={currentYear}
+          onDateChange={setCurrentDate}
+          onMonthChange={(m) => {
+            setCurrentMonth(m);
+            setCurrentDate("");
+          }}
+          onYearChange={(y) => {
+            setCurrentYear(y);
+            setCurrentDate("");
+          }}
+        />
       </div>
 
       {/* Main Metric Display */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Primary Selected Metric */}
         <div className="col-span-1 md:col-span-2 lg:col-span-4">
-          <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm flex items-center justify-between">
+          <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm flex items-center justify-between relative overflow-hidden">
+            {loading && (
+              <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px] z-10 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900"></div>
+              </div>
+            )}
             <div className="space-y-2">
               <h3 className="text-sm font-black text-zinc-400 uppercase tracking-widest">
                 {metricConfig[activeType].label}
@@ -121,7 +176,9 @@ export default function DashboardMetrics() {
                 {settings.currency}{" "}
                 {(metricConfig[activeType].value || 0).toLocaleString()}
               </p>
-              <p className="text-xs font-bold text-zinc-400">This Month</p>
+              <p className="text-xs font-bold text-zinc-400">
+                {getFilterLabel()}
+              </p>
             </div>
             <div className={`p-6 rounded-2xl ${metricConfig[activeType].bg}`}>
               {(() => {
@@ -145,8 +202,11 @@ export default function DashboardMetrics() {
               <div
                 key={key}
                 onClick={() => setActiveType(key)}
-                className="bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm cursor-pointer hover:border-zinc-200 transition-all group"
+                className="bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm cursor-pointer hover:border-zinc-200 transition-all group relative overflow-hidden"
               >
+                {loading && (
+                  <div className="absolute inset-0 bg-white/30 backdrop-blur-[1px] z-10" />
+                )}
                 <div className="flex items-center justify-between mb-3">
                   <div
                     className={`p-2 rounded-lg ${config.bg} group-hover:scale-110 transition-transform`}

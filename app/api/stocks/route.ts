@@ -17,6 +17,7 @@ export async function GET() {
 
     const data = await prisma.stock.findMany({
       where: { storeId },
+      include: { unit: true },
       orderBy: { name: "asc" },
     });
     return NextResponse.json({ success: true, data });
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, unit, quantity, amount } = body;
+    const { name, unitId, quantity, amount } = body;
 
     if (!name || quantity === undefined || amount === undefined) {
       return NextResponse.json(
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     const newStock = await prisma.stock.create({
       data: {
         name,
-        unit,
+        unitId,
         quantity: Number(quantity),
         amount: Number(amount),
         storeId,

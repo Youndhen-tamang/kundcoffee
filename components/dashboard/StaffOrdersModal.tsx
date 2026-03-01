@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Receipt, Calendar, CheckCircle2, Clock } from "lucide-react";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 interface StaffOrdersModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export default function StaffOrdersModal({
   staffId,
   staffName,
 }: StaffOrdersModalProps) {
+  const { settings } = useSettings();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -98,7 +100,7 @@ export default function StaffOrdersModal({
                       Total
                     </p>
                     <p className="text-sm font-bold text-zinc-900">
-                      Rs. {order.total}
+                      {settings.currency} {order.total}
                     </p>
                   </div>
                   <div
