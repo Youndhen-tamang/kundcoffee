@@ -1,9 +1,10 @@
 "use client";
 
-import { Modal } from "@/components/ui/Modal";
+import { SidePanel } from "@/components/ui/SidePanel";
 import { Button } from "@/components/ui/Button";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Package, TrendingDown } from "lucide-react";
 
 interface ConsumptionModalProps {
   isOpen: boolean;
@@ -22,8 +23,11 @@ export default function ConsumptionModal({
   const [quantity, setQuantity] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (!stockId || !quantity) {
+      toast.error("Please fill in all fields");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -51,60 +55,66 @@ export default function ConsumptionModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Record Consumption">
-      <form onSubmit={handleSubmit} className="p-6 space-y-4">
-        <div className="space-y-2">
-          <label className="text-xs font-black text-zinc-400 uppercase tracking-widest">
-            Select Stock Item
+    <SidePanel isOpen={isOpen} onClose={onClose} title="Record Consumption">
+      <div className="space-y-6 pb-20">
+        <div className="space-y-1.5">
+          <label className="text-sm font-semibold text-gray-700 block mb-2">
+            Select Stock Item <span className="text-red-500">*</span>
           </label>
-          <select
-            required
-            value={stockId}
-            onChange={(e) => setStockId(e.target.value)}
-            className="w-full h-12 px-4 bg-zinc-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500/20 transition-all appearance-none"
-          >
-            <option value="">Choose an item...</option>
-            {stocks.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.quantity} {s.unit?.shortName} available)
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <Package className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <select
+              required
+              value={stockId}
+              onChange={(e) => setStockId(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-11 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-medium text-zinc-900 appearance-none"
+            >
+              <option value="">Choose an item...</option>
+              {stocks.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.quantity} {s.unit?.shortName} available)
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-black text-zinc-400 uppercase tracking-widest">
-            Quantity Used
+        <div className="space-y-1.5">
+          <label className="text-sm font-semibold text-gray-700 block mb-2">
+            Quantity Used <span className="text-red-500">*</span>
           </label>
-          <input
-            type="number"
-            step="0.01"
-            required
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            placeholder="e.g. 1.5"
-            className="w-full h-12 px-4 bg-zinc-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500/20 transition-all"
-          />
+          <div className="relative">
+            <TrendingDown className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <input
+              type="number"
+              step="0.01"
+              required
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="e.g. 1.5"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-11 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-medium text-zinc-900"
+            />
+          </div>
         </div>
+      </div>
 
-        <div className="pt-4 flex gap-3">
-          <Button
-            type="button"
-            variant="none"
-            onClick={onClose}
-            className="flex-1 h-12 rounded-2xl font-black text-zinc-500 hover:bg-zinc-100 transition-all"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={loading}
-            className="flex-1 h-12 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white font-black shadow-xl shadow-zinc-200 active:scale-95 transition-all"
-          >
-            {loading ? "Recording..." : "Record Consumption"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+      <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex items-center gap-3">
+        <Button
+          onClick={onClose}
+          variant="secondary"
+          className="flex-1"
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm"
+          disabled={loading}
+        >
+          {loading ? "Recording..." : "Record Consumption"}
+        </Button>
+      </div>
+    </SidePanel>
   );
 }

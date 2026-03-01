@@ -1,9 +1,10 @@
 "use client";
 
-import { Modal } from "@/components/ui/Modal";
+import { SidePanel } from "@/components/ui/SidePanel";
 import { Button } from "@/components/ui/Button";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { Layers } from "lucide-react";
 
 interface StockGroupModalProps {
   isOpen: boolean;
@@ -32,8 +33,7 @@ export default function StockGroupModal({
     }
   }, [group, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setLoading(true);
 
     try {
@@ -64,55 +64,58 @@ export default function StockGroupModal({
   };
 
   return (
-    <Modal
+    <SidePanel
       isOpen={isOpen}
       onClose={onClose}
       title={group ? "Edit Stock Group" : "Create Stock Group"}
     >
-      <form onSubmit={handleSubmit} className="p-6 space-y-4">
-        <div className="space-y-2">
-          <label className="text-xs font-black text-zinc-400 uppercase tracking-widest">
-            Group Name
+      <div className="space-y-6 pb-20">
+        <div className="space-y-1.5">
+          <label className="text-sm font-semibold text-gray-700 block mb-2">
+            Group Name <span className="text-red-500">*</span>
           </label>
-          <input
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Vegetables, Dairy, Spices"
-            className="w-full h-12 px-4 bg-zinc-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500/20 transition-all"
-          />
+          <div className="relative">
+            <Layers className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <input
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Vegetables, Dairy, Spices"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-11 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-medium text-zinc-900"
+            />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-black text-zinc-400 uppercase tracking-widest">
+        <div className="space-y-1.5">
+          <label className="text-sm font-semibold text-gray-700 block mb-2">
             Description
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Optional description..."
-            className="w-full h-32 p-4 bg-zinc-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none"
+            className="w-full h-32 p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-medium text-zinc-900 resize-none"
           />
         </div>
+      </div>
 
-        <div className="pt-4 flex gap-3">
-          <Button
-            type="button"
-            variant="none"
-            onClick={onClose}
-            className="flex-1 h-12 rounded-2xl font-black text-zinc-500 hover:bg-zinc-100 transition-all"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={loading}
-            className="flex-1 h-12 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white font-black shadow-xl shadow-zinc-200 active:scale-95 transition-all"
-          >
-            {loading ? "Saving..." : group ? "Update Group" : "Create Group"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+      <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex items-center gap-3">
+        <Button
+          onClick={onClose}
+          variant="secondary"
+          className="flex-1"
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm"
+          disabled={loading}
+        >
+          {loading ? "Saving..." : group ? "Update Group" : "Create Group"}
+        </Button>
+      </div>
+    </SidePanel>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Modal } from "@/components/ui/Modal";
+import { SidePanel } from "@/components/ui/SidePanel";
 import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
 import { Package, Scale, Calculator, DollarSign } from "lucide-react";
@@ -52,8 +52,7 @@ export default function StockModal({
     }
   }, [stock, isOpen, units]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!formData.unitId) {
       toast.error("Please select a measuring unit");
       return;
@@ -86,157 +85,143 @@ export default function StockModal({
   };
 
   return (
-    <Modal
+    <SidePanel
       isOpen={isOpen}
       onClose={onClose}
       title={stock ? "Edit Stock Item" : "Add New Stock Item"}
     >
-      <form onSubmit={handleSubmit} className="space-y-6 text-zinc-950">
-        <div className="bg-zinc-50/50 p-5 rounded-3xl border border-zinc-100 space-y-4">
+      <div className="space-y-6 pb-20">
+        <div className="space-y-1.5">
+          <label className="text-sm font-semibold text-gray-700 block mb-2">
+            Item Name <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <Package className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <input
+              required
+              placeholder="e.g. Fresh Milk, Coffee Beans"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-11 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-medium text-zinc-900"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-              Item Name *
+            <label className="text-sm font-semibold text-gray-700 block mb-2">
+              Measuring Unit <span className="text-red-500">*</span>
             </label>
-            <div className="relative flex items-center">
-              <div className="absolute left-4 text-zinc-400">
-                <Package className="h-4 w-4" />
-              </div>
-              <input
+            <div className="relative">
+              <Scale className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <select
                 required
-                placeholder="e.g. Fresh Milk, Coffee Beans"
-                className="w-full h-11 pl-11 pr-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-semibold text-zinc-900 shadow-sm"
-                value={formData.name}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-11 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-medium text-zinc-900 appearance-none"
+                value={formData.unitId}
                 onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
+                  setFormData({ ...formData, unitId: e.target.value })
+                }
+              >
+                <option value="" disabled>
+                  Select Unit
+                </option>
+                {units.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} ({u.shortName})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-gray-700 block mb-2">
+              Stock Group
+            </label>
+            <div className="relative">
+              <Calculator className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <select
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-11 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-medium text-zinc-900 appearance-none"
+                value={formData.groupId}
+                onChange={(e) =>
+                  setFormData({ ...formData, groupId: e.target.value })
+                }
+              >
+                <option value="">No Group</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-gray-700 block mb-2">
+              Current Quantity
+            </label>
+            <div className="relative">
+              <Calculator className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <input
+                type="number"
+                step="0.01"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-11 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-medium text-zinc-900"
+                value={formData.quantity}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    quantity: parseFloat(e.target.value) || 0,
+                  })
                 }
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                Measuring Unit *
-              </label>
-              <div className="relative flex items-center">
-                <div className="absolute left-4 text-zinc-400">
-                  <Scale className="h-4 w-4" />
-                </div>
-                <select
-                  required
-                  className="w-full h-11 pl-11 pr-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-semibold text-zinc-900 shadow-sm appearance-none bg-white"
-                  value={formData.unitId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, unitId: e.target.value })
-                  }
-                >
-                  <option value="" disabled>
-                    Select Unit
-                  </option>
-                  {units.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name} ({u.shortName})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                Stock Group
-              </label>
-              <div className="relative flex items-center">
-                <div className="absolute left-4 text-zinc-400">
-                  <Calculator className="h-4 w-4" />
-                </div>
-                <select
-                  className="w-full h-11 pl-11 pr-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-semibold text-zinc-900 shadow-sm appearance-none bg-white"
-                  value={formData.groupId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, groupId: e.target.value })
-                  }
-                >
-                  <option value="">No Group</option>
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                Current Quantity
-              </label>
-              <div className="relative flex items-center">
-                <div className="absolute left-4 text-zinc-400">
-                  <Calculator className="h-4 w-4" />
-                </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  className="w-full h-11 pl-11 pr-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-semibold text-zinc-900 shadow-sm"
-                  value={formData.quantity}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      quantity: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                Total Value (Amt)
-              </label>
-              <div className="relative flex items-center">
-                <div className="absolute left-4 text-zinc-400">
-                  <DollarSign className="h-4 w-4" />
-                </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  className="w-full h-11 pl-11 pr-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-semibold text-zinc-900 shadow-sm"
-                  value={formData.amount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      amount: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                />
-              </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-gray-700 block mb-2">
+              Total Value (Amt)
+            </label>
+            <div className="relative">
+              <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <input
+                type="number"
+                step="0.01"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-11 py-3 text-sm focus:border-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 transition-all font-medium text-zinc-900"
+                value={formData.amount}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    amount: parseFloat(e.target.value) || 0,
+                  })
+                }
+              />
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-zinc-100">
-          <Button
-            type="button"
-            variant="ghost"
-            className="px-6 font-bold"
-            onClick={onClose}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={loading}
-            className="px-8 rounded-xl font-black bg-zinc-900 hover:bg-zinc-800 text-white shadow-lg active:scale-95 transition-all"
-          >
-            {loading ? "Saving..." : stock ? "Update Item" : "Create Item"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+      <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex items-center gap-3">
+        <Button
+          onClick={onClose}
+          variant="secondary"
+          className="flex-1"
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm"
+          disabled={loading}
+        >
+          {loading ? "Saving..." : stock ? "Update Item" : "Create Item"}
+        </Button>
+      </div>
+    </SidePanel>
   );
 }

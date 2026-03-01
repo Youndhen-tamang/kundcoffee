@@ -113,127 +113,119 @@ export default function StocksPage() {
   const lowStockItems = stocks.filter((s) => s.quantity < 5).length;
 
   return (
-    <div className="p-8 space-y-8 bg-zinc-50 min-h-screen">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-zinc-900 tracking-tight">
-            Inventory Stocks
-          </h1>
-          <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">
-            Manage raw materials and stock levels
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+    <div className="px-6 py-10">
+      <PageHeaderAction
+        title="Inventory Stocks"
+        description="Manage raw materials and stock levels"
+        onSearch={setSearchQuery}
+        actionButton={
           <Button
             onClick={openCreate}
-            className="rounded-2xl h-12 px-6 bg-zinc-900 hover:bg-zinc-800 text-white font-black shadow-xl shadow-zinc-200 active:scale-95 transition-all"
+            className="bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm"
           >
-            <Plus className="h-5 w-5 mr-2" /> Add Stock Item
+            <span className="flex items-center gap-2">Add Stock Item</span>
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <MetricCard title="Total Items" value={stocks.length} icon={Package} />
+      <div className="grid grid-cols-4 gap-6 mb-8">
+        <MetricCard title="Total Items" value={stocks.length} />
         <MetricCard
           title="Total Value"
           value={`Rs. ${totalInventoryValue.toLocaleString()}`}
-          icon={DollarSign}
         />
-        <MetricCard title="Low Stock" value={lowStockItems} icon={Scale} />
+        <MetricCard title="Low Stock" value={lowStockItems} />
       </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-sm overflow-hidden p-2">
-        <div className="p-6 border-b border-zinc-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-md group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-emerald-500 transition-colors" />
-            <input
-              placeholder="Search by name, group, or unit..."
-              className="w-full h-11 pl-12 pr-4 bg-zinc-50 border-none rounded-2xl text-sm font-semibold placeholder:text-zinc-400 focus:ring-2 focus:ring-emerald-500/20 transition-all"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <CustomTable
-          columns={[
-            {
-              header: "Item Name",
-              accessor: (s: any) => (
-                <div className="flex items-center gap-3 py-1">
-                  <div className="w-10 h-10 rounded-xl bg-zinc-50 flex items-center justify-center border border-zinc-100">
-                    <Package className="h-5 w-5 text-zinc-400" />
-                  </div>
+      <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
+        <table className="w-full text-left text-sm text-zinc-600">
+          <thead className="bg-zinc-50 border-b border-zinc-200">
+            <tr>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                Item Name
+              </th>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                Unit
+              </th>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                Current Stock
+              </th>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest">
+                Value
+              </th>
+              <th className="px-6 py-4 font-bold text-zinc-600 uppercase text-xs tracking-widest text-right">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-100">
+            {filteredStocks.map((s) => (
+              <tr
+                key={s.id}
+                onClick={() => openEdit(s)}
+                className="hover:bg-zinc-50 transition-colors cursor-pointer group"
+              >
+                <td className="px-6 py-4">
                   <div className="flex flex-col">
-                    <span className="font-bold text-zinc-900">{s.name}</span>
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-tight">
+                    <span className="font-medium text-zinc-900">{s.name}</span>
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
                       {s.group?.name || "Uncategorized"}
                     </span>
                   </div>
-                </div>
-              ),
-            },
-            {
-              header: "Unit",
-              accessor: (s: any) => (
-                <span className="px-3 py-1 bg-zinc-50 rounded-lg border border-zinc-100 text-xs font-black text-zinc-600 font-mono">
-                  {s.unit?.shortName || "—"}
-                </span>
-              ),
-            },
-            {
-              header: "Current Stock",
-              accessor: (s: any) => (
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`text-sm font-bold ${s.quantity < 5 ? "text-rose-500" : "text-zinc-700"}`}
-                  >
-                    {s.quantity.toLocaleString()}
+                </td>
+                <td className="px-6 py-4">
+                  <span className="px-2 py-1 bg-zinc-50 rounded border border-zinc-100 text-[10px] font-black text-zinc-500 uppercase tracking-wider">
+                    {s.unit?.shortName || "—"}
                   </span>
-                  <span className="text-[10px] font-black text-zinc-400 uppercase">
-                    {s.unit?.shortName}
-                  </span>
-                </div>
-              ),
-            },
-            {
-              header: "Inventory Value",
-              accessor: (s: any) => (
-                <span className="text-sm font-bold text-emerald-600">
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`font-semibold ${s.quantity < 5 ? "text-red-600" : "text-zinc-700"}`}
+                    >
+                      {s.quantity.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase">
+                      {s.unit?.shortName}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 font-semibold text-zinc-900">
                   Rs. {s.amount.toLocaleString()}
-                </span>
-              ),
-            },
-            {
-              header: "Actions",
-              accessor: (s: any) => (
-                <div
-                  className="flex gap-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Button
-                    variant="none"
-                    size="sm"
-                    className="h-9 w-9 p-0 hover:bg-emerald-50 rounded-xl transition-colors"
-                    onClick={() => openEdit(s)}
-                  >
-                    <Edit2 className="h-4 w-4 text-emerald-600" />
-                  </Button>
-                  <Button
-                    variant="none"
-                    size="sm"
-                    className="h-9 w-9 p-0 hover:bg-rose-50 rounded-xl transition-colors"
-                    onClick={() => setDeleteId(s.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-rose-500" />
-                  </Button>
-                </div>
-              ),
-            },
-          ]}
-          data={filteredStocks}
-        />
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEdit(s);
+                      }}
+                      className="p-2 text-zinc-400 hover:text-zinc-900 transition-colors"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteId(s.id);
+                      }}
+                      className="p-2 text-zinc-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filteredStocks.length === 0 && (
+              <tr>
+                <td colSpan={5} className="text-center py-8 text-zinc-500">
+                  No stock items found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       <StockModal
@@ -250,7 +242,7 @@ export default function StocksPage() {
         onClose={() => setDeleteId(null)}
         onConfirm={handleDelete}
         title="Delete Stock Item"
-        message="Are you sure you want to delete this stock item? This action cannot be undone and will only proceed if no transactions are linked."
+        message="Are you sure you want to delete this stock item? This action cannot be undone."
         confirmVariant="danger"
       />
     </div>
