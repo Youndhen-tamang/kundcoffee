@@ -259,12 +259,6 @@ export default function Sidebar() {
 
           <AccordionItem id="procurement" label="Procurement" icon={Package}>
             <NavItem
-              href="/dashboard/suppliers"
-              icon={Users}
-              label="Suppliers"
-              isChild
-            />
-            <NavItem
               href="/dashboard/purchases"
               icon={CreditCard}
               label="Purchases"
