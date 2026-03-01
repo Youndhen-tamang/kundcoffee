@@ -341,11 +341,11 @@ export default function Sidebar() {
       <div className="p-4 border-t border-zinc-100 bg-zinc-50/30">
         <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white border border-zinc-200 shadow-[0_2px_4px_rgba(0,0,0,0.02)] mb-3">
           <div className="w-9 h-9 bg-zinc-900 rounded-lg flex items-center justify-center text-white text-[10px] font-bold">
-            {session?.user?.name?.substring(0, 2).toUpperCase() || "AD"}
+            {session?.user?.email?.substring(0, 2).toUpperCase() || "AD"}
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-bold text-zinc-900 truncate">
-              {session?.user?.name || "Administrator"}
+              {session?.user?.email || "Administrator"}
             </span>
             <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-wider">
               {session?.user?.role || "Manager"}
