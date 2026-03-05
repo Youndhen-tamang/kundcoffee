@@ -18,14 +18,32 @@ export async function GET() {
 
     const combos = await prisma.comboOffer.findMany({
       where: { storeId },
-      include: {
-        category: true,
-        subMenu: true,
-        items: {
-          include: { dish: true },
+      select: {
+        id: true,
+        name: true,
+        categoryId: true,
+        subMenuId: true,
+        sortOrder: true,
+        price: {
+          select: {
+            listedPrice: true,
+          },
         },
-        price: true,
-        stocks: true,
+        category: {
+          select: {
+            name: true,
+          },
+        },
+        items: {
+          select: {
+            dish: {
+              select: {
+                name: true,
+              },
+            },
+            quantity: true,
+          },
+        },
       },
       orderBy: { sortOrder: "asc" },
     });

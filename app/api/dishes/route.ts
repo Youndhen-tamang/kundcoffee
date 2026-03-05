@@ -16,10 +16,23 @@ export async function GET() {
     }
 
     const dishes = await prisma.dish.findMany({
-      where: { storeId: storeId }, // CRITICAL: Only get dishes for THIS store
-      include: {
-        category: true,
-        price: true,
+      where: { storeId: storeId },
+      select: {
+        id: true,
+        name: true,
+        categoryId: true,
+        subMenuId: true,
+        sortOrder: true,
+        price: {
+          select: {
+            listedPrice: true,
+          },
+        },
+        category: {
+          select: {
+            name: true,
+          },
+        },
       },
       orderBy: { sortOrder: "asc" },
     });

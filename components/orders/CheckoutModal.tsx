@@ -13,6 +13,10 @@ import {
   Receipt,
   Info,
   Users,
+  Banknote,
+  QrCode,
+  CreditCard,
+  CheckCircle2,
 } from "lucide-react";
 import { CustomDropdown } from "../ui/CustomDropdown";
 import { addCustomer, getCustomerSummary } from "@/services/customer";
@@ -36,9 +40,13 @@ export function CheckoutModal({
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     order.customer || null,
   );
-  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "QR" | "CREDIT">(
-    "CASH",
-  );
+  const [paymentMethod, setPaymentMethod] = useState<
+    "CASH" | "QR" | "CREDIT" | "SPLIT"
+  >("CASH");
+  const [qrData, setQrData] = useState<any>(null);
+  const [cashAmount, setCashAmount] = useState<string>("");
+  const [qrAmount, setQrAmount] = useState<string>("");
+  const [creditAmount, setCreditAmount] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [includeTax, setIncludeTax] = useState(
     settings.includeTaxByDefault === "true",
@@ -65,13 +73,16 @@ export function CheckoutModal({
 
   useEffect(() => {
     const fetchData = async () => {
-      const [custRes, staffRes] = await Promise.all([
+      const [custRes, staffRes, qrRes] = await Promise.all([
         getCustomerSummary(),
         fetch("/api/staff"),
+        fetch("/api/qr-payment"),
       ]);
       if (custRes.success) setCustomers(custRes.data);
       const staffData = await staffRes.json();
       if (staffData.success) setStaff(staffData.data);
+      const qrResponse = await qrRes.json();
+      if (qrResponse.success) setQrData(qrResponse.data);
     };
     if (isOpen) fetchData();
   }, [isOpen]);
@@ -121,6 +132,13 @@ export function CheckoutModal({
     if (paymentMethod === "CASH") return tenderAmount >= grandTotal - 0.01;
     if (paymentMethod === "QR") return paymentReceived;
     if (paymentMethod === "CREDIT") return !!selectedCustomer;
+    if (paymentMethod === "SPLIT") {
+      const totalEntered =
+        (parseFloat(cashAmount) || 0) +
+        (parseFloat(qrAmount) || 0) +
+        (parseFloat(creditAmount) || 0);
+      return Math.abs(totalEntered - grandTotal) < 0.01;
+    }
     return false;
   }, [
     paymentMethod,
@@ -128,6 +146,9 @@ export function CheckoutModal({
     grandTotal,
     paymentReceived,
     selectedCustomer,
+    cashAmount,
+    qrAmount,
+    creditAmount,
   ]);
 
   const handleProcessCheckout = async () => {
@@ -141,6 +162,14 @@ export function CheckoutModal({
           tableId: order.tableId,
           sessionId: order.sessionId,
           paymentMethod,
+          payments:
+            paymentMethod === "SPLIT"
+              ? [
+                  { method: "CASH", amount: parseFloat(cashAmount) || 0 },
+                  { method: "QR", amount: parseFloat(qrAmount) || 0 },
+                  { method: "CREDIT", amount: parseFloat(creditAmount) || 0 },
+                ].filter((p) => p.amount > 0)
+              : undefined,
           amount: grandTotal,
           customerId: selectedCustomer?.id,
           subtotal: calculatedSubtotal,
@@ -334,7 +363,7 @@ export function CheckoutModal({
           {/* Payment Interaction Area */}
           <div className="p-4 bg-zinc-50 border-t border-black space-y-3">
             <div className="flex border border-black p-0.5">
-              {["CASH", "QR", "CREDIT"].map((m) => (
+              {["CASH", "QR", "CREDIT", "SPLIT"].map((m) => (
                 <button
                   key={m}
                   onClick={() => setPaymentMethod(m as any)}
@@ -349,7 +378,7 @@ export function CheckoutModal({
               ))}
             </div>
 
-            <div className="h-[130px] flex flex-col justify-center bg-white border border-black p-3">
+            <div className="h-auto min-h-[130px] flex flex-col justify-center bg-white border border-black p-3">
               {paymentMethod === "CASH" && (
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
@@ -377,12 +406,18 @@ export function CheckoutModal({
 
               {paymentMethod === "QR" && (
                 <div className="flex flex-col items-center gap-2">
-                  <div className="border border-black p-1 bg-white">
-                    <img
-                      src="/merchant-qr.jpg"
-                      alt="QR"
-                      className="w-16 h-16"
-                    />
+                  <div className="border border-black p-2 bg-white flex items-center justify-center">
+                    {qrData?.image?.[0] ? (
+                      <img
+                        src={qrData.image[0]}
+                        alt="Merchant QR"
+                        className="w-40 h-40 object-contain"
+                      />
+                    ) : (
+                      <div className="w-40 h-40 bg-zinc-100 flex items-center justify-center">
+                        <QrCode size={40} className="text-zinc-400" />
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={() => setPaymentReceived(!paymentReceived)}
@@ -409,6 +444,133 @@ export function CheckoutModal({
                       ? `Post to account: ${selectedCustomer.fullName}`
                       : "Error: Select Customer First"}
                   </p>
+                </div>
+              )}
+
+              {paymentMethod === "SPLIT" && (
+                <div className="flex flex-col gap-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Cash Input */}
+                    <div className="border border-black p-2 bg-white">
+                      <label className="text-[8px] font-black uppercase block mb-1">
+                        Cash
+                      </label>
+                      <div className="flex items-center">
+                        <span className="text-[10px] font-black mr-1 text-zinc-400">
+                          {settings.currency}
+                        </span>
+                        <input
+                          type="number"
+                          className="w-full text-xs font-black outline-none bg-transparent"
+                          value={cashAmount}
+                          onChange={(e) => setCashAmount(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+
+                    {/* QR Input */}
+                    <div className="border border-black p-2 bg-white">
+                      <label className="text-[8px] font-black uppercase block mb-1">
+                        QR
+                      </label>
+                      <div className="flex items-center">
+                        <span className="text-[10px] font-black mr-1 text-zinc-400">
+                          {settings.currency}
+                        </span>
+                        <input
+                          type="number"
+                          className="w-full text-xs font-black outline-none bg-transparent"
+                          value={qrAmount}
+                          onChange={(e) => setQrAmount(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Credit Input */}
+                    <div className="border border-black p-2 bg-white col-span-2">
+                      <label className="text-[8px] font-black uppercase block mb-1">
+                        Credit / Account
+                      </label>
+                      <div className="flex items-center">
+                        <span className="text-[10px] font-black mr-1 text-zinc-400">
+                          {settings.currency}
+                        </span>
+                        <input
+                          type="number"
+                          disabled={!selectedCustomer}
+                          className="w-full text-xs font-black outline-none bg-transparent disabled:opacity-30"
+                          value={creditAmount}
+                          onChange={(e) => setCreditAmount(e.target.value)}
+                          placeholder={
+                            !selectedCustomer ? "Select Profile" : "0.00"
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* QR Code Mirror in Split View - Medium Size */}
+                  {qrData?.image?.[0] && parseFloat(qrAmount) > 0 && (
+                    <div className="flex flex-col items-center gap-1 py-2 border-t border-dotted border-black">
+                      <div className="border border-black p-1 bg-white">
+                        <img
+                          src={qrData.image[0]}
+                          alt="QR"
+                          className="w-32 h-32 object-contain"
+                        />
+                      </div>
+                      <p className="text-[7px] font-black uppercase text-zinc-400">
+                        Scan for QR Portion
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Summary for Split Payment */}
+                  <div
+                    className={`p-2 border border-black space-y-1 ${Math.abs((parseFloat(cashAmount) || 0) + (parseFloat(qrAmount) || 0) + (parseFloat(creditAmount) || 0) - grandTotal) < 0.01 ? "bg-emerald-50 border-emerald-600" : "bg-zinc-50"}`}
+                  >
+                    <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                      <span>Total Entered</span>
+                      <span>
+                        {(
+                          (parseFloat(cashAmount) || 0) +
+                          (parseFloat(qrAmount) || 0) +
+                          (parseFloat(creditAmount) || 0)
+                        ).toFixed(2)}
+                      </span>
+                    </div>
+
+                    {/* Status Message */}
+                    {(() => {
+                      const total =
+                        (parseFloat(cashAmount) || 0) +
+                        (parseFloat(qrAmount) || 0) +
+                        (parseFloat(creditAmount) || 0);
+                      const diff = total - grandTotal;
+
+                      if (Math.abs(diff) < 0.01) {
+                        return (
+                          <div className="text-[8px] text-emerald-600 font-black uppercase tracking-tighter border-t border-emerald-200 pt-1">
+                            Balanced ✓
+                          </div>
+                        );
+                      }
+                      if (diff > 0) {
+                        return (
+                          <div className="text-[8px] text-amber-600 font-black uppercase border-t border-amber-200 pt-1">
+                            Overpay: {diff.toFixed(2)}
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="text-[8px] text-rose-600 font-black uppercase border-t border-rose-200 pt-1">
+                          Remaining: {(grandTotal - total).toFixed(2)}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               )}
             </div>

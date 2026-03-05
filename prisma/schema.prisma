@@ -344,6 +344,8 @@ model Order {
   status     OrderStatus   @default(PENDING)
   createdAt  DateTime      @default(now())
   customerId String?
+  guests     Int?
+  kotRemarks String?
   isDeleted  Boolean       @default(false)
   paymentId  String?
   sessionId  String?

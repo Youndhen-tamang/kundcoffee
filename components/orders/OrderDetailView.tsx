@@ -18,6 +18,8 @@ import {
   CheckCircle2,
   Ban,
   Printer,
+  Users,
+  MessageSquare,
 } from "lucide-react";
 
 interface OrderDetailViewProps {
@@ -114,6 +116,12 @@ export function OrderDetailView({
                   {order.table?.name || "Direct"}
                 </span>
               </span>
+              <div className="flex items-center gap-1 text-[11px] text-zinc-400">
+                <Users size={12} />
+                <span className="font-bold uppercase tracking-widest">
+                  Guests: {order.guests || 1}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -148,6 +156,19 @@ export function OrderDetailView({
       <div className="flex flex-1 overflow-hidden">
         {/* DISHES LIST */}
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-white">
+          {order.kotRemarks && (
+            <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-2 opacity-10">
+                <MessageSquare size={40} />
+              </div>
+              <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1 relative z-10">
+                Special Instructions / KOT Remarks
+              </h4>
+              <p className="text-xs font-black text-rose-700 uppercase relative z-10">
+                {order.kotRemarks}
+              </p>
+            </div>
+          )}
           <div className="space-y-3">
             {order.items.map((item) => (
               <div

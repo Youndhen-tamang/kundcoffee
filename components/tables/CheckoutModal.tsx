@@ -76,6 +76,7 @@ export function CheckoutModal({
   const [paymentMode, setPaymentMode] = useState<"SINGLE" | "SPLIT">("SINGLE");
   const [cashAmount, setCashAmount] = useState<string>("");
   const [qrAmount, setQrAmount] = useState<string>("");
+  const [creditAmount, setCreditAmount] = useState<string>("");
 
   // New Customer Form
   const [newCustomerName, setNewCustomerName] = useState("");
@@ -194,9 +195,11 @@ export function CheckoutModal({
         paymentsPayload = [
           { method: "CASH", amount: parseFloat(cashAmount) || 0 },
           { method: "QR", amount: parseFloat(qrAmount) || 0 },
-        ];
+          { method: "CREDIT", amount: parseFloat(creditAmount) || 0 },
+        ].filter((p) => p.amount > 0);
         // For legacy support in backend if needed
-        finalMethod = "CASH";
+        finalMethod =
+          paymentsPayload.length === 1 ? paymentsPayload[0].method : "SPLIT";
       }
 
       await processCheckout({
@@ -521,119 +524,163 @@ export function CheckoutModal({
             </div>
 
             <div className="flex flex-col gap-4">
-              <div className="flex bg-white p-1 rounded-2xl border-2 border-zinc-100 mb-2">
+              <div className="flex bg-zinc-100 p-1.5 rounded-2xl border border-zinc-200 mb-4">
                 <button
-                  onClick={() => setPaymentMode("SINGLE")}
-                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${paymentMode === "SINGLE" ? "bg-zinc-900 text-white shadow-lg" : "text-zinc-400 hover:text-zinc-600"}`}
+                  onClick={() => {
+                    setPaymentMode("SINGLE");
+                    setCashAmount("");
+                    setQrAmount("");
+                    setCreditAmount("");
+                  }}
+                  className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${paymentMode === "SINGLE" ? "bg-white text-zinc-900 shadow-md ring-1 ring-zinc-200" : "text-zinc-400 hover:text-zinc-600"}`}
                 >
-                  Single Payment
+                  Quick Pay
                 </button>
                 <button
                   onClick={() => {
                     setPaymentMode("SPLIT");
                     const total = calculateSummary().grandTotal;
+                    // Default to 50/50
                     setCashAmount((total / 2).toFixed(2));
                     setQrAmount((total / 2).toFixed(2));
+                    setCreditAmount("");
                   }}
-                  className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${paymentMode === "SPLIT" ? "bg-emerald-500 text-white shadow-lg" : "text-zinc-400 hover:text-zinc-600"}`}
+                  className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${paymentMode === "SPLIT" ? "bg-emerald-600 text-white shadow-lg" : "text-zinc-400 hover:text-zinc-600"}`}
                 >
-                  Split (Cash+QR)
+                  Custom Split
                 </button>
               </div>
 
               {paymentMode === "SINGLE" ? (
-                <>
+                <div className="space-y-4">
+                  <div className="text-center p-2">
+                    <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-1">
+                      Quick Single Pay
+                    </p>
+                    <p className="text-[9px] text-zinc-400 font-medium">
+                      Click once to complete
+                    </p>
+                  </div>
+
                   <button
                     disabled={loading}
                     onClick={() => handleFinalize("CASH")}
-                    className="flex items-center gap-5 p-5 bg-white border-2 border-zinc-100 rounded-3xl hover:border-emerald-500 hover:bg-emerald-50 transition-all group shadow-sm active:scale-95 text-left"
+                    className="w-full flex items-center gap-4 p-4 bg-white border border-zinc-200 rounded-3xl hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group shadow-sm active:scale-95 text-left"
                   >
-                    <div className="w-14 h-14 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                    <div className="w-12 h-12 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
                       <Banknote
-                        size={26}
+                        size={22}
                         className="text-zinc-400 group-hover:text-emerald-600"
                       />
                     </div>
                     <div>
-                      <span className="font-black text-zinc-900 text-sm uppercase tracking-widest block">
+                      <span className="font-black text-zinc-900 text-[11px] uppercase tracking-wider block">
                         Cash
                       </span>
-                      <span className="text-[10px] text-zinc-400">
-                        Receive physical currency
+                      <span className="text-[9px] text-zinc-400 font-medium">
+                        Instant complete
                       </span>
                     </div>
                   </button>
 
-                  <div className="space-y-3">
-                    <button
-                      disabled={loading}
-                      onClick={() => handleFinalize("QR")}
-                      className="w-full flex items-center gap-5 p-5 bg-white border-2 border-zinc-100 rounded-3xl hover:border-emerald-500 hover:bg-emerald-50 transition-all group shadow-sm active:scale-95 text-left"
-                    >
-                      <div className="w-14 h-14 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
-                        <QrCode
-                          size={26}
-                          className="text-zinc-400 group-hover:text-emerald-600"
-                        />
-                      </div>
-                      <div>
-                        <span className="font-black text-zinc-900 text-sm uppercase tracking-widest block">
-                          Scan QR
-                        </span>
-                        <span className="text-[10px] text-zinc-400">
-                          Digital wallet payment
-                        </span>
-                      </div>
-                    </button>
-                    {qrData?.image?.[0] && (
-                      <div className="bg-zinc-50 p-4 rounded-3xl border border-dashed border-zinc-200 flex flex-col items-center gap-3">
-                        <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-                          Scan to Pay
-                        </p>
-                        <img
-                          src={qrData.image[0]}
-                          alt="Store QR"
-                          className="w-40 h-40 object-contain rounded-xl shadow-sm bg-white p-2"
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    disabled={loading}
+                    onClick={() => handleFinalize("QR")}
+                    className="w-full flex items-center gap-4 p-4 bg-white border border-zinc-200 rounded-3xl hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group shadow-sm active:scale-95 text-left"
+                  >
+                    <div className="w-12 h-12 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                      <QrCode
+                        size={22}
+                        className="text-zinc-400 group-hover:text-emerald-600"
+                      />
+                    </div>
+                    <div>
+                      <span className="font-black text-zinc-900 text-[11px] uppercase tracking-wider block">
+                        Scan & Pay
+                      </span>
+                      <span className="text-[9px] text-zinc-400 font-medium">
+                        Full amount via QR
+                      </span>
+                    </div>
+                  </button>
 
                   <button
                     disabled={loading || !selectedCustomerId}
                     onClick={() => handleFinalize("CREDIT")}
-                    className={`flex items-center gap-5 p-5 bg-white border-2 border-zinc-100 rounded-3xl transition-all group shadow-sm text-left active:scale-95 ${!selectedCustomerId ? "opacity-50 cursor-not-allowed" : "hover:border-emerald-500 hover:bg-emerald-50"}`}
+                    className={`w-full flex items-center gap-4 p-4 bg-white border border-zinc-200 rounded-3xl transition-all group shadow-sm text-left active:scale-95 ${!selectedCustomerId ? "opacity-40 cursor-not-allowed" : "hover:border-emerald-500 hover:bg-emerald-50/50"}`}
                   >
-                    <div className="w-14 h-14 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                    <div className="w-12 h-12 shrink-0 rounded-2xl bg-zinc-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
                       <CreditCard
-                        size={26}
+                        size={22}
                         className="text-zinc-400 group-hover:text-emerald-600"
                       />
                     </div>
                     <div>
-                      <span className="font-black text-zinc-900 text-sm uppercase tracking-widest block">
+                      <span className="font-black text-zinc-900 text-[11px] uppercase tracking-wider block">
                         Store Credit
                       </span>
-                      <span className="text-[10px] text-zinc-400">
+                      <span className="text-[9px] text-zinc-400 font-medium">
                         {!selectedCustomerId
-                          ? "Requires customer"
-                          : "Add to ledger"}
+                          ? "Required customer"
+                          : "Save to account"}
                       </span>
                     </div>
                   </button>
-                </>
+
+                  {qrData?.image?.[0] && (
+                    <div className="bg-zinc-900 p-5 rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-4 border-4 border-white/5 mt-4 group">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <p className="text-[10px] font-black uppercase text-emerald-400 tracking-[0.2em]">
+                          Ready to Scan
+                        </p>
+                      </div>
+                      <div className="relative p-3 bg-white rounded-3xl shadow-inner group-hover:scale-105 transition-transform duration-500">
+                        <img
+                          src={qrData.image[0]}
+                          alt="Store QR"
+                          className="w-48 h-48 object-contain"
+                        />
+                      </div>
+                      <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest text-center px-4">
+                        Please confirm payment receipt after guest scans
+                      </p>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
-                    <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-1">
-                      Split Payment Guide
-                    </p>
-                    <p className="text-[10px] text-emerald-600 leading-relaxed font-medium">
-                      Enter the amount received in Cash and the amount paid via
-                      QR. The total must equal the grand total of{" "}
-                      {settings.currency}{" "}
-                      {calculateSummary().grandTotal.toLocaleString()}.
-                    </p>
+                  <div className="bg-white p-5 rounded-4xl border border-zinc-200 shadow-sm space-y-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-[10px] font-black text-zinc-900 uppercase tracking-widest">
+                        Quick Split
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const total = calculateSummary().grandTotal;
+                            setCashAmount((total / 2).toFixed(2));
+                            setQrAmount((total / 2).toFixed(2));
+                            setCreditAmount("");
+                          }}
+                          className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-[9px] font-black uppercase transition-colors"
+                        >
+                          50/50 Cash:QR
+                        </button>
+                        <button
+                          onClick={() => {
+                            const total = calculateSummary().grandTotal;
+                            setCashAmount("");
+                            setQrAmount((total / 2).toFixed(2));
+                            setCreditAmount((total / 2).toFixed(2));
+                          }}
+                          disabled={!selectedCustomerId}
+                          className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-[9px] font-black uppercase transition-colors disabled:opacity-30"
+                        >
+                          50/50 QR:Credit
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -665,18 +712,41 @@ export function CheckoutModal({
                         onChange={(e) => setQrAmount(e.target.value)}
                       />
                     </div>
+                    <div className="bg-white p-4 rounded-3xl border-2 border-emerald-100 shadow-sm col-span-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CreditCard size={16} className="text-emerald-600" />
+                        <span className="text-[9px] font-black uppercase text-zinc-400">
+                          Credit Amount
+                        </span>
+                      </div>
+                      <input
+                        type="number"
+                        className="w-full bg-transparent border-none text-xl font-black text-zinc-900 outline-none p-0"
+                        value={creditAmount}
+                        disabled={!selectedCustomerId}
+                        onChange={(e) => setCreditAmount(e.target.value)}
+                        placeholder={
+                          !selectedCustomerId ? "Select customer first" : ""
+                        }
+                      />
+                    </div>
                   </div>
 
-                  {qrData?.image?.[0] && (
-                    <div className="bg-zinc-50 p-4 rounded-3xl border border-dashed border-zinc-200 flex flex-col items-center gap-3">
-                      <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-                        Scan QR below for the QR part
-                      </p>
-                      <img
-                        src={qrData.image[0]}
-                        alt="Store QR"
-                        className="w-32 h-32 object-contain rounded-xl shadow-sm bg-white p-2"
-                      />
+                  {qrData?.image?.[0] && parseFloat(qrAmount) > 0 && (
+                    <div className="bg-zinc-900 p-5 rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-4 border-4 border-white/5 mt-2 group">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <p className="text-[10px] font-black uppercase text-emerald-400 tracking-[0.2em]">
+                          Scan QR for QR Part
+                        </p>
+                      </div>
+                      <div className="relative p-2.5 bg-white rounded-3xl shadow-inner group-hover:scale-105 transition-transform duration-500">
+                        <img
+                          src={qrData.image[0]}
+                          alt="Store QR"
+                          className="w-40 h-40 object-contain"
+                        />
+                      </div>
                     </div>
                   )}
 
@@ -689,13 +759,15 @@ export function CheckoutModal({
                         {settings.currency}{" "}
                         {(
                           (parseFloat(cashAmount) || 0) +
-                          (parseFloat(qrAmount) || 0)
+                          (parseFloat(qrAmount) || 0) +
+                          (parseFloat(creditAmount) || 0)
                         ).toFixed(2)}
                       </span>
                     </div>
                     {Math.abs(
                       (parseFloat(cashAmount) || 0) +
-                        (parseFloat(qrAmount) || 0) -
+                        (parseFloat(qrAmount) || 0) +
+                        (parseFloat(creditAmount) || 0) -
                         calculateSummary().grandTotal,
                     ) < 0.01 ? (
                       <CheckCircle2 size={24} className="text-emerald-500" />
@@ -709,27 +781,53 @@ export function CheckoutModal({
                           {(
                             calculateSummary().grandTotal -
                             ((parseFloat(cashAmount) || 0) +
-                              (parseFloat(qrAmount) || 0))
+                              (parseFloat(qrAmount) || 0) +
+                              (parseFloat(creditAmount) || 0))
                           ).toFixed(2)}
                         </span>
                       </div>
                     )}
                   </div>
 
-                  <Button
-                    disabled={
-                      loading ||
-                      Math.abs(
-                        (parseFloat(cashAmount) || 0) +
-                          (parseFloat(qrAmount) || 0) -
-                          calculateSummary().grandTotal,
-                      ) >= 0.01
-                    }
-                    onClick={() => handleFinalize("SPLIT")}
-                    className="w-full h-16 bg-zinc-900 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-xs shadow-xl active:scale-95 disabled:opacity-30"
-                  >
-                    Complete split payment
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      disabled={
+                        loading ||
+                        Math.abs(
+                          (parseFloat(cashAmount) || 0) +
+                            (parseFloat(qrAmount) || 0) +
+                            (parseFloat(creditAmount) || 0) -
+                            calculateSummary().grandTotal,
+                        ) >= 0.01 ||
+                        (parseFloat(creditAmount) > 0 && !selectedCustomerId)
+                      }
+                      onClick={() => handleFinalize("SPLIT")}
+                      className="w-full h-14 bg-zinc-900 text-white rounded-4xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl active:scale-95 disabled:opacity-30"
+                    >
+                      Process Split Payment
+                    </Button>
+
+                    {!(
+                      (parseFloat(cashAmount) || 0) +
+                        (parseFloat(qrAmount) || 0) +
+                        (parseFloat(creditAmount) || 0) >=
+                      calculateSummary().grandTotal - 0.01
+                    ) &&
+                      selectedCustomerId && (
+                        <button
+                          onClick={() => {
+                            const remaining =
+                              calculateSummary().grandTotal -
+                              ((parseFloat(cashAmount) || 0) +
+                                (parseFloat(qrAmount) || 0));
+                            setCreditAmount(remaining.toFixed(2));
+                          }}
+                          className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:text-emerald-700 transition-colors py-2 bg-emerald-50 rounded-xl border border-emerald-100"
+                        >
+                          Put Remaining to Credit
+                        </button>
+                      )}
+                  </div>
                 </div>
               )}
             </div>

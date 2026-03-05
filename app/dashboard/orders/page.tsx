@@ -455,6 +455,8 @@ export default function OrdersPage() {
       existingOrderForAdding.id,
       items,
       staffId,
+      guests,
+      kotRemarks,
     );
     if (success) {
       setExistingOrderForAdding(null);

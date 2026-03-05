@@ -61,11 +61,13 @@ export const updateOrderItems = async (
   orderId: string,
   items: any[],
   staffId?: string,
+  guests?: number,
+  kotRemarks?: string,
 ): Promise<boolean> => {
   const res = await fetch(`/api/order/${orderId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items, staffId }),
+    body: JSON.stringify({ items, staffId, guests, kotRemarks }),
   });
   const data = await res.json();
   return data.success;

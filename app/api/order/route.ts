@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { tableId, type, items, customerId, staffId } = body;
+    const { tableId, type, items, customerId, staffId, guests, kotRemarks } =
+      body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "No items in order" }, { status: 400 });
@@ -124,8 +125,10 @@ export async function POST(req: NextRequest) {
         items: {
           create: orderItemsData,
         },
-        customerId,
-        staffId,
+        customerId: customerId || null,
+        staffId: staffId || null,
+        guests,
+        kotRemarks,
         sessionId: activeSessionId,
       },
       include: {

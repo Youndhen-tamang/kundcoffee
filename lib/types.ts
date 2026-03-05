@@ -222,6 +222,10 @@ export type Order = {
   type: OrderType;
   total: number;
   status: OrderStatus;
+  staffId?: string | null;
+  staff?: any; // Add Staff type if needed
+  guests?: number | null;
+  kotRemarks?: string | null;
   createdAt: Date;
 };
 
