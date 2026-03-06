@@ -189,7 +189,7 @@ export default function CustomerProfilePage() {
         id: txn.id,
         type: "LEDGER",
         subtype: txn.type,
-        title: txn.type.replace("_", " "),
+        title: txn.type?.replace("_", " ") || "N/A",
         description: txn.remarks || `Transaction ${txn.txnNo}`,
         date: new Date(txn.createdAt),
         amount: txn.amount,

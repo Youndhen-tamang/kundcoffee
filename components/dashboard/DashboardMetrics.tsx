@@ -138,7 +138,7 @@ export default function DashboardMetrics() {
                   : "bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
               }`}
             >
-              {type.replace("_", " ")}
+              {type?.replace("_", " ")}
             </button>
           ))}
         </div>

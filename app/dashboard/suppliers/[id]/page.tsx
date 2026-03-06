@@ -213,7 +213,7 @@ export default function SupplierProfile() {
                   header: "Type",
                   accessor: (l: SupplierLedger) => (
                     <span className="text-[10px] font-bold px-2 py-0.5 bg-zinc-100 rounded text-zinc-500 uppercase tracking-tighter">
-                      {l.type.replace("_", " ")}
+                      {l.type?.replace("_", " ")}
                     </span>
                   ),
                 },

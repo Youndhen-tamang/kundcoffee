@@ -318,7 +318,7 @@ export default function Sidebar() {
           <NavItem
             href="/dashboard/settings"
             icon={Settings}
-            label="Configuration"
+            label="Settings"
           />
         </section>
       </div>

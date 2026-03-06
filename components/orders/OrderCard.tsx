@@ -51,7 +51,7 @@ export function OrderCard({
         <div className="flex items-center justify-between mt-1">
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-              {order.type.replace("_", " ")}
+              {order.type?.replace("_", " ")}
             </span>
             <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] font-medium">
               <Clock size={11} />

@@ -9,79 +9,51 @@ interface PriceFormProps {
 }
 
 import { useSettings } from "@/components/providers/SettingsProvider";
+import { Input } from "@/components/ui/Input";
 
 export function PriceForm({ value, onChange }: PriceFormProps) {
   const { settings } = useSettings();
   const handleChange = (field: keyof Price, val: string) => {
-    if (val === "") {
-      onChange({ ...value, [field]: 0 });
-      return;
-    }
     const num = parseFloat(val);
     onChange({ ...value, [field]: isNaN(num) ? 0 : num });
   };
 
   return (
-    <div className="space-y-4 border p-4 rounded-lg bg-gray-50">
-      <h3 className="font-semibold text-gray-700">
+    <div className="space-y-3 p-4 border border-zinc-200 bg-white rounded-md">
+      <h3 className="text-sm font-semibold text-zinc-900 border-b border-zinc-100 pb-2 mb-3">
         Pricing & Cost ({settings.currency})
       </h3>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-xs font-medium text-gray-500">
-            Actual Price ({settings.currency})
-          </label>
-          <input
-            type="number"
-            className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
-            value={value?.actualPrice || ""}
-            onChange={(e) => handleChange("actualPrice", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500">
-            Discount Price ({settings.currency})
-          </label>
-          <input
-            type="number"
-            className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
-            value={value?.discountPrice || ""}
-            onChange={(e) => handleChange("discountPrice", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500">
-            Listed Price ({settings.currency})
-          </label>
-          <input
-            type="number"
-            className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
-            value={value?.listedPrice || ""}
-            onChange={(e) => handleChange("listedPrice", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500">
-            COGS ({settings.currency})
-          </label>
-          <input
-            type="number"
-            className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
-            value={value?.cogs || ""}
-            onChange={(e) => handleChange("cogs", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500">
-            Gross Profit ({settings.currency})
-          </label>
-          <input
-            type="number"
-            className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
-            value={value?.grossProfit || ""}
-            onChange={(e) => handleChange("grossProfit", e.target.value)}
-          />
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
+        <Input
+          label={`Actual Price (${settings.currency})`}
+          type="number"
+          value={value?.actualPrice || 0}
+          onChange={(e) => handleChange("actualPrice", e.target.value)}
+        />
+        <Input
+          label={`Discount Price (${settings.currency})`}
+          type="number"
+          value={value?.discountPrice || 0}
+          onChange={(e) => handleChange("discountPrice", e.target.value)}
+        />
+        <Input
+          label={`Listed Price (${settings.currency})`}
+          type="number"
+          value={value?.listedPrice || 0}
+          onChange={(e) => handleChange("listedPrice", e.target.value)}
+        />
+        <Input
+          label={`COGS (${settings.currency})`}
+          type="number"
+          value={value?.cogs || 0}
+          onChange={(e) => handleChange("cogs", e.target.value)}
+        />
+        <Input
+          label={`Gross Profit (${settings.currency})`}
+          type="number"
+          value={value?.grossProfit || 0}
+          onChange={(e) => handleChange("grossProfit", e.target.value)}
+        />
       </div>
     </div>
   );
@@ -119,22 +91,22 @@ export function StockConsumptionForm({
   };
 
   return (
-    <div className="space-y-4 border p-4 rounded-lg bg-gray-50">
-      <div className="flex justify-between items-center">
-        <h3 className="font-semibold text-gray-700">Setup Stock Consumption</h3>
+    <div className="space-y-3 p-4 border border-zinc-200 bg-white rounded-md">
+      <div className="flex justify-between items-center border-b border-zinc-100 pb-2 mb-3">
+        <h3 className="text-sm font-semibold text-zinc-900">
+          Stock Consumption
+        </h3>
         <Button onClick={addRow} type="button" variant="secondary" size="sm">
-          + Add Stock
+          + Add Item
         </Button>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {value.map((row, index) => (
-          <div key={index} className="flex gap-2 items-end">
+          <div key={index} className="flex gap-2 items-end group">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-500">
-                Stock Item
-              </label>
+              <label className="pos-label">Stock Item</label>
               <select
-                className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
+                className="pos-input w-full"
                 value={row.stockId}
                 onChange={(e) => updateRow(index, "stockId", e.target.value)}
               >
@@ -146,21 +118,15 @@ export function StockConsumptionForm({
                 ))}
               </select>
             </div>
-            <div className="w-24">
-              <label className="block text-xs font-medium text-gray-500">
-                Qty
-              </label>
-              <input
+            <div className="w-28">
+              <Input
+                label="Qty"
                 type="number"
                 step="0.1"
-                className="w-full border rounded px-2 py-1 text-sm bg-white focus:ring-1 focus:ring-zinc-900 outline-none"
                 value={row.quantity}
                 onChange={(e) => {
                   const val = parseFloat(e.target.value);
                   updateRow(index, "quantity", isNaN(val) ? 0 : val);
-                }}
-                onBlur={(e) => {
-                  if (e.target.value === "") updateRow(index, "quantity", 0);
                 }}
               />
             </div>
@@ -168,14 +134,14 @@ export function StockConsumptionForm({
               variant="danger"
               size="sm"
               onClick={() => removeRow(index)}
-              title="Remove"
+              className="h-9 w-9 p-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
             >
-              X
+              ×
             </Button>
           </div>
         ))}
         {value.length === 0 && (
-          <p className="text-xs text-gray-400 italic">
+          <p className="text-xs text-zinc-400 py-2">
             No stock consumption defined.
           </p>
         )}

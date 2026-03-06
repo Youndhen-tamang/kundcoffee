@@ -116,20 +116,20 @@ export default function DishesPage() {
       let vb: string | number = "";
 
       if (sortBy === "name") {
-        va = a.name;
-        vb = b.name;
+        va = a.name || "";
+        vb = b.name || "";
       } else if (sortBy === "price") {
-        va = a.price?.listedPrice || 0;
-        vb = b.price?.listedPrice || 0;
+        va = a.price?.listedPrice ?? 0;
+        vb = b.price?.listedPrice ?? 0;
       } else if (sortBy === "category") {
         va = categories.find((c) => c.id === a.categoryId)?.name || "";
         vb = categories.find((c) => c.id === b.categoryId)?.name || "";
       } else if (sortBy === "type") {
-        va = a.type;
-        vb = b.type;
+        va = a.type || "";
+        vb = b.type || "";
       } else {
-        va = a.preparationTime;
-        vb = b.preparationTime;
+        va = a.preparationTime ?? 0;
+        vb = b.preparationTime ?? 0;
       }
 
       if (typeof va === "string")
@@ -222,23 +222,25 @@ export default function DishesPage() {
     e?.stopPropagation();
     setIsEditing(true);
     setSelectedId(d.id);
-    setName(d.name);
+    setName(d.name || "");
     setHscode(d.hscode || "");
     setImageFile(d.image && d.image.length > 0 ? d.image[0] : null);
-    setPrepTime(d.preparationTime.toString());
+    setPrepTime((d.preparationTime ?? 0).toString());
     setDescription(d.description || "");
-    setCategoryId(d.categoryId);
+    setCategoryId(d.categoryId || "");
     setSubMenuId(d.subMenuId || "");
-    setType(d.type);
-    setKotType(d.kotType);
+    setType(d.type || "VEG");
+    setKotType(d.kotType || "KITCHEN");
     setSortOrder((d as any).sortOrder ?? 0);
     setPrice(d.price || {});
     setStockConsumption(
-      d.stocks?.map((s) => ({ stockId: s.stockId, quantity: s.quantity })) ||
-        [],
+      d.stocks?.map((s: any) => ({
+        stockId: s.stockId,
+        quantity: s.quantity,
+      })) || [],
     );
     // @ts-ignore
-    setSelectedAddOnIds(d.addOns?.map((da) => da.addOnId) || []);
+    setSelectedAddOnIds(d.addOns?.map((da: any) => da.addOnId) || []);
     setIsPanelOpen(true);
   };
 
@@ -262,7 +264,7 @@ export default function DishesPage() {
   };
 
   const handleSubmit = async () => {
-    if (!name || !categoryId ) {
+    if (!name || !categoryId) {
       toast.error("Please fill required fields");
       return;
     }
@@ -289,7 +291,7 @@ export default function DishesPage() {
       name,
       hscode,
       image: imageUrl ? [imageUrl] : [],
-      preparationTime: prepTime === "" ? 0 : parseInt(prepTime), 
+      preparationTime: prepTime === "" ? 0 : parseInt(prepTime),
       description,
       categoryId,
       subMenuId: subMenuId || undefined,
@@ -466,7 +468,7 @@ export default function DishesPage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 font-bold bg-slate-100">
-                          {d.name.substring(0, 2).toUpperCase()}
+                          {d.name?.substring(0, 2).toUpperCase() || "??"}
                         </div>
                       )}
                     </div>
@@ -488,7 +490,7 @@ export default function DishesPage() {
                             : "bg-yellow-50 text-yellow-700 border-yellow-200"
                       }`}
                     >
-                      {d.type.replace("_", " ")}
+                      {d.type?.replace("_", " ") || "N/A"}
                     </span>
                   </td>
                   <td className="px-6 py-4">{d.preparationTime}</td>
@@ -661,12 +663,12 @@ export default function DishesPage() {
                   Prep(m)
                 </label>
                 <input
-                type="number"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none"
-                value={prepTime }
-                placeholder="0" 
-                onChange={(e) => setPrepTime(e.target.value)}
-              />
+                  type="number"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none"
+                  value={prepTime}
+                  placeholder="0"
+                  onChange={(e) => setPrepTime(e.target.value)}
+                />
               </div>
             </div>
             <ImageUpload

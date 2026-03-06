@@ -483,7 +483,7 @@ export default function OrdersPage() {
     } else {
       setActiveTable({
         id: "DIRECT",
-        name: type.replace("_", " "),
+        name: type?.replace("_", " ") || "N/A",
         status: "ACTIVE",
         capacity: 0,
         spaceId: "",

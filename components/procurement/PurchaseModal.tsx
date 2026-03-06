@@ -1,12 +1,15 @@
 "use client";
 
+"use client";
+
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Supplier, Stock } from "@/lib/types";
 import { toast } from "sonner";
-import { Trash2, Plus, User, Upload } from "lucide-react";
+import { Trash2, Plus, User } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { Input } from "@/components/ui/Input";
 
 interface PurchaseModalProps {
   isOpen: boolean;
@@ -43,7 +46,6 @@ export default function PurchaseModal({
   useEffect(() => {
     if (isOpen) {
       fetchData();
-      // Reset form data on open
       setFormData({
         supplierId: "",
         txnDate: new Date().toISOString().split("T")[0],
@@ -182,147 +184,124 @@ export default function PurchaseModal({
       title="New Purchase Bill"
       size="lg"
     >
-      <form onSubmit={handleSubmit} className="space-y-8 text-zinc-950">
-        <div className="bg-zinc-50/50 p-6 rounded-2xl border border-zinc-100 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-              Select Supplier *
-            </label>
-            <div className="relative group">
-              <select
-                className="w-full h-11 pl-4 pr-10 border border-zinc-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all appearance-none font-semibold text-zinc-900 shadow-sm group-hover:border-zinc-300"
-                value={formData.supplierId}
-                onChange={(e) =>
-                  setFormData({ ...formData, supplierId: e.target.value })
-                }
-                required
-              >
-                <option value="">Select Supplier</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.fullName}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
-                <Plus className="h-4 w-4" />
-              </div>
-            </div>
-          </div>
-          <div className="space-y-1.5 font-sans">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-              Supplier Batch Date *
-            </label>
-            <input
-              type="date"
-              className="w-full h-11 px-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-semibold text-zinc-900 shadow-sm"
-              value={formData.txnDate}
+      <form onSubmit={handleSubmit} className="space-y-6 text-zinc-900">
+        <div className="p-4 border border-zinc-200 bg-white grid grid-cols-1 md:grid-cols-3 gap-4 rounded-md">
+          <div className="space-y-1">
+            <label className="pos-label">Supplier *</label>
+            <select
+              className="pos-input w-full"
+              value={formData.supplierId}
               onChange={(e) =>
-                setFormData({ ...formData, txnDate: e.target.value })
+                setFormData({ ...formData, supplierId: e.target.value })
               }
               required
-            />
+            >
+              <option value="">Select Supplier</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.fullName}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-sans">
-              Receiver / Staff Incharge
-            </label>
-            <div className="relative group">
-              <select
-                className="w-full h-11 pl-4 pr-10 border border-zinc-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all appearance-none font-semibold text-zinc-900 shadow-sm group-hover:border-zinc-300"
-                value={formData.staffId}
-                onChange={(e) =>
-                  setFormData({ ...formData, staffId: e.target.value })
-                }
-              >
-                <option value="">Select Receiver</option>
-                {staff.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.role || "Staff"})
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
-                <User className="h-4 w-4" />
-              </div>
-            </div>
+
+          <Input
+            label="Bill Date *"
+            type="date"
+            value={formData.txnDate}
+            onChange={(e) =>
+              setFormData({ ...formData, txnDate: e.target.value })
+            }
+            required
+          />
+
+          <div className="space-y-1">
+            <label className="pos-label">Staff Incharge</label>
+            <select
+              className="pos-input w-full"
+              value={formData.staffId}
+              onChange={(e) =>
+                setFormData({ ...formData, staffId: e.target.value })
+              }
+            >
+              <option value="">Select Receiver</option>
+              {staff.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
-        <div className="bg-zinc-50/50 p-6 rounded-2xl border border-zinc-100">
+        <div className="p-4 border border-zinc-200 bg-white rounded-md">
           <ImageUpload
-            label="Bill Attachment (Photo/Scan)"
+            label="Bill Attachment"
             value={typeof imageFile === "string" ? imageFile : undefined}
             onChange={setImageFile}
           />
         </div>
 
-        <div className="space-y-4">
-          <div className="px-1 flex justify-between items-center text-zinc-950">
-            <div>
-              <h4 className="text-sm font-black uppercase tracking-tight text-zinc-900">
-                Purchase Items
-              </h4>
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                Add items from stock or manually
-              </p>
-            </div>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-2">
+            <h4 className="text-sm font-semibold text-zinc-900">
+              Purchase Items
+            </h4>
             <Button
               type="button"
               size="sm"
               variant="secondary"
-              className="rounded-xl font-bold bg-white border border-zinc-200 shadow-sm hover:bg-zinc-50"
               onClick={addItem}
             >
-              <Plus className="h-4 w-4 mr-1.5 text-emerald-600" /> Add New Item
+              + Add Item
             </Button>
           </div>
 
-          <div className="border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
-            <table className="w-full text-sm">
-              <thead className="bg-zinc-900 border-b border-zinc-800">
-                <tr>
-                  <th className="px-4 py-3 text-left text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                    Stock Item / Description
+          <div className="border border-zinc-200 overflow-hidden rounded-md">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-zinc-50 border-b border-zinc-200">
+                  <th className="pos-table-header border-none">
+                    Item Description
                   </th>
-                  <th className="px-4 py-3 text-center text-[10px] font-black text-zinc-400 uppercase tracking-widest w-24">
-                    Quantity
+                  <th className="pos-table-header border-none text-center w-24">
+                    Qty
                   </th>
-                  <th className="px-4 py-3 text-center text-[10px] font-black text-zinc-400 uppercase tracking-widest w-32">
+                  <th className="pos-table-header border-none text-center w-32">
                     Rate
                   </th>
-                  <th className="px-4 py-3 text-right text-[10px] font-black text-zinc-400 uppercase tracking-widest w-32">
+                  <th className="pos-table-header border-none text-right w-32">
                     Amount
                   </th>
-                  <th className="px-4 py-3 w-12"></th>
+                  <th className="pos-table-header border-none w-10"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
                 {formData.items.map((item, idx) => (
                   <tr
                     key={idx}
-                    className="bg-white group hover:bg-emerald-50/10 transition-colors"
+                    className="hover:bg-zinc-50/50 transition-colors group"
                   >
-                    <td className="px-3 py-3">
-                      <div className="space-y-1">
+                    <td className="pos-table-cell">
+                      <div className="space-y-2">
                         <select
-                          className="w-full p-2 border border-zinc-50 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-semibold text-zinc-800 transition-all"
+                          className="pos-input w-full"
                           value={item.stockId}
                           onChange={(e) =>
                             handleItemChange(idx, "stockId", e.target.value)
                           }
                         >
-                          <option value="">Choose item from stock...</option>
+                          <option value="">Choose item...</option>
                           {stocks.map((s) => (
                             <option key={s.id} value={s.id}>
-                              {s.name} ({s.unit?.shortName || "no unit"})
+                              {s.name} ({s.unit?.shortName || "unit"})
                             </option>
                           ))}
                         </select>
                         {!item.stockId && (
                           <input
-                            placeholder="Type item name if not in stock..."
-                            className="w-full p-2 text-xs border border-zinc-100 rounded-lg italic focus:ring-2 focus:ring-emerald-500 outline-none"
+                            placeholder="Type item name..."
+                            className="pos-input w-full h-8 text-xs italic bg-zinc-50 capitalize"
                             value={item.itemName}
                             onChange={(e) =>
                               handleItemChange(idx, "itemName", e.target.value)
@@ -331,11 +310,11 @@ export default function PurchaseModal({
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-3">
-                      <input
+                    <td className="pos-table-cell">
+                      <Input
                         type="number"
                         step="any"
-                        className="w-full p-2 border border-zinc-100 rounded-lg font-black text-center focus:ring-2 focus:ring-emerald-500 outline-none"
+                        className="text-center h-8"
                         value={item.quantity}
                         onChange={(e) =>
                           handleItemChange(
@@ -346,11 +325,11 @@ export default function PurchaseModal({
                         }
                       />
                     </td>
-                    <td className="px-3 py-3">
-                      <input
+                    <td className="pos-table-cell">
+                      <Input
                         type="number"
                         step="any"
-                        className="w-full p-2 border border-zinc-100 rounded-lg font-black text-center focus:ring-2 focus:ring-emerald-500 outline-none"
+                        className="text-center h-8"
                         value={item.rate}
                         onChange={(e) =>
                           handleItemChange(
@@ -361,16 +340,16 @@ export default function PurchaseModal({
                         }
                       />
                     </td>
-                    <td className="px-4 py-3 text-right font-black text-emerald-600 font-mono">
+                    <td className="pos-table-cell text-right font-medium text-zinc-900">
                       {item.amount.toLocaleString()}
                     </td>
-                    <td className="px-2 py-3 text-center">
+                    <td className="pos-table-cell text-center">
                       <button
                         type="button"
-                        className="p-2 text-zinc-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                        className="text-zinc-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all font-bold"
                         onClick={() => removeItem(idx)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        ×
                       </button>
                     </td>
                   </tr>
@@ -380,56 +359,46 @@ export default function PurchaseModal({
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-8 items-start">
-          <div className="flex-1 space-y-4 w-full">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                Internal Remarks / Notes
-              </label>
-              <textarea
-                placeholder="Mention bill reference, payment details, or receiver name..."
-                className="w-full p-4 border border-zinc-200 rounded-2xl min-h-[140px] outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm"
-                value={formData.remark}
-                onChange={(e) =>
-                  setFormData({ ...formData, remark: e.target.value })
-                }
-              />
-            </div>
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+          <div className="flex-1 w-full">
+            <label className="pos-label">Remarks / Notes</label>
+            <textarea
+              placeholder="Internal notes..."
+              className="pos-input w-full min-h-[120px] p-3 resize-none"
+              value={formData.remark}
+              onChange={(e) =>
+                setFormData({ ...formData, remark: e.target.value })
+              }
+            />
           </div>
 
-          <div className="w-96 p-6 bg-zinc-900 rounded-3xl border border-zinc-800 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-zinc-500 font-black uppercase tracking-widest">
-                Sub Total
-              </span>
-              <span className="font-bold text-white font-mono">
-                Rs. {formData.taxableAmount.toLocaleString()}
+          <div className="w-80 p-5 bg-zinc-50 border border-zinc-200 rounded-md space-y-3">
+            <div className="flex justify-between text-xs text-zinc-500">
+              <span>Sub Total</span>
+              <span className="font-medium text-zinc-900">
+                {formData.taxableAmount.toLocaleString()}
               </span>
             </div>
-            <div className="flex justify-between items-center text-xs space-x-4">
-              <span className="text-zinc-500 font-black uppercase tracking-widest">
-                Discount
-              </span>
-              <div className="relative">
-                <input
-                  type="number"
-                  className="w-24 h-8 px-2 bg-zinc-800 border-none rounded-lg text-white text-right font-black focus:ring-1 focus:ring-emerald-500 outline-none"
-                  value={formData.discount}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setFormData({ ...formData, discount: val });
-                    calculateTotals(formData.items, val, formData.roundOff);
-                  }}
-                />
-              </div>
-            </div>
-            <div className="flex justify-between items-center text-xs space-x-4">
-              <span className="text-zinc-500 font-black uppercase tracking-widest">
-                Round Off
-              </span>
-              <input
+
+            <div className="flex justify-between items-center text-xs text-zinc-500">
+              <span>Discount</span>
+              <Input
                 type="number"
-                className="w-24 h-8 px-2 bg-zinc-800 border-none rounded-lg text-white text-right font-black focus:ring-1 focus:ring-emerald-500 outline-none"
+                className="w-24 h-7 text-right"
+                value={formData.discount}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value) || 0;
+                  setFormData({ ...formData, discount: val });
+                  calculateTotals(formData.items, val, formData.roundOff);
+                }}
+              />
+            </div>
+
+            <div className="flex justify-between items-center text-xs text-zinc-500">
+              <span>Round Off</span>
+              <Input
+                type="number"
+                className="w-24 h-7 text-right"
                 value={formData.roundOff}
                 onChange={(e) => {
                   const val = parseFloat(e.target.value) || 0;
@@ -438,26 +407,23 @@ export default function PurchaseModal({
                 }}
               />
             </div>
-            <div className="border-t border-zinc-800 pt-4 flex flex-col gap-1">
-              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] leading-none mb-1">
-                Payable Amount
-              </span>
-              <span className="text-3xl font-black text-white font-mono tracking-tighter">
-                Rs. {formData.totalAmount.toLocaleString()}
-              </span>
+
+            <div className="border-t border-zinc-200 pt-3 mt-3">
+              <div className="flex justify-between items-end">
+                <span className="text-[10px] uppercase font-bold text-zinc-400">
+                  Total Payable
+                </span>
+                <span className="text-2xl font-bold text-zinc-900">
+                  {formData.totalAmount.toLocaleString()}
+                </span>
+              </div>
             </div>
 
-            <div className="pt-6 border-t border-zinc-800 space-y-4">
-              <label
-                className={`flex items-center gap-3 p-3 rounded-2xl border transition-all cursor-pointer ${
-                  formData.paymentStatus === "PAID"
-                    ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
-                    : "bg-zinc-800/50 border-zinc-800 text-zinc-400"
-                }`}
-              >
+            <div className="pt-4 border-t border-zinc-200 space-y-3">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="hidden"
+                  className="w-4 h-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
                   checked={formData.paymentStatus === "PAID"}
                   onChange={(e) =>
                     setFormData({
@@ -466,25 +432,16 @@ export default function PurchaseModal({
                     })
                   }
                 />
-                <div
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${formData.paymentStatus === "PAID" ? "bg-emerald-500 border-emerald-500" : "border-zinc-700"}`}
-                >
-                  {formData.paymentStatus === "PAID" && (
-                    <Plus className="h-3 w-3 text-zinc-900" />
-                  )}
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest">
-                  Settled / Paid Bill
+                <span className="text-xs font-medium text-zinc-700">
+                  Mark as Paid
                 </span>
               </label>
 
               {formData.paymentStatus === "PAID" && (
-                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">
-                    Payment Method
-                  </label>
+                <div className="space-y-1">
+                  <label className="pos-label">Payment Mode</label>
                   <select
-                    className="w-full h-10 px-3 bg-zinc-800 border-none rounded-xl text-white text-xs font-bold outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                    className="pos-input w-full h-8 text-xs"
                     value={formData.paymentMode}
                     onChange={(e) =>
                       setFormData({
@@ -493,6 +450,7 @@ export default function PurchaseModal({
                       })
                     }
                   >
+                    <option value="CASH">Cash</option>
                     <option value="ESEWA">Digital - eSewa</option>
                     <option value="BANK_TRANSFER">Bank Settlement</option>
                     <option value="QR">Fonepay / QR Scan</option>
@@ -503,21 +461,17 @@ export default function PurchaseModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-6 border-t border-zinc-100">
+        <div className="flex justify-end gap-2 pt-4 border-t border-zinc-100">
           <Button
             type="button"
             variant="ghost"
-            className="px-6 font-bold"
+            className="text-zinc-500 hover:text-zinc-900"
             onClick={onClose}
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={loading}
-            className="px-10 rounded-xl font-black shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
-          >
-            {loading ? "Processing..." : "Confirm & Save Bill"}
+          <Button type="submit" disabled={loading} className="px-8">
+            {loading ? "Processing..." : "Save Bill"}
           </Button>
         </div>
       </form>

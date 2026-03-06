@@ -162,226 +162,226 @@ export default function DashboardClient({
   };
 
   // Popover Contents
-  const SpacePopoverContent = (
-    <div className="flex flex-col gap-4 p-2">
-      <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
-        Add New Space
-      </h3>
-      <div className="space-y-4">
-        <div>
-          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
-            Name
-          </label>
-          <input
-            type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
-            placeholder="e.g. Main Hall"
-            value={newSpaceName}
-            onChange={(e) => setNewSpaceName(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
-            Description
-          </label>
-          <textarea
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
-            placeholder="Optional description"
-            value={newSpaceDesc}
-            onChange={(e) => setNewSpaceDesc(e.target.value)}
-          />
-        </div>
-        <Button
-          size="sm"
-          onClick={handleAddSpace}
-          className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
-        >
-          Create Space
-        </Button>
-      </div>
-    </div>
-  );
+  // const SpacePopoverContent = (
+  //   <div className="flex flex-col gap-4 p-2">
+  //     <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
+  //       Add New Space
+  //     </h3>
+  //     <div className="space-y-4">
+  //       <div>
+  //         <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+  //           Name
+  //         </label>
+  //         <input
+  //           type="text"
+  //           className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+  //           placeholder="e.g. Main Hall"
+  //           value={newSpaceName}
+  //           onChange={(e) => setNewSpaceName(e.target.value)}
+  //         />
+  //       </div>
+  //       <div>
+  //         <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+  //           Description
+  //         </label>
+  //         <textarea
+  //           className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+  //           placeholder="Optional description"
+  //           value={newSpaceDesc}
+  //           onChange={(e) => setNewSpaceDesc(e.target.value)}
+  //         />
+  //       </div>
+  //       <Button
+  //         size="sm"
+  //         onClick={handleAddSpace}
+  //         className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
+  //       >
+  //         Create Space
+  //       </Button>
+  //     </div>
+  //   </div>
+  // );
 
-  const TablePopoverContent = (
-    <div className="flex flex-col gap-4 p-2">
-      <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
-        Add New Table
-      </h3>
-      <div className="space-y-4">
-        <div>
-          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
-            Table Name
-          </label>
-          <input
-            type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
-            placeholder="e.g. T-01"
-            value={newTableName}
-            onChange={(e) => setNewTableName(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
-            Capacity
-          </label>
-          <input
-            type="number"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
-            placeholder="e.g. 4"
-            value={newTableCapacity}
-            onChange={(e) => setNewTableCapacity(e.target.value)}
-          />
-        </div>
+  // const TablePopoverContent = (
+  //   <div className="flex flex-col gap-4 p-2">
+  //     <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
+  //       Add New Table
+  //     </h3>
+  //     <div className="space-y-4">
+  //       <div>
+  //         <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+  //           Table Name
+  //         </label>
+  //         <input
+  //           type="text"
+  //           className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+  //           placeholder="e.g. T-01"
+  //           value={newTableName}
+  //           onChange={(e) => setNewTableName(e.target.value)}
+  //         />
+  //       </div>
+  //       <div>
+  //         <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+  //           Capacity
+  //         </label>
+  //         <input
+  //           type="number"
+  //           className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+  //           placeholder="e.g. 4"
+  //           value={newTableCapacity}
+  //           onChange={(e) => setNewTableCapacity(e.target.value)}
+  //         />
+  //       </div>
 
-        <CustomDropdown
-          label="Space"
-          options={spaces.map((s) => ({ id: s.id, name: s.name }))}
-          value={selectedSpaceId}
-          onChange={setSelectedSpaceId}
-          placeholder="Select Space"
-        />
+  //       <CustomDropdown
+  //         label="Space"
+  //         options={spaces.map((s) => ({ id: s.id, name: s.name }))}
+  //         value={selectedSpaceId}
+  //         onChange={setSelectedSpaceId}
+  //         placeholder="Select Space"
+  //       />
 
-        <CustomDropdown
-          label="Table Type"
-          options={tableTypes.map((t) => ({ id: t.id, name: t.name }))}
-          value={selectedTypeId}
-          onChange={setSelectedTypeId}
-          placeholder="Select Type"
-          onAddNew={() => {
-            setIsTablePopoverOpen(false); // Close popover temporarily or keep open?
-            setIsTypeModalOpen(true);
-          }}
-          addNewLabel="Add New Type"
-        />
+  //       <CustomDropdown
+  //         label="Table Type"
+  //         options={tableTypes.map((t) => ({ id: t.id, name: t.name }))}
+  //         value={selectedTypeId}
+  //         onChange={setSelectedTypeId}
+  //         placeholder="Select Type"
+  //         onAddNew={() => {
+  //           setIsTablePopoverOpen(false); // Close popover temporarily or keep open?
+  //           setIsTypeModalOpen(true);
+  //         }}
+  //         addNewLabel="Add New Type"
+  //       />
 
-        <Button
-          size="sm"
-          onClick={handleAddTable}
-          className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
-        >
-          Create Table
-        </Button>
-      </div>
-    </div>
-  );
+  //       <Button
+  //         size="sm"
+  //         onClick={handleAddTable}
+  //         className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
+  //       >
+  //         Create Table
+  //       </Button>
+  //     </div>
+  //   </div>
+  // );
 
-  const QRPopoverContent = (
-    <div className="flex flex-col gap-4 p-2">
-      <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
-        QR Management
-      </h3>
-      <div className="text-sm text-gray-500 space-y-2">
-        <p>Manage QR codes for tables here.</p>
-        <p className="text-[10px] font-medium text-red-600 italic">
-          Select a table to generate specialized QR.
-        </p>
-      </div>
-      {/* Placeholder for QR logic */}
-      <Button size="sm" variant="secondary" className="w-full">
-        Generate All QRs
-      </Button>
-    </div>
-  );
+  // const QRPopoverContent = (
+  //   <div className="flex flex-col gap-4 p-2">
+  //     <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
+  //       QR Management
+  //     </h3>
+  //     <div className="text-sm text-gray-500 space-y-2">
+  //       <p>Manage QR codes for tables here.</p>
+  //       <p className="text-[10px] font-medium text-red-600 italic">
+  //         Select a table to generate specialized QR.
+  //       </p>
+  //     </div>
+  //     {/* Placeholder for QR logic */}
+  //     <Button size="sm" variant="secondary" className="w-full">
+  //       Generate All QRs
+  //     </Button>
+  //   </div>
+  // );
 
-  const CustomerPopoverContent = (
-    <div className="flex flex-col gap-4 p-2">
-      <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
-        Quick Add Customer
-      </h3>
-      <div className="space-y-4">
-        <div>
-          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
-            Full Name
-          </label>
-          <input
-            type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
-            placeholder="e.g. John Doe"
-            value={newCustomer.fullName}
-            onChange={(e) =>
-              setNewCustomer({ ...newCustomer, fullName: e.target.value })
-            }
-          />
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
-            Phone
-          </label>
-          <input
-            type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
-            placeholder="Phone Number"
-            value={newCustomer.phone}
-            onChange={(e) =>
-              setNewCustomer({ ...newCustomer, phone: e.target.value })
-            }
-          />
-        </div>
-        <Button
-          size="sm"
-          onClick={handleAddCustomer}
-          className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
-        >
-          Add Customer
-        </Button>
-      </div>
-    </div>
-  );
+  // const CustomerPopoverContent = (
+  //   <div className="flex flex-col gap-4 p-2">
+  //     <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
+  //       Quick Add Customer
+  //     </h3>
+  //     <div className="space-y-4">
+  //       <div>
+  //         <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+  //           Full Name
+  //         </label>
+  //         <input
+  //           type="text"
+  //           className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+  //           placeholder="e.g. John Doe"
+  //           value={newCustomer.fullName}
+  //           onChange={(e) =>
+  //             setNewCustomer({ ...newCustomer, fullName: e.target.value })
+  //           }
+  //         />
+  //       </div>
+  //       <div>
+  //         <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+  //           Phone
+  //         </label>
+  //         <input
+  //           type="text"
+  //           className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+  //           placeholder="Phone Number"
+  //           value={newCustomer.phone}
+  //           onChange={(e) =>
+  //             setNewCustomer({ ...newCustomer, phone: e.target.value })
+  //           }
+  //         />
+  //       </div>
+  //       <Button
+  //         size="sm"
+  //         onClick={handleAddCustomer}
+  //         className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
+  //       >
+  //         Add Customer
+  //       </Button>
+  //     </div>
+  //   </div>
+  // );
 
-  const StaffPopoverContent = (
-    <div className="flex flex-col gap-4 p-2">
-      <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
-        Add New Staff
-      </h3>
-      <div className="space-y-4">
-        <div>
-          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
-            Name
-          </label>
-          <input
-            type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
-            placeholder="e.g. Alice Smith"
-            value={newStaff.name}
-            onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
-            Role
-          </label>
-          <input
-            type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
-            placeholder="e.g. Waiter"
-            value={newStaff.role}
-            onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-gray-700 block mb-1.5">
-            Phone
-          </label>
-          <input
-            type="text"
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
-            placeholder="Phone Number"
-            value={newStaff.phone}
-            onChange={(e) =>
-              setNewStaff({ ...newStaff, phone: e.target.value })
-            }
-          />
-        </div>
-        <Button
-          size="sm"
-          onClick={handleAddStaff}
-          className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
-        >
-          Add Staff
-        </Button>
-      </div>
-    </div>
-  );
+  // const StaffPopoverContent = (
+  //   <div className="flex flex-col gap-4 p-2">
+  //     <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-2 uppercase text-xs tracking-wider">
+  //       Add New Staff
+  //     </h3>
+  //     <div className="space-y-4">
+  //       <div>
+  //         <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+  //           Name
+  //         </label>
+  //         <input
+  //           type="text"
+  //           className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+  //           placeholder="e.g. Alice Smith"
+  //           value={newStaff.name}
+  //           onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
+  //         />
+  //       </div>
+  //       <div>
+  //         <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+  //           Role
+  //         </label>
+  //         <input
+  //           type="text"
+  //           className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+  //           placeholder="e.g. Waiter"
+  //           value={newStaff.role}
+  //           onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
+  //         />
+  //       </div>
+  //       <div>
+  //         <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+  //           Phone
+  //         </label>
+  //         <input
+  //           type="text"
+  //           className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all placeholder:text-gray-400"
+  //           placeholder="Phone Number"
+  //           value={newStaff.phone}
+  //           onChange={(e) =>
+  //             setNewStaff({ ...newStaff, phone: e.target.value })
+  //           }
+  //         />
+  //       </div>
+  //       <Button
+  //         size="sm"
+  //         onClick={handleAddStaff}
+  //         className="w-full bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 border-none"
+  //       >
+  //         Add Staff
+  //       </Button>
+  //     </div>
+  //   </div>
+  // );
 
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-full">
@@ -395,7 +395,7 @@ export default function DashboardClient({
             Monitor and manage your restaurant floor in real-time
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
           <Popover
             trigger={
               <Button
@@ -466,7 +466,7 @@ export default function DashboardClient({
             setIsOpen={setIsQRPopoverOpen}
             align="right"
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Metrics Section */}

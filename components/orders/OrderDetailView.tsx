@@ -106,7 +106,7 @@ export function OrderDetailView({
                 Order #{order.id.slice(-6).toUpperCase()}
               </h2>
               <span className="text-[9px] font-medium px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-700 uppercase tracking-widest">
-                {order.type.replace("_", " ")}
+                {order.type?.replace("_", " ")}
               </span>
             </div>
             <div className="flex items-center gap-3 mt-1.5">

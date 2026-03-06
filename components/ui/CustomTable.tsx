@@ -7,61 +7,53 @@ export function CustomTable<T>({
   data,
   onRowClick,
 }: {
-  columns: { header: string; accessor: (row: T, i: number) => any }[];
+  columns: {
+    header: string;
+    accessor: (row: T, i: number) => any;
+    align?: "left" | "right";
+  }[];
   data: T[];
   onRowClick?: (row: T) => void;
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <table className="w-full text-left text-sm text-gray-600">
-        <thead className="bg-slate-50 border-b border-gray-200">
+    <div className="bg-white border border-zinc-200 overflow-auto max-h-[calc(100vh-250px)]">
+      <table className="w-full border-collapse">
+        <thead>
           <tr>
             {columns.map((col, i) => (
               <th
                 key={i}
-                className="px-6 py-4 font-semibold text-gray-700 uppercase tracking-wider text-left"
+                className={`pos-table-header ${
+                  col.align === "right" ? "text-right" : "text-left"
+                }`}
               >
                 {col.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-zinc-100">
           {data.length > 0 ? (
             data.map((row, i) => (
               <tr
                 key={i}
                 onClick={() => onRowClick?.(row)}
-                className="hover:bg-red-50/50 transition-colors cursor-pointer group"
+                className="hover:bg-zinc-50 transition-colors cursor-pointer group"
               >
                 {columns.map((col, j) => {
                   const cell = col.accessor(row, i);
-
-                  // If the cell is a status string, render as badge
-                  const isStatus =
-                    typeof cell === "string" &&
-                    ["ACTIVE", "INACTIVE", "OCCUPIED"].includes(cell);
+                  const isNumber = typeof cell === "number";
 
                   return (
                     <td
                       key={j}
-                      className="px-6 py-4 font-medium text-gray-900"
+                      className={`pos-table-cell ${
+                        col.align === "right" || isNumber
+                          ? "text-right"
+                          : "text-left"
+                      }`}
                     >
-                      {isStatus ? (
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            cell === "ACTIVE"
-                              ? "bg-green-50 text-green-700"
-                              : cell === "OCCUPIED"
-                              ? "bg-amber-50 text-amber-700"
-                              : "bg-gray-100 text-gray-500"
-                          }`}
-                        >
-                          {cell}
-                        </span>
-                      ) : (
-                        cell ?? "-"
-                      )}
+                      {cell ?? "-"}
                     </td>
                   );
                 })}
@@ -71,7 +63,7 @@ export function CustomTable<T>({
             <tr>
               <td
                 colSpan={columns.length}
-                className="px-6 py-8 text-center text-gray-500"
+                className="pos-table-cell text-center text-zinc-400 py-12"
               >
                 No data available.
               </td>

@@ -305,7 +305,7 @@ function OrdersTable({
               </td>
               <td className="py-4 px-4">
                 <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded uppercase">
-                  {o.type.replace("_", " ")}
+                  {o.type?.replace("_", " ")}
                 </span>
               </td>
               <td className="py-4 px-4">

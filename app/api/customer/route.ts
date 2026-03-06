@@ -56,37 +56,40 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const customer = await prisma.$transaction(async (tx) => {
-      const newCustomer = await tx.customer.create({
-        data: {
-          fullName,
-          phone,
-          email,
-          dob: dob ? new Date(dob) : null,
-          loyaltyId,
-          openingBalance: parseFloat(openingBalance) || 0,
-          creditLimit: parseFloat(creditLimit) || 0,
-          creditTermDays: parseInt(creditTermDays) || 0,
-          loyaltyDiscount: parseFloat(loyaltyDiscount) || 0,
-          legalName,
-          taxNumber,
-          address,
-          notes,
-          storeId,
-        },
-      });
-
-      if (!newCustomer.loyaltyId) {
-        return await tx.customer.update({
-          where: { id: newCustomer.id },
+    const customer = await prisma.$transaction(
+      async (tx) => {
+        const newCustomer = await tx.customer.create({
           data: {
-            loyaltyId: `LOY-${newCustomer.id.slice(0, 8).toUpperCase()}`,
+            fullName,
+            phone,
+            email,
+            dob: dob ? new Date(dob) : null,
+            loyaltyId,
+            openingBalance: parseFloat(openingBalance) || 0,
+            creditLimit: parseFloat(creditLimit) || 0,
+            creditTermDays: parseInt(creditTermDays) || 0,
+            loyaltyDiscount: parseFloat(loyaltyDiscount) || 0,
+            legalName,
+            taxNumber,
+            address,
+            notes,
+            storeId,
           },
         });
-      }
 
-      return newCustomer;
-    });
+        if (!newCustomer.loyaltyId) {
+          return await tx.customer.update({
+            where: { id: newCustomer.id },
+            data: {
+              loyaltyId: `LOY-${newCustomer.id.slice(0, 8).toUpperCase()}`,
+            },
+          });
+        }
+
+        return newCustomer;
+      },
+      { timeout: 20000 },
+    );
 
     return NextResponse.json({
       success: true,

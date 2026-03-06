@@ -34,42 +34,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const supplier = await prisma.$transaction(async (tx) => {
-      const newSupplier = await tx.supplier.create({
-        data: {
-          fullName,
-          phone,
-          email,
-          legalName,
-          taxNumber,
-          address,
-          openingBalance: parseFloat(openingBalance) || 0,
-          openingBalanceType: openingBalanceType || "CREDIT",
-          storeId,
-        },
-      });
-
-      // Create opening balance ledger entry
-      if (newSupplier.openingBalance !== 0) {
-        const amount = newSupplier.openingBalance;
-        const closingBalance =
-          newSupplier.openingBalanceType === "CREDIT" ? amount : -amount;
-
-        await tx.supplierLedger.create({
+    const supplier = await prisma.$transaction(
+      async (tx) => {
+        const newSupplier = await tx.supplier.create({
           data: {
-            supplierId: newSupplier.id,
+            fullName,
+            phone,
+            email,
+            legalName,
+            taxNumber,
+            address,
+            openingBalance: parseFloat(openingBalance) || 0,
+            openingBalanceType: openingBalanceType || "CREDIT",
             storeId,
-            txnNo: `OPB-${newSupplier.id.slice(0, 8).toUpperCase()}`,
-            type: "OPENING_BALANCE",
-            amount,
-            closingBalance,
-            remarks: "Opening Balance",
           },
         });
-      }
 
-      return newSupplier;
-    });
+        // Create opening balance ledger entry
+        if (newSupplier.openingBalance !== 0) {
+          const amount = newSupplier.openingBalance;
+          const closingBalance =
+            newSupplier.openingBalanceType === "CREDIT" ? amount : -amount;
+
+          await tx.supplierLedger.create({
+            data: {
+              supplierId: newSupplier.id,
+              storeId,
+              txnNo: `OPB-${newSupplier.id.slice(0, 8).toUpperCase()}`,
+              type: "OPENING_BALANCE",
+              amount,
+              closingBalance,
+              remarks: "Opening Balance",
+            },
+          });
+        }
+
+        return newSupplier;
+      },
+      { timeout: 20000 },
+    );
 
     return NextResponse.json({ success: true, data: supplier });
   } catch (error: any) {
@@ -93,27 +96,33 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // 1. Fetch suppliers
     const suppliers = await prisma.supplier.findMany({
       where: { storeId },
       orderBy: { createdAt: "desc" },
     });
 
-    // Calculate Global Metrics
-    const totalSuppliers = suppliers.length;
-
-    // For total outstanding payables, we need to sum up all ledger entries for all suppliers in this store
-    const ledgers = await prisma.supplierLedger.findMany({
+    // 2. Efficiently calculate metrics using aggregations
+    // We group by type to sum up amounts for each type
+    const ledgerAggregations = await prisma.supplierLedger.groupBy({
+      by: ["type"],
       where: { storeId },
+      _sum: {
+        amount: true,
+        closingBalance: true,
+      },
     });
 
     let totalOutstanding = 0;
-    ledgers.forEach((l) => {
-      if (l.type === "PURCHASE") totalOutstanding += l.amount;
-      else if (l.type === "PAYMENT") totalOutstanding -= l.amount;
-      else if (l.type === "RETURN") totalOutstanding -= l.amount;
-      else if (l.type === "OPENING_BALANCE") {
-        totalOutstanding += l.closingBalance;
-      } else if (l.type === "ADJUSTMENT") totalOutstanding += l.amount;
+    ledgerAggregations.forEach((agg) => {
+      const sumAmount = agg._sum.amount || 0;
+      const sumClosing = agg._sum.closingBalance || 0;
+
+      if (agg.type === "PURCHASE") totalOutstanding += sumAmount;
+      else if (agg.type === "PAYMENT") totalOutstanding -= sumAmount;
+      else if (agg.type === "RETURN") totalOutstanding -= sumAmount;
+      else if (agg.type === "OPENING_BALANCE") totalOutstanding += sumClosing;
+      else if (agg.type === "ADJUSTMENT") totalOutstanding += sumAmount;
     });
 
     return NextResponse.json({
@@ -121,7 +130,7 @@ export async function GET(req: NextRequest) {
       data: {
         suppliers,
         metrics: {
-          totalSuppliers,
+          totalSuppliers: suppliers.length,
           totalOutstanding,
         },
       },

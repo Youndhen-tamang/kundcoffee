@@ -346,7 +346,7 @@ export default function CategoriesPage() {
                   </td>
                   <td className="px-6 py-4 max-w-xs truncate text-gray-500">
                     {c.description ? (
-                      c.description.replace(/[#*_]/g, "")
+                      c.description?.replace(/[#*_]/g, "")
                     ) : (
                       <span className="text-gray-300 italic">
                         No description

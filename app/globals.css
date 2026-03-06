@@ -1,2 +1,30 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-inter);
+}
+
+@layer base {
+  body {
+    @apply bg-white text-zinc-900 font-sans;
+  }
+}
+
+/* Custom UI Utilities */
+@layer components {
+  .pos-table-header {
+    @apply sticky top-0 bg-zinc-50 border-b border-zinc-200 px-4 py-2 text-left text-xs font-semibold text-zinc-500 uppercase tracking-tight z-10;
+  }
+
+  .pos-table-cell {
+    @apply px-4 py-2 text-sm text-zinc-700 border-b border-zinc-100 align-middle;
+  }
+
+  .pos-input {
+    @apply h-9 px-3 py-1 bg-white border border-zinc-200 rounded-md text-sm transition-all focus:outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 placeholder:text-zinc-400;
+  }
+
+  .pos-label {
+    @apply block text-xs font-medium text-zinc-500 mb-1;
+  }
+}

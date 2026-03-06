@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Category, Dish, SubMenu, Table, OrderItem, AddOn } from "@/lib/types";
 import { getCategories, getDishes, getSubMenus } from "@/services/menu";
-import { Button } from "@/components/ui/Button";
 import { Popover } from "@/components/ui/Popover";
 import {
   Search,
@@ -11,12 +10,8 @@ import {
   Minus,
   UserPlus,
   Users,
-  MessageSquare,
   Printer,
-  Filter,
-  LayoutGrid,
   X,
-  PlusCircle,
   ChevronDown,
 } from "lucide-react";
 import { useSettings } from "@/components/providers/SettingsProvider";
@@ -100,29 +95,35 @@ export function TableOrderingSystem({
     return matchesSearch && matchesCategory && matchesSubMenu;
   });
 
+  // Existing function updated for better logic
   const addToCartDirectly = (dish: Dish) => {
-    const newItem: CartItem = {
-      dishId: dish.id,
-      dish: dish,
-      quantity: 1,
-      unitPrice: dish.price?.listedPrice || 0,
-      totalPrice: dish.price?.listedPrice || 0,
-      remarks: "",
-      addons: [],
-    };
-
-    // Check if item already in cart (without addons/remarks) to increment qty instead
-    const existingIndex = cart.findIndex(
-      (item) =>
-        item.dishId === dish.id &&
-        (!item.addons || item.addons.length === 0) &&
-        !item.remarks,
-    );
-
+    const existingIndex = cart.findIndex((item) => item.dishId === dish.id);
     if (existingIndex > -1) {
       updateCartQty(existingIndex, 1);
     } else {
+      const newItem: CartItem = {
+        dishId: dish.id,
+        dish: dish,
+        quantity: 1,
+        unitPrice: dish.price?.listedPrice || 0,
+        totalPrice: dish.price?.listedPrice || 0,
+        remarks: "",
+        addons: [],
+      };
       setCart([...cart, newItem]);
+    }
+  };
+
+  // NEW: Add this to handle the minus button in the grid
+  const removeFromCartDirectly = (dishId: string) => {
+    const existingIndex = cart.findIndex((item) => item.dishId === dishId);
+    if (existingIndex > -1) {
+      const currentQty = cart[existingIndex].quantity || 0;
+      if (currentQty <= 1) {
+        setCart(cart.filter((_, i) => i !== existingIndex));
+      } else {
+        updateCartQty(existingIndex, -1);
+      }
     }
   };
 
@@ -162,132 +163,101 @@ export function TableOrderingSystem({
     >
       {/* Top Header - Condensed & Professional */}
       <div
-        className={`border-b h-14 flex items-center justify-between px-6 ${isAddingToExisting ? "bg-black text-white" : "bg-white text-black border-zinc-100"}`}
+        className={`border-b h-10 flex items-center justify-between px-4 ${isAddingToExisting ? "bg-zinc-900 text-white" : "bg-white text-zinc-900 border-zinc-200"}`}
       >
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-8 h-8 rounded-lg flex items-center justify-center ${isAddingToExisting ? "bg-white text-black" : "bg-black text-white"}`}
-            >
-              <Users size={14} strokeWidth={2.5} />
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Users
+              size={14}
+              className={isAddingToExisting ? "text-zinc-400" : "text-zinc-500"}
+            />
             <div>
-              <h2
-                className={`text-[10px] font-black uppercase tracking-widest leading-none ${isAddingToExisting ? "text-white" : "text-black"}`}
-              >
+              <h2 className="text-xs font-bold leading-none">
                 {isAddingToExisting
                   ? "Update Session"
                   : table?.id === "DIRECT"
                     ? "Direct Order"
                     : `Table ${table?.name || "Order"}`}
               </h2>
-              <p
-                className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 opacity-50`}
-              >
-                {table?.tableType?.name || "Standard"} •{" "}
-                {new Date().toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
             </div>
           </div>
-          <div
-            className={`h-4 w-px ${isAddingToExisting ? "bg-white/10" : "bg-zinc-100"}`}
-          />
+          <div className="h-4 w-px bg-zinc-200 mx-1" />
           <Popover
             trigger={
               <button
-                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-all ${isAddingToExisting ? "bg-white/5 hover:bg-white/10 text-white" : "bg-zinc-50 hover:bg-zinc-100 text-zinc-600"} border border-transparent hover:border-black/5 group`}
+                className={`flex items-center gap-2 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-50 transition-all ${isAddingToExisting ? "text-zinc-300 border-zinc-700" : "text-zinc-600"}`}
               >
-                <UserPlus
-                  size={10}
-                  className="opacity-50 group-hover:opacity-100"
-                />
-                <span className="text-[8px] font-black uppercase tracking-widest">
-                  Assign Staff
-                </span>
-                <ChevronDown size={8} className="opacity-30" />
+                <UserPlus size={12} className="opacity-70" />
+                <span className="text-[10px] font-medium">Assign Staff</span>
+                <ChevronDown size={10} className="opacity-50" />
               </button>
             }
             content={
-              <div className="w-48 p-1 bg-white border border-black shadow-xl">
-                <p className="px-3 py-2 text-[7px] font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-50 mb-1">
-                  Select Service Staff
+              <div className="w-48 p-1 bg-white border border-zinc-200 shadow-xl rounded-md">
+                <p className="px-3 py-1.5 text-[9px] font-bold text-zinc-400 uppercase tracking-wider border-b border-zinc-100 mb-1">
+                  Select Staff
                 </p>
                 {staff.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setSelectedStaffId(s.id)}
-                    className={`w-full text-left px-3 py-2 text-[9px] font-bold rounded transition-colors uppercase tracking-tight ${selectedStaffId === s.id ? "bg-black text-white" : "hover:bg-zinc-50 text-zinc-600"}`}
+                    className={`w-full text-left px-3 py-2 text-xs rounded transition-colors ${selectedStaffId === s.id ? "bg-zinc-900 text-white" : "hover:bg-zinc-50 text-zinc-600"}`}
                   >
                     {s.name}
                   </button>
                 ))}
-                {staff.length === 0 && (
-                  <p className="px-3 py-2 text-[8px] italic text-zinc-400">
-                    Loading staff...
-                  </p>
-                )}
               </div>
             }
           />
         </div>
         <div className="flex items-center gap-2">
           {includeTax && (
-            <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
-              VAT Inclusive (13%)
+            <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+              Tax Incl.
             </span>
           )}
-          <button
+          {/* <button
             onClick={onClose}
-            className={`p-1.5 transition-all opacity-30 hover:opacity-100 ${isAddingToExisting ? "text-white" : "text-black"}`}
+            className="p-1 hover:bg-zinc-100 rounded-md transition-all text-zinc-400 hover:text-zinc-900"
           >
-            <X size={16} />
-          </button>
+            <X size={18} />
+          </button> */}
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Column: Sidebar (Search + Categories) */}
-        <div className="w-56 bg-zinc-50 border-r border-zinc-100 flex flex-col p-4 space-y-6 overflow-hidden">
-          {/* Search Section - Condensed */}
-          <div className="space-y-2">
-            <div className="relative group">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-black transition-colors"
-                size={12}
-              />
-              <input
-                type="text"
-                placeholder="Find item..."
-                className="w-full pl-8 pr-4 py-2 bg-white border border-black/5 rounded-lg text-[10px] outline-none focus:border-black transition-all font-bold placeholder:text-zinc-300 uppercase tracking-tight"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+        <div className="w-48 bg-zinc-50 border-r border-zinc-200 flex flex-col p-3 space-y-4 overflow-hidden">
+          <div className="relative">
+            <Search
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400"
+              size={14}
+            />
+            <input
+              type="text"
+              placeholder="Search dishes..."
+              className="pos-input w-full pl-8 h-9 text-xs"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
-          {/* Categories Section - High Density list */}
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex items-center justify-between px-1 mb-2">
-              <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">
-                DISH MENU
-              </label>
-            </div>
-
-            <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-1">
+            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2 px-1">
+              Menu Categories
+            </label>
+            <div className="flex-1 overflow-y-auto pr-1 space-y-0.5 custom-scrollbar">
               <button
                 onClick={() => setSelectedCategoryId("ALL")}
-                className={`w-full text-left px-3 py-2 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${selectedCategoryId === "ALL" ? "bg-black text-white shadow-lg shadow-black/10" : "text-zinc-500 hover:bg-zinc-100"}`}
+                className={`w-full text-left px-3 py-1.5 rounded text-xs transition-all ${selectedCategoryId === "ALL" ? "bg-zinc-900 text-white font-medium" : "text-zinc-600 hover:bg-zinc-200/50"}`}
               >
-                All Varieties
+                All Items
               </button>
               {categories.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedCategoryId(c.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${selectedCategoryId === c.id ? "bg-black text-white shadow-lg shadow-black/10" : "text-zinc-500 hover:bg-zinc-100"}`}
+                  className={`w-full text-left px-3 py-1.5 rounded text-xs transition-all ${selectedCategoryId === c.id ? "bg-zinc-900 text-white font-medium" : "text-zinc-600 hover:bg-zinc-200/50"}`}
                 >
                   {c.name}
                 </button>
@@ -295,15 +265,14 @@ export function TableOrderingSystem({
             </div>
           </div>
 
-          {/* Sub-Menus - Integrated instead of Popover */}
-          <div className="pt-4 border-t border-zinc-200">
-            <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest px-1 mb-2 block">
-              SUB-MENU FILTERS
+          <div className="pt-3 border-t border-zinc-200">
+            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2 px-1 block">
+              Filters
             </label>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <button
                 onClick={() => setSelectedSubMenuId("ALL")}
-                className={`w-full text-left px-2 py-1.5 rounded text-[8px] font-bold uppercase transition-all ${selectedSubMenuId === "ALL" ? "bg-emerald-600 text-white" : "text-zinc-400 hover:bg-zinc-100"}`}
+                className={`w-full text-left px-3 py-1.5 rounded text-xs transition-all ${selectedSubMenuId === "ALL" ? "bg-zinc-200 text-zinc-900 font-medium" : "text-zinc-500 hover:bg-zinc-200/50"}`}
               >
                 Global
               </button>
@@ -311,7 +280,7 @@ export function TableOrderingSystem({
                 <button
                   key={sm.id}
                   onClick={() => setSelectedSubMenuId(sm.id)}
-                  className={`w-full text-left px-2 py-1.5 rounded text-[8px] font-bold uppercase transition-all ${selectedSubMenuId === sm.id ? "bg-emerald-600 text-white" : "text-zinc-400 hover:bg-zinc-100"}`}
+                  className={`w-full text-left px-3 py-1.5 rounded text-xs transition-all ${selectedSubMenuId === sm.id ? "bg-zinc-200 text-zinc-900 font-medium" : "text-zinc-500 hover:bg-zinc-200/50"}`}
                 >
                   {sm.name}
                 </button>
@@ -320,152 +289,169 @@ export function TableOrderingSystem({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-white p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto bg-white p-4 custom-scrollbar">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+              {[...Array(12)].map((_, i) => (
                 <div
                   key={i}
-                  className="bg-zinc-50 rounded-2xl h-48 animate-pulse border border-black/5"
+                  className="bg-zinc-50 rounded border border-zinc-100 h-24 animate-pulse"
                 />
               ))}
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-                {filteredDishes.map((dish) => (
-                  <div
-                    key={dish.id}
-                    onClick={() => addToCartDirectly(dish)}
-                    className="group bg-white rounded-2xl p-6 border border-black/5 hover:border-black hover:shadow-2xl transition-all duration-500 cursor-pointer flex flex-col relative overflow-hidden"
-                  >
-                    {/* Plus icon indicator */}
-                    <div className="absolute top-4 right-4 w-7 h-7 bg-black text-white rounded-full flex items-center justify-center translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                      <Plus size={14} strokeWidth={3} />
-                    </div>
+              {/*Middle part Food Item  */}
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
+  {filteredDishes.map((dish) => {
+    const cartItem = cart.find((item) => item.dishId === dish.id);
+    const qty = cartItem?.quantity || 0;
 
-                    {/* Content */}
-                    <div className="flex flex-col h-full space-y-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <h4 className="text-[14px] font-black text-black leading-tight uppercase tracking-tight flex-1">
-                          {dish.name}
-                        </h4>
-                      </div>
+    const getInitials = (name: string) =>
+      name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
-                      <div className="mt-auto flex items-end justify-between border-t border-zinc-50 pt-4">
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1">
-                            Price
-                          </span>
-                          <span className="text-xl font-black text-black leading-none">
-                            Rs.{dish.price?.listedPrice ?? 0}
-                          </span>
-                        </div>
-                        <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase tracking-widest">
-                          {dish.category?.name || "Dish"}
-                        </span>
-                      </div>
-                    </div>
+    return (
+      <div
+        key={dish.id}
+        className="group bg-white rounded border border-zinc-200 p-2.5 hover:border-zinc-900 transition-all flex flex-col justify-between h-32 active:scale-[0.98]"
+      >
+        {/* Top Section: Small Image + Title */}
+        <div className="flex gap-3">
+          {/* Small Fixed Image Box */}
+          <div className="w-10 h-10 shrink-0 bg-zinc-50 rounded border border-zinc-100 flex items-center justify-center overflow-hidden">
+            {dish.image && dish.image[0] ? (
+              <img
+                src={dish.image[0]}
+                alt={dish.name}
+                className="w-full h-full object-cover grayscale-[50%] group-hover:grayscale-0 transition-all"
+              />
+            ) : (
+              <span className="text-[10px] font-bold text-zinc-400">
+                {getInitials(dish.name)}
+              </span>
+            )}
+          </div>
 
-                    {/* Professional hover overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/2 transition-colors" />
-                  </div>
-                ))}
+          <div className="min-w-0 flex-1">
+            <h4 className="text-[11px] font-bold text-zinc-900 leading-tight line-clamp-2 uppercase tracking-tight">
+              {dish.name}
+            </h4>
+            <div className="text-[10px] font-mono text-zinc-400 mt-0.5">
+              Rs.{dish.price?.listedPrice ?? 0}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Section: Action Button */}
+        <div className="mt-auto">
+          <div className="h-7 w-full relative">
+            {qty === 0 ? (
+              <button
+                onClick={() => addToCartDirectly(dish)}
+                className="w-full h-full bg-white border border-zinc-200 text-zinc-600 text-[9px] font-bold rounded hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-all uppercase tracking-wider"
+              >
+                + Add
+              </button>
+            ) : (
+              <div className="w-full h-full flex items-center justify-between bg-zinc-900 text-white rounded px-1 animate-in fade-in zoom-in duration-150">
+                <button
+                  onClick={() => removeFromCartDirectly(dish.id)}
+                  className="p-1 hover:text-zinc-400 transition-colors"
+                >
+                  <Minus size={10} strokeWidth={3} />
+                </button>
+                
+                <span className="text-[10px] font-bold font-mono">
+                  {qty}
+                </span>
+                
+                <button
+                  onClick={() => addToCartDirectly(dish)}
+                  className="p-1 hover:text-zinc-400 transition-colors"
+                >
+                  <Plus size={10} strokeWidth={3} />
+                </button>
               </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
 
               {filteredDishes.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center py-20 opacity-20">
-                  <Search size={32} className="text-zinc-400 mb-2" />
-                  <p className="text-[11px] font-bold uppercase tracking-widest">
-                    No items found
-                  </p>
+                <div className="h-full flex flex-col items-center justify-center py-20 text-zinc-300">
+                  <Search size={24} className="mb-2" />
+                  <p className="text-xs">No items found</p>
                 </div>
               )}
             </>
           )}
         </div>
 
-        {/* Right Column: Cart Summary - Performance POS style */}
-        <div className="w-[320px] bg-zinc-50 flex flex-col border-l border-zinc-100 z-10">
-          <div
-            className={`px-6 py-4 border-b flex items-center justify-between sticky top-0 backdrop-blur-sm z-20 ${isAddingToExisting ? "bg-black text-white" : "bg-white/80 border-zinc-100"}`}
-          >
-            <div>
-              <h3 className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">
-                {isAddingToExisting ? "Updating Session" : "Active Selection"}
-              </h3>
-              <p className="text-[12px] font-black uppercase tracking-tight mt-1">
-                {totalQty} Items Added
-              </p>
-            </div>
-            {cart.length > 0 && (
-              <button
-                onClick={() => setCart([])}
-                className="text-[9px] font-bold text-zinc-400 hover:text-red-500 uppercase tracking-widest transition-colors"
-              >
-                Clear
-              </button>
-            )}
+        {/* Right Column: Cart Summary */}
+        <div className="w-72 bg-zinc-50 flex flex-col border-l border-zinc-200">
+          <div className="p-3 border-b border-zinc-200 bg-white flex items-center justify-between">
+            <h3 className="text-xs font-bold text-zinc-900">Active Order</h3>
+            <span className="text-[10px] font-bold bg-zinc-100 px-1.5 py-0.5 rounded text-zinc-600">
+              {totalQty} Items
+            </span>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
             {isAddingToExisting && existingItems.length > 0 && (
-              <div className="mb-4 bg-zinc-100/50 rounded-lg p-3 border border-zinc-200/50">
-                <h4 className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mb-2">
-                  Already in Order
+              <div className="mb-3 bg-zinc-100 p-2 rounded border border-zinc-200">
+                <h4 className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
+                  Current Session
                 </h4>
-                <div className="space-y-1.5 opacity-60">
-                  {existingItems.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center text-[9px] uppercase tracking-tighter"
-                    >
-                      <span className="font-bold text-zinc-600 truncate max-w-[140px]">
-                        {item.quantity} ×{" "}
-                        {item.dish?.name || item.combo?.name || "Item"}
-                      </span>
-                      <span className="font-black text-zinc-600">
-                        {item.totalPrice?.toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                {existingItems.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between text-[10px] text-zinc-500"
+                  >
+                    <span className="truncate flex-1">
+                      {item.quantity} × {item.dish?.name}
+                    </span>
+                    <span className="ml-2">{item.totalPrice?.toFixed(2)}</span>
+                  </div>
+                ))}
               </div>
             )}
 
             {cart.map((item, idx) => (
               <div
                 key={idx}
-                className="bg-white rounded-lg p-3 border border-black/5 shadow-sm group relative"
+                className="bg-white rounded border border-zinc-200 p-2 shadow-sm relative group"
               >
-                <div className="flex justify-between items-start gap-3">
+                <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-[11px] font-black text-black leading-none truncate uppercase tracking-tight">
+                    <h4 className="text-[11px] font-bold text-zinc-900 truncate">
                       {item.dish?.name}
                     </h4>
-                    <span className="text-[10px] text-zinc-500 font-bold">
-                      Rs. {(item.unitPrice ?? 0).toFixed(2)}
+                    <span className="text-[10px] text-zinc-500">
+                      @ {item.unitPrice?.toFixed(2)}
                     </span>
                   </div>
-                  <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <span className="text-[12px] font-black text-black">
-                      {(item.totalPrice ?? 0).toFixed(2)}
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className="text-xs font-bold text-zinc-900">
+                      {item.totalPrice?.toFixed(2)}
                     </span>
-                    <div className="flex items-center gap-2 bg-zinc-50 rounded-md p-1 border border-zinc-100">
+                    <div className="flex items-center gap-1.5 bg-zinc-50 rounded border border-zinc-200 px-1 py-0.5">
                       <button
                         onClick={() => updateCartQty(idx, -1)}
-                        className="p-0.5 text-zinc-400 hover:text-black transition-colors"
+                        className="text-zinc-400 hover:text-zinc-900"
                       >
-                        <Minus size={8} strokeWidth={3} />
+                        <Minus size={10} />
                       </button>
-                      <span className="text-[9px] font-black w-3 text-center text-black">
+                      <span className="text-[10px] font-bold w-3 text-center">
                         {item.quantity}
                       </span>
                       <button
                         onClick={() => updateCartQty(idx, 1)}
-                        className="p-0.5 text-zinc-400 hover:text-black transition-colors"
+                        className="text-zinc-400 hover:text-zinc-900"
                       >
-                        <Plus size={8} strokeWidth={3} />
+                        <Plus size={10} />
                       </button>
                     </div>
                   </div>
@@ -474,53 +460,38 @@ export function TableOrderingSystem({
                 <div className="mt-2 flex items-center gap-2">
                   <input
                     type="text"
-                    placeholder="Note..."
-                    className="flex-1 bg-zinc-50 border-none rounded px-2.5 py-1.5 text-[9px] font-bold uppercase outline-none focus:bg-white focus:ring-1 focus:ring-black transition-all text-zinc-600 placeholder:text-zinc-300"
+                    placeholder="Notes..."
+                    className="flex-1 h-6 bg-zinc-50 border border-zinc-100 rounded px-1.5 text-[10px] outline-none"
                     value={item.remarks}
                     onChange={(e) => updateCartItemRemarks(idx, e.target.value)}
                   />
                   <button
                     onClick={() => removeFromCart(idx)}
-                    className="p-1 text-zinc-300 hover:text-rose-500 transition-colors"
+                    className="text-zinc-300 hover:text-red-500"
                   >
-                    <X size={10} strokeWidth={3} />
+                    <X size={12} />
                   </button>
                 </div>
               </div>
             ))}
-
-            {cart.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center py-20 opacity-20">
-                <LayoutGrid size={48} className="text-zinc-400 mb-4" />
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em]">
-                  No items selected
-                </p>
-              </div>
-            )}
           </div>
 
-          <div className="p-4 bg-white border-t border-black/5 space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="relative">
-                <label className="text-[8px] font-black text-zinc-500 uppercase tracking-widest absolute top-1.5 left-2.5 z-10">
-                  Guests
-                </label>
+          <div className="p-3 bg-white border-t border-zinc-200 space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="pos-label text-[10px]">Guests</label>
                 <input
                   type="number"
                   min="1"
-                  className="w-full pl-2.5 pr-2.5 pt-4 pb-1.5 bg-zinc-50 border border-transparent focus:border-black rounded-lg text-[11px] outline-none transition-all font-black text-black"
+                  className="pos-input w-full h-8 text-xs"
                   value={guests}
-                  max={table?.capacity}
                   onChange={(e) => setGuests(Number(e.target.value))}
                 />
               </div>
-
-              <div className="relative">
-                <label className="text-[8px] font-black text-zinc-500 uppercase tracking-widest absolute top-1.5 left-2.5 z-10">
-                  Staff
-                </label>
+              <div className="space-y-1">
+                <label className="pos-label text-[10px]">Staff</label>
                 <select
-                  className="w-full pl-2.5 pr-2.5 pt-4 pb-1.5 bg-zinc-50 border border-transparent focus:border-black rounded-lg text-[11px] outline-none transition-all font-black text-black appearance-none"
+                  className="pos-input w-full h-8 text-xs"
                   value={selectedStaffId}
                   onChange={(e) => setSelectedStaffId(e.target.value)}
                 >
@@ -532,52 +503,41 @@ export function TableOrderingSystem({
                   ))}
                 </select>
               </div>
-
-              <div className="col-span-2 relative">
-                <label className="text-[7px] font-black text-zinc-400 uppercase tracking-widest absolute top-2 left-2.5 z-10">
-                  Order Instructions
-                </label>
-                <textarea
-                  className="w-full pl-2.5 pr-2.5 pt-5 pb-1.5 bg-zinc-50 border border-transparent focus:border-black rounded-lg text-[9px] outline-none transition-all font-bold text-black min-h-[50px] resize-none uppercase"
-                  placeholder="EX: NO ONIONS..."
-                  value={kotRemarks}
-                  onChange={(e) => setKotRemarks(e.target.value)}
-                />
-              </div>
             </div>
 
-            <div className="pt-3 border-t border-zinc-100 flex flex-col gap-3">
-              <div className="flex justify-between items-end">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">
-                    TOTAL DUE
-                  </span>
-                  <p className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">
-                    Tax Incl. Rs. {taxAmount?.toFixed(2)}
-                  </p>
-                </div>
-                <span className="text-3xl font-black text-black tracking-tighter leading-none">
+            <textarea
+              className="pos-input w-full p-2 text-xs h-12 resize-none"
+              placeholder="Order remarks (KOT)..."
+              value={kotRemarks}
+              onChange={(e) => setKotRemarks(e.target.value)}
+            />
+
+            <div className="pt-2 border-t border-zinc-100 flex justify-between items-end">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-zinc-400">
+                  GRAND TOTAL
+                </span>
+                <span className="text-xl font-bold text-zinc-900 leading-none">
                   Rs. {grandTotal?.toFixed(2)}
                 </span>
               </div>
-
-              <div className="grid grid-cols-5 gap-2">
+              <div className="flex gap-1.5">
                 <button
                   onClick={() =>
                     onConfirm(cart, guests, kotRemarks, selectedStaffId)
                   }
-                  className="col-span-1 h-10 border border-black/5 bg-zinc-50 hover:bg-zinc-100 rounded-lg flex items-center justify-center transition-colors"
+                  className="h-9 px-2 bg-zinc-100 text-zinc-600 rounded hover:bg-zinc-200 transition-all"
                 >
-                  <Printer size={14} className="text-zinc-400" />
+                  <Printer size={16} />
                 </button>
                 <button
                   onClick={() =>
                     onConfirm(cart, guests, kotRemarks, selectedStaffId)
                   }
                   disabled={cart.length === 0}
-                  className="col-span-4 h-10 bg-black text-white text-[9px] font-black uppercase tracking-widest rounded-lg disabled:opacity-30 active:scale-95 transition-all shadow-xl shadow-black/10"
+                  className="h-9 px-4 bg-zinc-900 text-white text-xs font-bold rounded disabled:opacity-30 transition-all uppercase"
                 >
-                  {isAddingToExisting ? "Sync Update" : "Confirm KOT"}
+                  {isAddingToExisting ? "Update" : "Place Order"}
                 </button>
               </div>
             </div>
