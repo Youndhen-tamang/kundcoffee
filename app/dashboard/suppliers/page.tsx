@@ -101,6 +101,7 @@ export default function SuppliersPage() {
               setSelectedSupplier(null);
               setIsModalOpen(true);
             }}
+            variant="primary"
           >
             Add Supplier
           </Button>

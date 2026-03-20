@@ -19,18 +19,17 @@ export default async function middleware(req: NextRequest) {
     if (isDashboardPage || isVerifyPage || isSetupPage) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
-    // ALLOW the Home page, Login, and Signup
+    // ALLOW Login and Signup
     return NextResponse.next();
   }
 
-  // 2. If user IS logged in, prevent them from seeing Login/Signup
-  // Redirect them to dashboard instead of home
+  // 2. If user IS logged in, prevent them from seeing Login/Signup/Home
   if (isAuthPage) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   // 3. Email Verification Check
-  // We force verification even if they try to look at the public home page while logged in
+  // Only enforce for self-registered users (emailVerified is null)
   if (!token.emailVerified && !isVerifyPage) {
     const url = new URL("/verify-email", req.url);
     if (token.email) url.searchParams.set("email", token.email as string);

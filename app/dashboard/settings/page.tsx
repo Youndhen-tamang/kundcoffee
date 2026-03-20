@@ -377,7 +377,42 @@ export default function SettingsPage() {
       </div>
 
       {/*User Modification */}
-      <section></section>
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
+        <div className="lg:pt-2">
+          <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-tight mb-1">
+            System Access
+          </h2>
+          <p className="text-xs text-zinc-500 leading-relaxed font-medium">
+            Manage system users, login credentials, and granular permission sets for your staff.
+          </p>
+        </div>
+
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 shadow-sm p-8">
+          <div className="flex items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="mt-1 w-10 h-10 rounded-lg bg-zinc-900 text-white flex items-center justify-center">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-zinc-900 block mb-1">
+                  User Access & RBAC
+                </label>
+                <p className="text-xs text-zinc-500 font-medium leading-relaxed max-w-sm">
+                  Control who can access this dashboard and what they can see or modify.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => window.location.href = "/dashboard/settings/users"}
+              variant="secondary"
+              className="h-10 px-6 border-zinc-200 text-zinc-900 hover:bg-zinc-50 font-bold text-[10px] uppercase tracking-widest"
+            >
+              Manage Users
+            </Button>
+          </div>
+        </div>
+      </section>
       {/* --- ACTION FOOTER --- */}
       <div className="flex items-center justify-between pt-10 border-t border-zinc-100">
         <div className="hidden md:flex items-center gap-2 text-zinc-400">

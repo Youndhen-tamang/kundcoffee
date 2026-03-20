@@ -768,6 +768,7 @@ model User {
   verificationCodeExpires DateTime?
   sessions                Session[]
   store                   Store?    @relation(fields: [storeId], references: [id])
+  permissions             String[]  @default([])
 }
 
 model Menu {

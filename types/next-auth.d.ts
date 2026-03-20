@@ -5,7 +5,8 @@ declare module "next-auth" {
     user: {
       id: string;
       role: "ADMIN" | "MANAGER" | "CASHIER";
-      storeId?: string | null; 
+      storeId?: string | null;
+      permissions?: string[];
       emailVerified?: Date | null;
       isSetupComplete?: boolean;
       trialEndsAt?: Date | null;
@@ -15,7 +16,8 @@ declare module "next-auth" {
   interface User {
     id: string;
     role: "ADMIN" | "MANAGER" | "CASHIER";
-    storeId?: string | null; 
+    storeId?: string | null;
+    permissions?: string[];
     emailVerified?: Date | null;
     isSetupComplete?: boolean;
     trialEndsAt?: Date | null;
@@ -26,7 +28,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: "ADMIN" | "MANAGER" | "CASHIER";
-    storeId?: string | null; 
+    storeId?: string | null;
+    permissions?: string[];
     emailVerified?: Date | null;
     isSetupComplete?: boolean;
     trialEndsAt?: Date | null;

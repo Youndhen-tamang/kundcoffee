@@ -26,11 +26,21 @@ import {
   RefreshCcw,
   Scale,
   History,
+  Shield,
 } from "lucide-react";
 
 export default function Sidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
+
+  const userPermissions = (session?.user?.permissions as string[]) || [];
+  const userRole = session?.user?.role;
+  const isAdmin = userRole === "ADMIN";
+
+  const hasAccess = (permission: string) => {
+    if (isAdmin) return true;
+    return userPermissions.includes(permission);
+  };
 
   const [openSection, setOpenSection] = useState<string | null>(
     pathname.includes("menu")
@@ -55,12 +65,16 @@ export default function Sidebar() {
     icon: Icon,
     label,
     isChild = false,
+    permission,
   }: {
     href: string;
     icon: any;
     label: string;
     isChild?: boolean;
+    permission?: string;
   }) => {
+    if (permission && !hasAccess(permission)) return null;
+
     const active = isActive(href);
     return (
       <Link
@@ -91,12 +105,18 @@ export default function Sidebar() {
     label,
     icon: Icon,
     children,
+    permission,
   }: {
     id: string;
     label: string;
     icon: any;
     children: React.ReactNode;
+    permission?: string;
   }) => {
+    if (permission && !hasAccess(permission)) return null;
+    
+    // Also hide if all children are hidden (though difficult to check here, we'll manually apply to AccordionItems)
+
     const isOpen = openSection === id;
     const isChildActive = pathname.includes(id === "core" ? "tables" : id);
 
@@ -162,7 +182,12 @@ export default function Sidebar() {
             Main
           </label>
           <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-          <NavItem href="/dashboard/orders" icon={Package} label="Orders" />
+          <NavItem 
+            href="/dashboard/orders" 
+            icon={Package} 
+            label="Orders" 
+            permission="pos_access"
+          />
         </section>
 
         {/* Management Section */}
@@ -171,7 +196,7 @@ export default function Sidebar() {
             Operations
           </label>
 
-          <AccordionItem id="menu" label="Menu" icon={UtensilsCrossed}>
+          <AccordionItem id="menu" label="Menu" icon={UtensilsCrossed} permission="manage_menu">
             <NavItem
               href="/dashboard/menu/categories"
               icon={Tag}
@@ -204,7 +229,7 @@ export default function Sidebar() {
             />
           </AccordionItem>
 
-          <AccordionItem id="core" label="Floor Plan" icon={Database}>
+          <AccordionItem id="core" label="Floor Plan" icon={Database} permission="manage_core">
             <NavItem
               href="/dashboard/spaces"
               icon={Map}
@@ -225,7 +250,7 @@ export default function Sidebar() {
             />
           </AccordionItem>
 
-          <AccordionItem id="customer" label="CRM" icon={Users}>
+          <AccordionItem id="customer" label="CRM" icon={Users} permission="manage_customers">
             <NavItem
               href="/dashboard/customers/add-customer"
               icon={Users}
@@ -240,7 +265,7 @@ export default function Sidebar() {
             />
           </AccordionItem>
 
-          <AccordionItem id="staffs" label="Team" icon={Users}>
+          <AccordionItem id="staffs" label="Team" icon={Users} permission="manage_staff">
             <NavItem
               href="/dashboard/staff"
               icon={Users}
@@ -249,7 +274,7 @@ export default function Sidebar() {
             />
           </AccordionItem>
 
-          <AccordionItem id="procurement" label="Procurement" icon={Package}>
+          <AccordionItem id="procurement" label="Procurement" icon={Package} permission="manage_inventory">
             <NavItem
               href="/dashboard/purchases"
               icon={CreditCard}
@@ -264,7 +289,7 @@ export default function Sidebar() {
             />
           </AccordionItem>
 
-          <AccordionItem id="inventory" label="Inventory" icon={Database}>
+          <AccordionItem id="inventory" label="Inventory" icon={Database} permission="manage_inventory">
             <NavItem
               href="/dashboard/inventory/stocks"
               icon={Package}
@@ -307,6 +332,7 @@ export default function Sidebar() {
             href="/dashboard/finance"
             icon={TrendingUp}
             label="Sales Analytics"
+            permission="view_finance"
           />
         </section>
 
@@ -315,10 +341,18 @@ export default function Sidebar() {
           <label className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] mb-2 block">
             System
           </label>
+          {isAdmin && (
+            <NavItem
+              href="/dashboard/settings/users"
+              icon={Shield}
+              label="User Access"
+            />
+          )}
           <NavItem
             href="/dashboard/settings"
             icon={Settings}
             label="Settings"
+            permission="manage_settings"
           />
         </section>
       </div>
@@ -331,7 +365,7 @@ export default function Sidebar() {
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-bold text-zinc-900 truncate">
-              {session?.user?.email || "Administrator"}
+              {session?.user?.name || session?.user?.email || "Administrator"}
             </span>
             <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-wider">
               {session?.user?.role || "Manager"}
