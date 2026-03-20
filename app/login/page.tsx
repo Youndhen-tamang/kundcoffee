@@ -148,12 +148,7 @@ export default function LoginPage() {
           className="w-full max-w-[420px]"
         >
           {/* Mobile-only Logo */}
-          <div className="md:hidden flex items-center gap-3 mb-10">
-            <Coffee size={24} className="text-red-700" />
-            <h1 className="text-lg font-bold tracking-tighter uppercase">
-              Kund Coffee
-            </h1>
-          </div>
+          
 
           <div className="mb-10">
             <h2 className="text-3xl font-semibold text-zinc-900 tracking-tight mb-2">
