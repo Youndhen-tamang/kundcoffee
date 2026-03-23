@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
+      orderId, // Added orderId
       tableId,
       sessionId,
       paymentMethod,
@@ -58,8 +59,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Direct Order check (Takeaway/etc)
+    let order;
+    if (orderId) {
+      order = await prisma.order.findUnique({
+        where: { id: orderId },
+      });
+    }
+
     // DINE_IN must have a session.
-    if (!session || !session.isActive) {
+    // However, Takeaway/Direct orders might not have a session.
+    const isDirectOrder = order && order.type !== "DINE_IN";
+
+    if (!isDirectOrder && (!session || !session.isActive)) {
       return NextResponse.json(
         {
           success: false,
@@ -69,15 +81,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Ensure the session belongs to the authenticated store
-    if (storeId && session.storeId && session.storeId !== storeId) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized access to this session" },
-        { status: 401 },
-      );
+    // Ensure the session/order belongs to the authenticated store
+    if (storeId) {
+      if (session && session.storeId && session.storeId !== storeId) {
+        return NextResponse.json(
+          { success: false, message: "Unauthorized access to this session" },
+          { status: 401 },
+        );
+      }
+      if (order && order.storeId && order.storeId !== storeId) {
+        return NextResponse.json(
+          { success: false, message: "Unauthorized access to this order" },
+          { status: 401 },
+        );
+      }
     }
 
-    const effectiveStoreId = storeId || session.storeId;
+    const effectiveStoreId = storeId || session?.storeId || order?.storeId;
 
     if (!effectiveStoreId) {
       return NextResponse.json(
@@ -86,7 +106,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const activeSessionId = session.id;
+    const activeSessionId = session?.id || null;
 
     // --- 2. BRANCHING LOGIC ---
 
@@ -95,7 +115,13 @@ export async function POST(req: NextRequest) {
       const transactionUuid = `${Date.now()}-${uuidv4()}`;
 
       const existing = await prisma.payment.findFirst({
-        where: { sessionId: activeSessionId, status: "PAID" },
+        where: {
+          OR: [
+            activeSessionId ? { sessionId: activeSessionId } : {},
+            orderId ? { orders: { some: { id: orderId } } } : {},
+          ].filter((q) => Object.keys(q).length > 0),
+          status: "PAID",
+        },
       });
 
       if (existing) {
@@ -114,6 +140,7 @@ export async function POST(req: NextRequest) {
           transactionUuid,
           storeId: effectiveStoreId as string,
           staffId: staffId || null,
+          orders: orderId ? { connect: { id: orderId } } : undefined,
         },
       });
 
@@ -151,8 +178,9 @@ export async function POST(req: NextRequest) {
       }
 
       await finalizeSessionTransaction({
+        orderId, // Added orderId
         sessionId: activeSessionId,
-        tableId: tableId || session.tableId || null,
+        tableId: tableId || session?.tableId || null,
         amount,
         subtotal,
         tax,

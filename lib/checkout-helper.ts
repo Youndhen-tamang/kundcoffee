@@ -2,8 +2,9 @@
 import { prisma } from "@/lib/prisma";
 
 export async function finalizeSessionTransaction(data: {
-  sessionId: string;
-  tableId: string;
+  orderId?: string;
+  sessionId: string | null;
+  tableId: string | null;
   amount: number;
   subtotal: number;
   tax: number;
@@ -20,6 +21,7 @@ export async function finalizeSessionTransaction(data: {
   staffId?: string;
 }) {
   const {
+    orderId,
     sessionId,
     tableId,
     amount,
@@ -59,13 +61,21 @@ export async function finalizeSessionTransaction(data: {
           finalStoreId = session?.storeId || undefined;
         }
 
+        if (!finalStoreId && orderId) {
+          const order = await tx.order.findUnique({
+            where: { id: orderId },
+            select: { storeId: true },
+          });
+          finalStoreId = order?.storeId || undefined;
+        }
+
         if (!finalStoreId) {
           throw new Error("Store identification failed. storeId is required.");
         }
       }
 
       // 1. Handle Payments
-      // Delete existing payments for this session to avoid duplicates/confusion if re-run
+      // Delete existing payments for this session/order to avoid duplicates
       if (sessionId) {
         await tx.payment.deleteMany({
           where: { sessionId: sessionId },
@@ -88,7 +98,7 @@ export async function finalizeSessionTransaction(data: {
             method: p.method as any,
             status: paymentStatus,
             sessionId: sessionId || null,
-            storeId: finalStoreId,
+            storeId: finalStoreId as string,
             staffId: staffId || null,
           },
         });
@@ -97,13 +107,15 @@ export async function finalizeSessionTransaction(data: {
 
       const finalPaymentId = paymentRecords[0]?.id || null;
 
-      // 2. Update all orders in this session to COMPLETED
+      // 2. Update orders to COMPLETED
       const orders = await tx.order.findMany({
         where: {
-          sessionId: sessionId || undefined,
+          OR: [
+            sessionId ? { sessionId } : {},
+            orderId ? { id: orderId } : {},
+          ].filter((q) => Object.keys(q).length > 0),
           storeId: finalStoreId,
-          // If no sessionId, we might be finalizing a specific order if we had an orderId,
-          // but this helper seems session-centric. For Take Away, API should pass sessionId.
+          status: { in: ["PENDING", "PREPARING", "READYTOPICK", "SERVED"] },
         },
         include: { items: true },
       });
@@ -131,13 +143,13 @@ export async function finalizeSessionTransaction(data: {
         }
       }
 
-      // 3. Handle extra free items - Create a special "Complimentary" order
+      // 3. Handle extra free items
       if (extraFreeItems.length > 0) {
         await tx.order.create({
           data: {
             sessionId: sessionId || null,
             tableId: tableId || null,
-            storeId: finalStoreId,
+            storeId: finalStoreId as string,
             type: tableId ? "DINE_IN" : "TAKE_AWAY",
             status: "COMPLETED",
             customerId: customerId || null,
@@ -158,8 +170,8 @@ export async function finalizeSessionTransaction(data: {
         });
       }
 
-      // 4. Handle stray orders on the table (not yet linked to session) - ONLY if tableId exists
-      if (tableId) {
+      // 4. Handle stray orders on the table (Dine-in only)
+      if (tableId && sessionId) {
         await tx.order.updateMany({
           where: {
             tableId,
@@ -197,17 +209,17 @@ export async function finalizeSessionTransaction(data: {
             },
           });
         }
+
+        // 6. Reset Table status to ACTIVE if exists
+        if (tableId) {
+          await tx.table.update({
+            where: { id: tableId, storeId: finalStoreId },
+            data: { status: "ACTIVE" },
+          });
+        }
       }
 
-      // 6. Reset Table status to ACTIVE if exists
-      if (tableId) {
-        await tx.table.update({
-          where: { id: tableId, storeId: finalStoreId },
-          data: { status: "ACTIVE" },
-        });
-      }
-
-      // 7. Handle Customer Ledger and Loyalty
+      // 7. Handle Customer Ledger
       if (customerId) {
         const pointsEarned = Math.floor(amount / 100);
         await tx.customer.update({
@@ -226,7 +238,7 @@ export async function finalizeSessionTransaction(data: {
         await tx.customerLedger.create({
           data: {
             customerId,
-            storeId: finalStoreId,
+            storeId: finalStoreId as string,
             txnNo: `SALE-${Date.now()}-${(sessionId || "TA").substring(0, 4)}`,
             type: "SALE",
             amount: amount,
@@ -238,7 +250,7 @@ export async function finalizeSessionTransaction(data: {
           },
         });
 
-        // Create PAYMENT_IN entries for only the successful (paid) portions
+        // Create PAYMENT_IN entries
         let runningBalance = newBalance;
         for (const payRec of paymentRecords) {
           if (payRec.status === "PAID") {
@@ -246,7 +258,7 @@ export async function finalizeSessionTransaction(data: {
             await tx.customerLedger.create({
               data: {
                 customerId,
-                storeId: finalStoreId,
+                storeId: finalStoreId as string,
                 txnNo: `PAY-${Date.now()}-${payRec.id.substring(0, 4)}`,
                 type: "PAYMENT_IN",
                 amount: payRec.amount,

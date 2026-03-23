@@ -164,6 +164,7 @@ export function CheckoutModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          orderId: order.id,
           tableId: order.tableId,
           sessionId: order.sessionId,
           paymentMethod,

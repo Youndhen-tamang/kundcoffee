@@ -344,13 +344,13 @@ model Order {
   status     OrderStatus   @default(PENDING)
   createdAt  DateTime      @default(now())
   customerId String?
-  guests     Int?
-  kotRemarks String?
   isDeleted  Boolean       @default(false)
   paymentId  String?
   sessionId  String?
   staffId    String?
   storeId    String?
+  guests     Int?
+  kotRemarks String?
   customer   Customer?     @relation(fields: [customerId], references: [id])
   payment    Payment?      @relation(fields: [paymentId], references: [id])
   session    TableSession? @relation(fields: [sessionId], references: [id])
@@ -542,10 +542,10 @@ model Staff {
   email           String?
   isActive        Boolean          @default(true)
   image           String?
-  joinDate        DateTime?        @default(now())
   createdAt       DateTime         @default(now())
   storeId         String
   roleId          String?
+  joinDate        DateTime?        @default(now())
   orders          Order[]
   payments        Payment[]
   purchases       Purchase[]
@@ -767,9 +767,9 @@ model User {
   trialEndsAt             DateTime?
   verificationCode        String?
   verificationCodeExpires DateTime?
+  permissions             String[]  @default([])
   sessions                Session[]
   store                   Store?    @relation(fields: [storeId], references: [id])
-  permissions             String[]  @default([])
 }
 
 model Menu {
