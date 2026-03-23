@@ -141,7 +141,7 @@ export default function StaffHistoryPage() {
               <div className="flex items-center gap-3 text-zinc-600">
                 <Calendar size={16} className="text-zinc-400" />
                 <span className="text-sm font-medium">
-                  Joined {new Date(staff.createdAt).toLocaleDateString()}
+                  Joined {new Date(staff.joinDate || staff.createdAt).toLocaleDateString()}
                 </span>
               </div>
             </div>

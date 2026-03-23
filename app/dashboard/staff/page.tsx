@@ -36,6 +36,7 @@ export default function StaffPage() {
     phone: "",
     roleId: "",
     isActive: true,
+    joinDate: new Date().toISOString().split("T")[0],
   });
 
   const fetchData = async () => {
@@ -70,6 +71,7 @@ export default function StaffPage() {
       phone: "",
       roleId: "",
       isActive: true,
+      joinDate: new Date().toISOString().split("T")[0],
     });
     setImageFile(null);
     setIsAddModalOpen(true);
@@ -84,6 +86,7 @@ export default function StaffPage() {
       phone: s.phone || "",
       roleId: s.roleId || "",
       isActive: s.isActive,
+      joinDate: (s.joinDate || s.createdAt)?.split("T")[0],
     });
     setImageFile(s.image || null);
     setIsAddModalOpen(true);
@@ -336,6 +339,19 @@ export default function StaffPage() {
                 value={formData.phone}
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
+                Join Date
+              </label>
+              <input
+                type="date"
+                className="w-full h-12 px-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-zinc-900 outline-none transition-all font-semibold"
+                value={formData.joinDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, joinDate: e.target.value })
                 }
               />
             </div>

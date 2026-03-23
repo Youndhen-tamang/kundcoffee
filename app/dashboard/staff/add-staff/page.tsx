@@ -10,7 +10,8 @@ import {
   Briefcase, 
   User, 
   CheckCircle2,
-  Loader2
+  Loader2,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
@@ -23,6 +24,7 @@ export default function AddStaffPage() {
     role: "Waiter",
     phone: "",
     email: "",
+    joinDate: new Date().toISOString().split("T")[0],
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -159,6 +161,18 @@ export default function AddStaffPage() {
                   className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:ring-2 focus:ring-zinc-900 outline-none transition-all placeholder:text-zinc-300"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+              {/* Join Date Field */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                  <Calendar size={12} /> Join Date
+                </label>
+                <input
+                  type="date"
+                  className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:ring-2 focus:ring-zinc-900 outline-none transition-all placeholder:text-zinc-300"
+                  value={formData.joinDate}
+                  onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
                 />
               </div>
             </div>

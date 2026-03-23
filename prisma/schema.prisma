@@ -542,6 +542,7 @@ model Staff {
   email           String?
   isActive        Boolean          @default(true)
   image           String?
+  joinDate        DateTime?        @default(now())
   createdAt       DateTime         @default(now())
   storeId         String
   roleId          String?

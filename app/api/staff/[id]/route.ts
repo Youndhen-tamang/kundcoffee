@@ -58,7 +58,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { name, role, roleId, phone, email, isActive, image } = body;
+    const { name, role, roleId, phone, email, isActive, image, joinDate } = body;
 
     const updatedStaff = await prisma.staff.update({
       where: { id, storeId },
@@ -70,6 +70,7 @@ export async function PATCH(
         email,
         isActive,
         image,
+        joinDate: joinDate ? new Date(joinDate) : undefined,
       },
     });
 

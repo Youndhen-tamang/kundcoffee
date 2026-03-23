@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, role, roleId, phone, email, isActive, image } = body;
+    const { name, role, roleId, phone, email, isActive, image, joinDate } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
         email,
         isActive: isActive !== undefined ? isActive : true,
         image,
+        joinDate: joinDate ? new Date(joinDate) : undefined,
         storeId,
       },
     });
