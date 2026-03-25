@@ -34,7 +34,7 @@ export default function TablesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<
     "name" | "type" | "space" | "capacity" | "status"
-  >("name");
+  >("space");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   // --- UI & Logic States ---
@@ -410,127 +410,159 @@ export default function TablesPage() {
         <MetricCard title="Table Types" value={tableTypes.length} />
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
-          <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-tight">
-            Floor Map & Table Register
-          </h3>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-zinc-400 font-medium">
-              {filteredTables.length} tables configured
-            </span>
-          </div>
-        </div>
+      <div className="space-y-12">
+        {Object.entries(
+          filteredTables.reduce(
+            (acc, table) => {
+              const groupName =
+                sortBy === "space"
+                  ? table.space?.name || "Unassigned Space"
+                  : table.tableType?.name || "Unassigned Type";
+              if (!acc[groupName]) acc[groupName] = [];
+              acc[groupName].push(table);
+              return acc;
+            },
+            {} as Record<string, Table[]>,
+          ),
+        ).map(([groupName, groupTables]) => (
+          <div
+            key={groupName}
+            className="bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden"
+          >
+            <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+              <h3 className="text-sm font-black text-zinc-900 uppercase tracking-widest flex items-center gap-3">
+                <span className="w-1.5 h-6 bg-zinc-900 rounded-full" />
+                {groupName}
+              </h3>
+              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                {groupTables.length} Tables
+              </span>
+            </div>
 
-        <table className="w-full text-left text-sm text-zinc-600">
-          <thead className="bg-zinc-50 border-b border-zinc-200">
-            <tr>
-              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest w-24">
-                Row #
-              </th>
-              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
-                Name
-              </th>
-              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
-                Type
-              </th>
-              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
-                Space
-              </th>
-              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
-                Cap.
-              </th>
-              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
-                Status
-              </th>
-              <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest text-right">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100">
-            {filteredTables.map((table) => (
-              <tr
-                key={table.id}
-                onClick={() => openEdit(table)}
-                className="hover:bg-zinc-50 transition-colors cursor-pointer group border-b border-zinc-100 last:border-0"
-              >
-                <td
-                  className="px-6 py-4"
-                  onClick={(e) => handleSortOrderClick(table, e)}
-                >
-                  {editingRowId === table.id ? (
-                    <input
-                      type="number"
-                      value={editingValue}
-                      onChange={handleSortOrderChange}
-                      onBlur={() => handleSortOrderBlur(table.id)}
-                      onKeyDown={(e) => handleSortOrderKeyDown(e, table.id)}
-                      className="w-16 px-2 py-1 text-sm border border-zinc-300 rounded focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono"
-                      autoFocus
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <span className="font-mono text-xs font-black text-zinc-400 group-hover:text-zinc-900 transition-colors">
-                      {((table as any).sortOrder ?? 0)
-                        .toString()
-                        .padStart(2, "0")}
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4 font-black text-zinc-900">
-                  {table.name}
-                </td>
-                <td className="px-6 py-4">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                    {table.tableType?.name || "Standard"}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-zinc-600 font-bold text-xs uppercase">
-                  {table.space?.name || "-"}
-                </td>
-                <td className="px-6 py-4 text-zinc-900 font-mono font-black">
-                  {table.capacity}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${
-                      table.status === "ACTIVE"
-                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                        : table.status === "OCCUPIED"
-                          ? "bg-rose-50 text-rose-600 border-rose-100"
-                          : "bg-amber-50 text-amber-600 border-amber-100"
-                    }`}
+            <table className="w-full text-left text-sm text-zinc-600">
+              <thead className="bg-zinc-50/50 border-b border-zinc-200">
+                <tr>
+                  <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest w-24">
+                    Row #
+                  </th>
+                  <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
+                    Name
+                  </th>
+                  <th
+                    className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest cursor-pointer hover:text-zinc-900"
+                    onClick={() => {
+                      setSortBy(sortBy === "type" ? "space" : "type");
+                      setSortDir("asc");
+                    }}
                   >
-                    {table.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="none"
-                      size="sm"
-                      className="h-8 w-8 p-0 hover:bg-zinc-100 rounded-full transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEdit(table);
-                      }}
+                    {sortBy === "type" ? "Type (Switch to Space)" : "Type"}
+                  </th>
+                  <th
+                    className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest cursor-pointer hover:text-zinc-900"
+                    onClick={() => {
+                      setSortBy(sortBy === "space" ? "type" : "space");
+                      setSortDir("asc");
+                    }}
+                  >
+                    {sortBy === "space" ? "Space (Switch to Type)" : "Space"}
+                  </th>
+                  <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
+                    Cap.
+                  </th>
+                  <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 font-black text-zinc-500 uppercase text-[10px] tracking-widest text-right">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {groupTables.map((table) => (
+                  <tr
+                    key={table.id}
+                    onClick={() => openEdit(table)}
+                    className="hover:bg-zinc-50 transition-colors cursor-pointer group border-b border-zinc-100 last:border-0"
+                  >
+                    <td
+                      className="px-6 py-4"
+                      onClick={(e) => handleSortOrderClick(table, e)}
                     >
-                      <Pencil className="h-4 w-4 text-zinc-500" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filteredTables.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-zinc-400">
-                  No tables found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                      {editingRowId === table.id ? (
+                        <input
+                          type="number"
+                          value={editingValue}
+                          onChange={handleSortOrderChange}
+                          onBlur={() => handleSortOrderBlur(table.id)}
+                          onKeyDown={(e) => handleSortOrderKeyDown(e, table.id)}
+                          className="w-16 px-2 py-1 text-sm border border-zinc-300 rounded focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono"
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <span className="font-mono text-xs font-black text-zinc-400 group-hover:text-zinc-900 transition-colors">
+                          {((table as any).sortOrder ?? 0)
+                            .toString()
+                            .padStart(2, "0")}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 font-black text-zinc-900">
+                      {table.name}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                        {table.tableType?.name || "Standard"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-zinc-600 font-bold text-xs uppercase">
+                      {table.space?.name || "-"}
+                    </td>
+                    <td className="px-6 py-4 text-zinc-900 font-mono font-black">
+                      {table.capacity}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${
+                          table.status === "ACTIVE"
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                            : table.status === "OCCUPIED"
+                              ? "bg-rose-50 text-rose-600 border-rose-100"
+                              : "bg-amber-50 text-amber-600 border-amber-100"
+                        }`}
+                      >
+                        {table.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="none"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-zinc-100 rounded-full transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(table);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4 text-zinc-500" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+
+        {filteredTables.length === 0 && (
+          <div className="py-20 text-center bg-zinc-50 rounded-3xl border-2 border-dashed border-zinc-100">
+            <h3 className="text-sm font-black text-zinc-400 uppercase tracking-widest">
+              No tables found matching your search.
+            </h3>
+          </div>
+        )}
       </div>
 
       <SidePanel

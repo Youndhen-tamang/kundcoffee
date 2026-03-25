@@ -37,6 +37,7 @@ export default function StaffPage() {
     roleId: "",
     isActive: true,
     joinDate: new Date().toISOString().split("T")[0],
+    shift: "DAY",
   });
 
   const fetchData = async () => {
@@ -72,6 +73,7 @@ export default function StaffPage() {
       roleId: "",
       isActive: true,
       joinDate: new Date().toISOString().split("T")[0],
+      shift: "DAY",
     });
     setImageFile(null);
     setIsAddModalOpen(true);
@@ -87,6 +89,7 @@ export default function StaffPage() {
       roleId: s.roleId || "",
       isActive: s.isActive,
       joinDate: (s.joinDate || s.createdAt)?.split("T")[0],
+      shift: s.shift || "DAY",
     });
     setImageFile(s.image || null);
     setIsAddModalOpen(true);
@@ -231,6 +234,11 @@ export default function StaffPage() {
                   <span className="text-[10px] font-black uppercase tracking-widest text-red-800 bg-red-50 px-2 py-0.5 rounded-md">
                     {s.roleRef?.name || s.role || "Staff"}
                   </span>
+                  {s.shift && (
+                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md">
+                      {s.shift}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -354,6 +362,22 @@ export default function StaffPage() {
                   setFormData({ ...formData, joinDate: e.target.value })
                 }
               />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">
+                Shift Time
+              </label>
+              <select
+                className="w-full h-12 px-4 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-zinc-900 outline-none transition-all font-semibold appearance-none"
+                value={formData.shift}
+                onChange={(e) =>
+                  setFormData({ ...formData, shift: e.target.value })
+                }
+              >
+                <option value="MORNING">Morning</option>
+                <option value="DAY">Day</option>
+                <option value="EVENING">Evening</option>
+              </select>
             </div>
           </div>
 

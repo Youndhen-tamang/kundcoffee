@@ -551,6 +551,7 @@ model Staff {
   purchases       Purchase[]
   purchaseReturns PurchaseReturn[]
   salesReturns    SalesReturn[]
+  shift           Shift?           @default(DAY)
   roleRef         StaffRole?       @relation(fields: [roleId], references: [id])
   store           Store            @relation(fields: [storeId], references: [id])
 
@@ -786,6 +787,12 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Shift {
+  MORNING
+  EVENING
+  DAY
 }
 
 enum TableStatus {
