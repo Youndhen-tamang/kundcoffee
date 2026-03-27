@@ -11,8 +11,43 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Raj Biryani | Kathmandu",
-  description: "POS System for Restaurants",
+  title: "Bodhiberry | Premium Restaurant & Cafe POS System in Kathmandu",
+  description: "Experience the future of restaurant management with KundCoffee. The most intuitive POS system for cafes and restaurants in Kathmandu. Streamline your operations today.",
+  keywords: ["Restaurant POS Kathmandu", "Cafe Management System Nepal", "KundCoffee", "Coffee Shop POS", "Restaurant Software Nepal"],
+  authors: [{ name: "KundCoffee Team" }],
+  creator: "KundCoffee",
+  publisher: "KundCoffee",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL("https://bodhiberry.com"), // Replace with actual domain if different
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "KundCoffee | Premium Restaurant & Cafe POS System in Kathmandu",
+    description: "Streamline your restaurant operations with KundCoffee POS. Built for the modern culinary experience.",
+    url: "https://bodhiberry.com",
+    siteName: "Bodhiberry",
+    images: [
+      {
+        url: "/Logo.jpeg",
+        width: 800,
+        height: 600,
+        alt: "Bodhiberry Logo",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bodhiberry | Premium Restaurant & Cafe POS System in Kathmandu",
+    description: "Streamline your restaurant operations with KundCoffee POS.",
+    images: ["/Logo.jpeg"],
+  },
   icons: {
     icon: [
       {
@@ -22,6 +57,17 @@ export const metadata: Metadata = {
     ],
     shortcut: "/Logo.jpeg",
     apple: "/Logo.jpeg",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 

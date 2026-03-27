@@ -5,7 +5,30 @@ import { motion } from "framer-motion";
 
 export default function ComingSoonPage() {
   return (
-    <div className="min-h-screen bg-white text-zinc-900 flex flex-col items-center justify-center p-8 font-sans antialiased selection:bg-zinc-100">
+    <main className="min-h-screen bg-white text-zinc-900 flex flex-col items-center justify-center p-8 font-sans antialiased selection:bg-zinc-100">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "KundCoffee",
+            "operatingSystem": "Web",
+            "applicationCategory": "BusinessApplication",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "NPR"
+            },
+            "description": "Premium Restaurant & Cafe POS System in Kathmandu. Streamline your operations with KundCoffee.",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "ratingCount": "1"
+            }
+          }),
+        }}
+      />
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -32,12 +55,12 @@ export default function ComingSoonPage() {
         </p>
 
         {/* Footer info (Subtle) */}
-        <div className="mt-20">
+        <footer className="mt-20">
           <p className="text-zinc-300 text-[10px] font-bold tracking-[0.3em] uppercase">
             EST. 2026
           </p>
-        </div>
+        </footer>
       </motion.div>
-    </div>
+    </main>
   );
 }
