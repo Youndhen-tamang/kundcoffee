@@ -108,7 +108,8 @@ export default function SetupStorePage() {
               <Coffee size={22} className="text-zinc-900" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-white tracking-tight leading-none uppercase">Kund</span>
+              <span className="text-xl font-bold text-white tracking-tight leading-none uppercase">Bodhiberry</span>
+
               <span className="text-[10px] font-semibold text-red-800 tracking-[0.2em] uppercase">Coffee Group</span>
             </div>
           </motion.div>

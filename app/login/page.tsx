@@ -90,11 +90,12 @@ export default function LoginPage() {
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-bold text-white tracking-tight leading-none uppercase">
-                Kund
+                Bodhi
               </span>
               <span className="text-[10px] font-semibold text-red-600 tracking-[0.2em] uppercase">
-                Coffee Group
+                berry
               </span>
+
             </div>
           </motion.div>
 

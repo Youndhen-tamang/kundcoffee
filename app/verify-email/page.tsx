@@ -104,7 +104,8 @@ function VerifyEmailContent() {
           <Coffee size={22} className="text-white" />
         </div>
         <div className="flex flex-col items-center text-center">
-          <span className="text-sm font-bold text-zinc-900 tracking-tight leading-none uppercase">Kund</span>
+          <span className="text-sm font-bold text-zinc-900 tracking-tight leading-none uppercase">Bodhiberry</span>
+
           <span className="text-[8px] font-semibold text-red-800 tracking-[0.2em] uppercase">Coffee Group</span>
         </div>
       </div>
@@ -205,7 +206,8 @@ function VerifyEmailContent() {
 
       {/* Footer Branding */}
       <footer className="mt-12 text-[10px] text-zinc-400 font-medium uppercase tracking-[0.2em]">
-        Proprietary Security Module • Kund Coffee Group
+        Proprietary Security Module • Bodhiberry Group
+
       </footer>
     </div>
   );

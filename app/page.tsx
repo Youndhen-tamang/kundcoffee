@@ -12,7 +12,7 @@ export default function ComingSoonPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
-            "name": "KundCoffee",
+            "name": "Bodhiberry",
             "operatingSystem": "Web",
             "applicationCategory": "BusinessApplication",
             "offers": {
@@ -20,7 +20,8 @@ export default function ComingSoonPage() {
               "price": "0",
               "priceCurrency": "NPR"
             },
-            "description": "Premium Restaurant & Cafe POS System in Kathmandu. Streamline your operations with KundCoffee.",
+            "description": "Premium Restaurant & Cafe POS System in Kathmandu. Streamline your operations with Bodhiberry.",
+
             "aggregateRating": {
               "@type": "AggregateRating",
               "ratingValue": "5",
@@ -51,8 +52,9 @@ export default function ComingSoonPage() {
         {/* Description */}
         <p className="text-zinc-500 text-sm md:text-base font-medium tracking-wide uppercase leading-relaxed">
           The new digital experience for <br />
-          <span className="text-zinc-950 font-bold">Kund Coffee</span>
+          <span className="text-zinc-950 font-bold">Bodhiberry</span>
         </p>
+
 
         {/* Footer info (Subtle) */}
         <footer className="mt-20">

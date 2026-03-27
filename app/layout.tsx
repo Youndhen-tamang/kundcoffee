@@ -12,11 +12,12 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Bodhiberry | Premium Restaurant & Cafe POS System in Kathmandu",
-  description: "Experience the future of restaurant management with KundCoffee. The most intuitive POS system for cafes and restaurants in Kathmandu. Streamline your operations today.",
-  keywords: ["Restaurant POS Kathmandu", "Cafe Management System Nepal", "KundCoffee", "Coffee Shop POS", "Restaurant Software Nepal"],
-  authors: [{ name: "KundCoffee Team" }],
-  creator: "KundCoffee",
-  publisher: "KundCoffee",
+  description: "Experience the future of restaurant management with Bodhiberry. The most intuitive POS system for cafes and restaurants in Kathmandu. Streamline your operations today.",
+  keywords: ["Restaurant POS Kathmandu", "Cafe Management System Nepal", "Bodhiberry", "Coffee Shop POS", "Restaurant Software Nepal"],
+  authors: [{ name: "Bodhiberry Team" }],
+  creator: "Bodhiberry",
+  publisher: "Bodhiberry",
+
   formatDetection: {
     email: false,
     address: false,
@@ -28,7 +29,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Bodhiberry | Premium Restaurant & Cafe POS System in Kathmandu",
-    description: "Streamline your restaurant operations with KundCoffee POS. Built for the modern culinary experience.",
+    description: "Streamline your restaurant operations with Bodhiberry POS. Built for the modern culinary experience.",
+
     url: "https://bodhiberry.com",
     siteName: "Bodhiberry",
     images: [
@@ -45,7 +47,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Bodhiberry | Premium Restaurant & Cafe POS System in Kathmandu",
-    description: "Streamline your restaurant operations with KundCoffee POS.",
+    description: "Streamline your restaurant operations with Bodhiberry POS.",
+
     images: ["/Logo.jpeg"],
   },
   icons: {

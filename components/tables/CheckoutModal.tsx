@@ -955,7 +955,7 @@ export function CheckoutModal({
               <div className="bg-white printable-area">
                 <div className="text-center mb-6">
                   <h2 className="text-xl font-black tracking-tight text-zinc-900">
-                    KUND COFFEE
+                    BODHIBERRY
                   </h2>
                   <p className="text-[10px] text-zinc-400 uppercase tracking-[0.2em]">
                     Table Summary Receipt

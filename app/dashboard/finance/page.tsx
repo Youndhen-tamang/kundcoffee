@@ -145,7 +145,7 @@ export default function FinancePage() {
         </head>
         <body>
           <div class="header">
-            <h2>KUND COFFEE</h2>
+            <h2>BODHIBERRY</h2>
             <p>TAX INVOICE</p>
           </div>
           <div class="meta">
@@ -556,7 +556,7 @@ export default function FinancePage() {
                   <Package size={28} />
                 </div>
                 <h3 className="text-sm font-black text-zinc-900 uppercase tracking-[0.3em]">
-                  KUND COFFEE
+                  BODHIBERRY
                 </h3>
                 <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">
                   Quality & Comfort

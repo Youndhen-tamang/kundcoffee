@@ -12,7 +12,8 @@ import {
   type StoreSetupInput,
 } from "@/lib/validations/auth";
 import { addDays } from "date-fns";
-import { resend } from "@/lib/resend";
+import { sendMail } from "@/lib/mail";
+
 
 // --- HELPER: Generate 6-digit code ---
 function generateVerificationCode() {
@@ -52,15 +53,22 @@ export async function registerAction(data: RegisterInput) {
     console.log(`[Auth] Verification Code for ${email}: ${verificationCode}`);
 
     // SEND EMAIL
-    const { error } = await resend.emails.send({
-      from: "Kund Coffee <onboarding@resend.dev>",
+    const { error } = await sendMail({
       to: [email],
-      subject: "Verify your email",
+      subject: "Verify your email | Bodhiberry",
       html: `
-      <h1>Welcome to Kund Coffee</h1>
-      <p>Your verification code is: <strong>${verificationCode}</strong></p>
-      <p>This code expires in 15 minutes</p>`,
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; rounded-lg: 8px;">
+        <h1 style="color: #111827; font-size: 24px; font-weight: 700; margin-bottom: 20px;">Welcome to Bodhiberry</h1>
+        <p style="color: #4b5563; font-size: 16px; margin-bottom: 20px;">Your verification code is:</p>
+        <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px;">
+          <span style="font-size: 32px; font-weight: 800; letter-spacing: 4px; color: #111827;">${verificationCode}</span>
+        </div>
+        <p style="color: #6b7280; font-size: 14px;">This code expires in 15 minutes.</p>
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+        <p style="color: #9ca3af; font-size: 12px;">© 2026 Bodhiberry POS. All rights reserved.</p>
+      </div>`,
     });
+
 
     if (error) {
       console.error("[Auth] Resend Error (Non-blocking):", error);
@@ -154,16 +162,23 @@ export async function resendCodeAction(email: string) {
     );
 
     // Send email
-    const { data, error } = await resend.emails.send({
-      from: "Kund Coffee <onboarding@resend.dev>",
+    const { error } = await sendMail({
       to: [email],
-      subject: "Your new verification code",
+      subject: "Your new verification code | Bodhiberry",
       html: `
-      <h1>New Verification Code</h1>
-      <p>Your new code is: <strong>${verificationCode}</strong></p>
-      <p>This code expires in 15 minutes.</p>
-      <p>If you didn't request this, you can safely ignore this email.</p>`,
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; rounded-lg: 8px;">
+        <h1 style="color: #111827; font-size: 24px; font-weight: 700; margin-bottom: 20px;">New Verification Code</h1>
+        <p style="color: #4b5563; font-size: 16px; margin-bottom: 20px;">Your new code is:</p>
+        <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px;">
+          <span style="font-size: 32px; font-weight: 800; letter-spacing: 4px; color: #111827;">${verificationCode}</span>
+        </div>
+        <p style="color: #6b7280; font-size: 14px;">This code expires in 15 minutes.</p>
+        <p style="color: #6b7280; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+        <p style="color: #9ca3af; font-size: 12px;">© 2026 Bodhiberry POS. All rights reserved.</p>
+      </div>`,
     });
+
 
     if (error) {
       console.error("[Auth] Resend Email Error (Non-blocking):", error);
@@ -174,8 +189,9 @@ export async function resendCodeAction(email: string) {
       };
     }
 
-    console.log(`[Auth] Code sent to ${email}. ID: ${data?.id}`);
+    console.log(`[Auth] Code sent to ${email}.`);
     return { success: true, message: "New code sent!" };
+
   } catch (error) {
     console.error("[Auth] Resend System Error:", error);
     return { success: false, message: "Failed to resend code" };

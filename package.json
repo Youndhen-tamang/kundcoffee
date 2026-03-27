@@ -1,5 +1,5 @@
 {
-  "name": "kundcoffee",
+  "name": "bodhiberry",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,6 +15,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.2.2",
     "@react-google-maps/api": "^2.20.8",
+    "@types/nodemailer": "^7.0.11",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
@@ -24,6 +25,7 @@
     "lucide-react": "^0.562.0",
     "next": "16.1.2",
     "next-auth": "^4.24.13",
+    "nodemailer": "^7.0.13",
     "qrcode.react": "^4.2.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -31,7 +33,6 @@
     "react-leaflet": "^5.0.0",
     "react-qr-code": "^2.0.18",
     "recharts": "^3.7.0",
-    "resend": "^6.9.2",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "uuid": "^13.0.0",

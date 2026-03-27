@@ -260,7 +260,7 @@ export function CheckoutModal({
             {/* Store Header */}
             <div className="text-center mb-4 space-y-1">
               <h2 className="text-sm font-black uppercase leading-none">
-                {settings.name || "KUND COFFEE"}
+                {settings.name || "BODHIBERRY"}
               </h2>
               <p className="uppercase">
                 {settings.address || "Kathmandu, Nepal"}
@@ -374,7 +374,7 @@ export function CheckoutModal({
 
             <div className="text-center mt-6 pt-4 border-t border-black border-dashed space-y-1">
               <p className="font-bold">THANK YOU FOR YOUR VISIT!</p>
-              <p className="text-[8px]">POWERED BY KUND ERP</p>
+              <p className="text-[8px]">POWERED BY BODHIBERRY ERP</p>
             </div>
           </div>
 
