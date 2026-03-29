@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSettings } from "@/components/providers/SettingsProvider";
 import { Button } from "@/components/ui/Button";
 import {
@@ -21,6 +21,14 @@ import { ImageUpload } from "@/components/ui/ImageUpload";
 export default function SettingsPage() {
   const { settings, updateSetting, loading } = useSettings();
   const [currency, setCurrency] = useState(settings.currency);
+  const [restaurantName, setRestaurantName] = useState(settings.name || "");
+  const [address, setAddress] = useState(settings.address || "");
+  const [phone, setPhone] = useState(settings.phone || "");
+  const [panNumber, setPanNumber] = useState(settings.panNumber || "");
+  const [email, setEmail] = useState(settings.email || "");
+  const [logoFile, setLogoFile] = useState<File | string | null>(settings.logo || null);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+
   const [isSaving, setIsSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | string | null>(null);
   const [staffRoles, setStaffRoles] = useState<any[]>([]);
@@ -30,7 +38,31 @@ export default function SettingsPage() {
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      await updateSetting("currency", currency);
+      await Promise.all([
+        updateSetting("currency", currency),
+        updateSetting("name", restaurantName),
+        updateSetting("address", address),
+        updateSetting("phone", phone),
+        updateSetting("panNumber", panNumber),
+        updateSetting("email", email),
+      ]);
+
+      // Save Logo
+      if (logoFile && logoFile instanceof File) {
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", logoFile);
+        uploadFormData.append("folder", "settings");
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadFormData,
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.url) {
+          await updateSetting("logo", uploadData.url);
+        }
+      } else if (typeof logoFile === "string" && logoFile !== settings.logo) {
+         await updateSetting("logo", logoFile);
+      }
 
       // Save QR image
       if (imageFile) {
@@ -56,6 +88,7 @@ export default function SettingsPage() {
       }
 
       toast.success("Settings updated successfully");
+      setIsEditingDetails(false);
     } catch (error) {
       toast.error("Failed to update settings");
     } finally {
@@ -92,6 +125,19 @@ export default function SettingsPage() {
     fetchRoles();
     fetchQrSettings();
   });
+
+  // Sync settings when they are loaded
+  useEffect(() => {
+    if (!loading) {
+      setRestaurantName(settings.name || "");
+      setAddress(settings.address || "");
+      setPhone(settings.phone || "");
+      setPanNumber(settings.panNumber || "");
+      setEmail(settings.email || "");
+      setLogoFile(settings.logo || null);
+      setCurrency(settings.currency || "Rs.");
+    }
+  }, [loading, settings]);
 
   const handleAddRole = async () => {
     if (!newRoleName) return;
@@ -171,6 +217,111 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-8">
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-4">
+          <div className="lg:pt-2">
+            <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-tight mb-1">
+              Restaurant Details
+            </h2>
+            <p className="text-xs text-zinc-500 leading-relaxed font-medium mb-4">
+              Update your restaurant's identity and contact information for bills and invoices.
+            </p>
+            <Button
+              onClick={() => setIsEditingDetails(!isEditingDetails)}
+              variant="secondary"
+              className="h-9 px-4 text-[10px] font-bold uppercase tracking-widest border-zinc-200"
+            >
+              {isEditingDetails ? "Cancel Editing" : "Edit Details"}
+            </Button>
+          </div>
+
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">
+                    Restaurant Name
+                  </label>
+                  <input
+                    type="text"
+                    value={restaurantName}
+                    disabled={!isEditingDetails}
+                    onChange={(e) => setRestaurantName(e.target.value)}
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">
+                    PAN/VAT Number
+                  </label>
+                  <input
+                    type="text"
+                    value={panNumber}
+                    disabled={!isEditingDetails}
+                    onChange={(e) => setPanNumber(e.target.value)}
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">
+                    Mobile Number
+                  </label>
+                  <input
+                    type="text"
+                    value={phone}
+                    disabled={!isEditingDetails}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    disabled={!isEditingDetails}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
+                  />
+                </div>
+                <div className="col-span-2 space-y-2">
+                  <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">
+                    Physical Address
+                  </label>
+                  <input
+                    type="text"
+                    value={address}
+                    disabled={!isEditingDetails}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full h-11 px-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-zinc-900 outline-none transition-all disabled:opacity-60"
+                  />
+                </div>
+                <div className="col-span-2 space-y-2">
+                  <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">
+                    Restaurant Logo
+                  </label>
+                  {isEditingDetails ? (
+                    <ImageUpload
+                      label="Upload Logo"
+                      value={typeof logoFile === "string" ? logoFile : undefined}
+                      onChange={setLogoFile}
+                    />
+                  ) : (
+                    <div className="w-full h-32 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center justify-center overflow-hidden">
+                      {logoFile ? (
+                        <img src={typeof logoFile === "string" ? logoFile : ""} alt="Logo" className="h-full w-auto object-contain" />
+                      ) : (
+                        <span className="text-zinc-300 text-[10px] font-bold uppercase tracking-widest">No Logo Uploaded</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/*Qr Payment Confirguration Section */}
         <section className="w-full  p-4">
           <div>

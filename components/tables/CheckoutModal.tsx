@@ -954,10 +954,17 @@ export function CheckoutModal({
             {checkoutData && (
               <div className="bg-white printable-area">
                 <div className="text-center mb-6">
+                  {settings.logo && (
+                    <div className="flex justify-center mb-2">
+                       <img src={settings.logo} alt="Logo" className="h-10 w-auto object-contain" />
+                    </div>
+                  )}
                   <h2 className="text-xl font-black tracking-tight text-zinc-900">
-                    BODHIBERRY
+                    {settings.name || "BODHIBERRY"}
                   </h2>
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-[0.2em]">
+                  <p className="text-[10px] uppercase">{settings.address || "Kathmandu, Nepal"}</p>
+                  <p className="text-[10px]">PAN/VAT: {settings.panNumber || "123456789"}</p>
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-[0.2em] mt-2">
                     Table Summary Receipt
                   </p>
                   <p className="text-[10px] text-zinc-400 uppercase tracking-[0.2em]">

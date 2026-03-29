@@ -259,6 +259,11 @@ export function CheckoutModal({
           >
             {/* Store Header */}
             <div className="text-center mb-4 space-y-1">
+              {settings.logo && (
+                <div className="flex justify-center mb-2">
+                  <img src={settings.logo} alt="Logo" className="h-10 w-auto object-contain" />
+                </div>
+              )}
               <h2 className="text-sm font-black uppercase leading-none">
                 {settings.name || "BODHIBERRY"}
               </h2>
@@ -266,7 +271,8 @@ export function CheckoutModal({
                 {settings.address || "Kathmandu, Nepal"}
               </p>
               <p>Phone: {settings.phone || "+977 XXXXXXXXXX"}</p>
-              <p className="font-bold">PAN/VAT: 123456789</p>
+              {settings.email && <p className="lowercase">Email: {settings.email}</p>}
+              <p className="font-bold">PAN/VAT: {settings.panNumber || "123456789"}</p>
             </div>
 
             {/* Bill Info */}
@@ -374,7 +380,7 @@ export function CheckoutModal({
 
             <div className="text-center mt-6 pt-4 border-t border-black border-dashed space-y-1">
               <p className="font-bold">THANK YOU FOR YOUR VISIT!</p>
-              <p className="text-[8px]">POWERED BY BODHIBERRY ERP</p>
+              <p className="text-[8px]">POWERED BY {settings.name || "BODHIBERRY"} ERP</p>
             </div>
           </div>
 

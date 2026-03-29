@@ -28,9 +28,11 @@ import {
   History,
   Shield,
 } from "lucide-react";
+import { useSettings } from "@/components/providers/SettingsProvider";
 
 export default function Sidebar() {
   const { data: session } = useSession();
+  const { settings } = useSettings();
   const pathname = usePathname();
 
   const userPermissions = (session?.user?.permissions as string[]) || [];
@@ -165,7 +167,7 @@ export default function Sidebar() {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-black text-zinc-900 uppercase tracking-tighter leading-none">
-              Bodhiberry ERP
+              {settings.name || "Bodhiberry"} ERP
             </span>
             <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-[0.2em] mt-1">
               System Active

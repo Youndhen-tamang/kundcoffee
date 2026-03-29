@@ -84,9 +84,10 @@ export async function POST(req: NextRequest) {
 
     const existingDish = await prisma.dish.findFirst({
       where: {
-        storeId, // Ensure uniqueness within the store
+        storeId,
         name,
-        OR: [{ categoryId }, { subMenuId: subMenuId || null }],
+        categoryId,
+        subMenuId: subMenuId || null,
       },
     });
 

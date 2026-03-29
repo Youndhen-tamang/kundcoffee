@@ -294,7 +294,7 @@ export default function DishesPage() {
       preparationTime: prepTime === "" ? 0 : parseInt(prepTime),
       description,
       categoryId,
-      subMenuId: subMenuId || undefined,
+      subMenuId: subMenuId || null,
       type,
       kotType,
       sortOrder: Number(sortOrder) || 0,

@@ -5,8 +5,8 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true, // use SSL
   auth: {
-    user: process.env.ZOHO_MAIL_USER,
-    pass: process.env.ZOHO_MAIL_PASS,
+    user: process.env.ZOHO_EMAIL,
+    pass: process.env.ZOHO_PASSWORD,
   },
 });
 
@@ -21,7 +21,7 @@ export const sendMail = async ({
 }) => {
   try {
     const info = await transporter.sendMail({
-      from: `"Bodhiberry" <${process.env.ZOHO_MAIL_USER}>`,
+      from: `"Bodhiberry" <${process.env.ZOHO_EMAIL}>`,
       to: Array.isArray(to) ? to.join(", ") : to,
       subject,
       html,

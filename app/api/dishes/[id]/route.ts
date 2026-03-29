@@ -65,12 +65,12 @@ export async function PATCH(request: NextRequest, context: { params: Params }) {
 
     // (Keep duplicate check logic here...)
     // Only check duplicates if name/category/submenu actually changed
-    if ((name && name !== currentDish.name) || (categoryId && categoryId !== currentDish.categoryId)) {
+    if ((name && name !== currentDish.name) || (categoryId && categoryId !== currentDish.categoryId) || (subMenuId !== undefined && subMenuId !== currentDish.subMenuId)) {
         const existingDish = await prisma.dish.findFirst({
             where: {
             name: name || currentDish.name,
             categoryId: categoryId || currentDish.categoryId,
-            subMenuId: subMenuId !== undefined ? subMenuId : currentDish.subMenuId,
+            subMenuId: subMenuId !== undefined ? (subMenuId || null) : currentDish.subMenuId,
             id: { not: id },
             },
         });
