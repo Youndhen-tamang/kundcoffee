@@ -27,6 +27,7 @@ export default function SettingsPage() {
   const [panNumber, setPanNumber] = useState(settings.panNumber || "");
   const [email, setEmail] = useState(settings.email || "");
   const [logoFile, setLogoFile] = useState<File | string | null>(settings.logo || null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isEditingDetails, setIsEditingDetails] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -34,6 +35,17 @@ export default function SettingsPage() {
   const [staffRoles, setStaffRoles] = useState<any[]>([]);
   const [newRoleName, setNewRoleName] = useState("");
   const [qrId, setQrId] = useState<string | null>(null);
+
+  // Generate preview for File objects
+  useEffect(() => {
+    if (logoFile instanceof File) {
+      const objectUrl = URL.createObjectURL(logoFile);
+      setLogoPreview(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    } else {
+      setLogoPreview(logoFile);
+    }
+  }, [logoFile]);
 
   const handleSave = async () => {
     try {
@@ -59,6 +71,7 @@ export default function SettingsPage() {
         const uploadData = await uploadRes.json();
         if (uploadData.url) {
           await updateSetting("logo", uploadData.url);
+          setLogoFile(uploadData.url);
         }
       } else if (typeof logoFile === "string" && logoFile !== settings.logo) {
          await updateSetting("logo", logoFile);
@@ -309,8 +322,8 @@ export default function SettingsPage() {
                     />
                   ) : (
                     <div className="w-full h-32 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center justify-center overflow-hidden">
-                      {logoFile ? (
-                        <img src={typeof logoFile === "string" ? logoFile : ""} alt="Logo" className="h-full w-auto object-contain" />
+                      {logoPreview ? (
+                        <img src={logoPreview} alt="Logo" className="h-full w-auto object-contain" />
                       ) : (
                         <span className="text-zinc-300 text-[10px] font-bold uppercase tracking-widest">No Logo Uploaded</span>
                       )}
@@ -444,7 +457,7 @@ export default function SettingsPage() {
                     settings.includeTaxByDefault === "true" ? "false" : "true",
                   )
                 }
-                className={`w-14 h-7 rounded-full transition-all duration-300 relative ${
+                className={`w-14 h-7 rounded-full transition-all duration-300 relative shrink-0 ${
                   settings.includeTaxByDefault === "true"
                     ? "bg-red-800"
                     : "bg-zinc-200"
@@ -458,6 +471,51 @@ export default function SettingsPage() {
                   } flex items-center justify-center`}
                 >
                   {settings.includeTaxByDefault === "true" && (
+                    <Check size={10} className="text-red-800" />
+                  )}
+                </div>
+              </button>
+            </div>
+
+            <div className="h-px bg-zinc-100 my-6" />
+
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <div className="mt-1 w-10 h-10 rounded-lg bg-red-50 text-red-800 flex items-center justify-center">
+                  <span className="font-bold text-sm">10%</span>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-zinc-900 block mb-1">
+                    Service Charge (10%)
+                  </label>
+                  <p className="text-xs text-zinc-500 font-medium leading-relaxed max-w-sm">
+                    Automatically append service charge to all new orders. You
+                    can override this manually per transaction.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() =>
+                  updateSetting(
+                    "includeServiceChargeByDefault",
+                    settings.includeServiceChargeByDefault === "true" ? "false" : "true",
+                  )
+                }
+                className={`w-14 h-7 rounded-full transition-all duration-300 relative shrink-0 ${
+                  settings.includeServiceChargeByDefault === "true"
+                    ? "bg-red-800"
+                    : "bg-zinc-200"
+                }`}
+              >
+                <div
+                  className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-300 shadow-sm ${
+                    settings.includeServiceChargeByDefault === "true"
+                      ? "left-8"
+                      : "left-1"
+                  } flex items-center justify-center`}
+                >
+                  {settings.includeServiceChargeByDefault === "true" && (
                     <Check size={10} className="text-red-800" />
                   )}
                 </div>

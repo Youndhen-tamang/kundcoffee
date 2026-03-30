@@ -52,7 +52,9 @@ export function CheckoutModal({
   const [includeTax, setIncludeTax] = useState(
     settings.includeTaxByDefault === "true",
   );
-  const [includeServiceCharge, setIncludeServiceCharge] = useState(false);
+  const [includeServiceCharge, setIncludeServiceCharge] = useState(
+    settings.includeServiceChargeByDefault === "true",
+  );
   const [staff, setStaff] = useState<any[]>([]);
   const [selectedStaffId, setSelectedStaffId] = useState("");
 
@@ -379,6 +381,12 @@ export function CheckoutModal({
             </div>
 
             <div className="text-center mt-6 pt-4 border-t border-black border-dashed space-y-1">
+              {qrData?.image && (
+                <div className="flex flex-col items-center mb-4 pt-2">
+                  <img src={qrData.image} alt="Payment QR" className="w-32 h-32 object-contain" />
+                  <p className="text-[8px] font-bold mt-1">SCAN TO PAY</p>
+                </div>
+              )}
               <p className="font-bold">THANK YOU FOR YOUR VISIT!</p>
               <p className="text-[8px]">POWERED BY {settings.name || "BODHIBERRY"} ERP</p>
             </div>
@@ -739,7 +747,7 @@ export function CheckoutModal({
         </div>
 
         {/* --- RIGHT COLUMN: ORDER ITEMS & COMPLIMENTARY --- */}
-        <div className="bg-white border border-black p-6 flex flex-col h-[760px]">
+        {/* <div className="bg-white border border-black p-6 flex flex-col h-[760px]">
           <h3 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-3 mb-6 shrink-0">
             Line Items
           </h3>
@@ -794,7 +802,7 @@ export function CheckoutModal({
               </tbody>
             </table>
           </div>
-        </div>
+        </div> */}
       </div>
 
       <Modal

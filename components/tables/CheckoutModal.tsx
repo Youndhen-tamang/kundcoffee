@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   Banknote,
   Plus,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -76,6 +77,12 @@ export function CheckoutModal({
   const [cashAmount, setCashAmount] = useState<string>("");
   const [qrAmount, setQrAmount] = useState<string>("");
   const [creditAmount, setCreditAmount] = useState<string>("");
+  const [includeTax, setIncludeTax] = useState(
+    settings.includeTaxByDefault === "true",
+  );
+  const [includeServiceCharge, setIncludeServiceCharge] = useState(
+    settings.includeServiceChargeByDefault === "true",
+  );
 
   // New Customer Form
   const [newCustomerName, setNewCustomerName] = useState("");
@@ -262,9 +269,9 @@ export function CheckoutModal({
       0,
       rawSubtotal - complimentaryValue - (checkoutData.summary.discount || 0),
     );
-    const serviceCharge = netSubtotal * 0.1; // Assuming fixed 10% for now
+    const serviceCharge = includeServiceCharge ? netSubtotal * 0.1 : 0;
 
-    const standardTax = netSubtotal * 0.13; // Assuming fixed 13% for now
+    const standardTax = includeTax ? netSubtotal * 0.13 : 0;
     const customTaxesTotal = customTaxes.reduce(
       (sum, tax) => sum + netSubtotal * (tax.percentage / 100),
       0,
@@ -842,15 +849,27 @@ export function CheckoutModal({
                         {settings.currency} {summary.subtotal.toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-xs font-medium text-zinc-400">
-                      <span>Service Charge (10%)</span>
-                      <span className="text-white">
+                    <div 
+                      className="flex justify-between text-xs font-medium text-zinc-400 cursor-pointer hover:text-white transition-colors"
+                      onClick={() => setIncludeServiceCharge(!includeServiceCharge)}
+                    >
+                      <span className="flex items-center gap-2">
+                        {includeServiceCharge ? <Check size={12} className="text-blue-500" /> : <div className="w-3 h-3 border border-white/20 rounded" />}
+                        Service Charge (10%)
+                      </span>
+                      <span className={includeServiceCharge ? "text-white" : "text-zinc-600 line-through"}>
                         {settings.currency} {summary.serviceCharge.toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-xs font-medium text-zinc-400">
-                      <span>VAT (13%)</span>
-                      <span className="text-white">
+                    <div 
+                      className="flex justify-between text-xs font-medium text-zinc-400 cursor-pointer hover:text-white transition-colors"
+                      onClick={() => setIncludeTax(!includeTax)}
+                    >
+                      <span className="flex items-center gap-2">
+                        {includeTax ? <Check size={12} className="text-blue-500" /> : <div className="w-3 h-3 border border-white/20 rounded" />}
+                        VAT (13%)
+                      </span>
+                      <span className={includeTax ? "text-white" : "text-zinc-600 line-through"}>
                         {settings.currency}{" "}
                         {(summary.subtotal * 0.13).toFixed(2)}
                       </span>
@@ -1000,12 +1019,36 @@ export function CheckoutModal({
                     </div>
                   ))}
                 </div>
+                {includeServiceCharge && (
+                  <div className="flex justify-between text-xs">
+                    <span>Service Charge (10%)</span>
+                    <span>{settings.currency} {calculateSummary().serviceCharge.toFixed(2)}</span>
+                  </div>
+                )}
+                {includeTax && (
+                  <div className="flex justify-between text-xs">
+                    <span>VAT (13%)</span>
+                    <span>{settings.currency} {(calculateSummary().subtotal * 0.13).toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="border-t pt-4 text-sm font-bold flex justify-between">
                   <span>Total</span>
                   <span>
                     {settings.currency}{" "}
                     {calculateSummary().grandTotal.toFixed(2)}
                   </span>
+                </div>
+                
+                {qrData?.image && (
+                  <div className="flex flex-col items-center mt-6 pt-4 border-t border-dashed">
+                    <img src={qrData.image} alt="Payment QR" className="w-32 h-32 object-contain" />
+                    <p className="text-[8px] font-bold mt-1 uppercase">Scan to Pay</p>
+                  </div>
+                )}
+
+                <div className="text-center mt-4 pt-2 border-t border-dashed space-y-1">
+                  <p className="font-bold text-xs uppercase tracking-widest">Thank you for your visit!</p>
+                  <p className="text-[8px]">POWERED BY {settings.name || "BODHIBERRY"} ERP</p>
                 </div>
               </div>
             )}

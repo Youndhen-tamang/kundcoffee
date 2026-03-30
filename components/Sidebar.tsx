@@ -162,8 +162,12 @@ export default function Sidebar() {
       {/* Brand Header */}
       <div className="h-20 flex items-center px-6 border-b border-zinc-50">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white shadow-sm">
-            <Coffee size={18} strokeWidth={2.5} />
+          <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white shadow-sm overflow-hidden border border-zinc-100/10">
+            {settings.logo ? (
+              <img src={settings.logo} alt="Logo" className="w-full h-full object-contain" />
+            ) : (
+              <Coffee size={18} strokeWidth={2.5} />
+            )}
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-black text-zinc-900 uppercase tracking-tighter leading-none">
