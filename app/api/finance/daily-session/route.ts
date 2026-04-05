@@ -26,21 +26,44 @@ export async function GET(req: NextRequest) {
             select: { name: true, email: true }
           },
           payments: {
-            where: { status: "PAID" },
+            where: { status: { in: ["PAID", "CREDIT"] } },
             select: { amount: true, method: true }
           }
         }
       });
 
       if (activeSession) {
-        // Calculate current expected balance
-        const cashSales = activeSession.payments
-          .filter(p => p.method === "CASH")
-          .reduce((sum, p) => sum + p.amount, 0);
+        // Broaden payment statuses for comprehensive revenue reporting
+        const relevantPayments = activeSession.payments.map(p => ({
+          ...p,
+          amount: parseFloat(p.amount.toString()) // Ensure it's a number
+        }));
+
+        // Calculate breakdown by method
+        const salesByMethod: Record<string, number> = {
+          CASH: 0,
+          QR: 0,
+          ESEWA: 0,
+          CARD: 0,
+          BANK_TRANSFER: 0,
+          CREDIT: 0
+        };
+
+        relevantPayments.forEach(p => {
+          if (salesByMethod[p.method] !== undefined) {
+             salesByMethod[p.method] += p.amount;
+          } else {
+             salesByMethod[p.method] = p.amount;
+          }
+        });
+
+        const cashSales = salesByMethod.CASH || 0;
+        const totalDigitalSales = Object.entries(salesByMethod)
+          .filter(([method]) => method !== "CASH" && method !== "CREDIT")
+          .reduce((sum, [_, amount]) => sum + amount, 0);
         
-        const digitalSales = activeSession.payments
-          .filter(p => p.method !== "CASH")
-          .reduce((sum, p) => sum + p.amount, 0);
+        const creditSales = salesByMethod.CREDIT || 0;
+        const totalRevenue = cashSales + totalDigitalSales + creditSales;
 
         const currentExpectedBalance = activeSession.openingBalance + cashSales;
 
@@ -50,7 +73,10 @@ export async function GET(req: NextRequest) {
             ...activeSession, 
             currentExpectedBalance,
             currentCashSales: cashSales,
-            currentDigitalSales: digitalSales
+            currentDigitalSales: totalDigitalSales,
+            currentCreditSales: creditSales,
+            salesByMethod,
+            totalRevenue
           } 
         });
       }

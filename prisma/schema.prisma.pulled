@@ -1,0 +1,942 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AddOn {
+  id               String             @id
+  name             String
+  image            String?
+  description      String?
+  type             AddOnType
+  isAvailable      Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  categoryId       String?
+  sortOrder        Int                @default(0)
+  storeId          String
+  Category         Category?          @relation(fields: [categoryId], references: [id])
+  Store            Store              @relation(fields: [storeId], references: [id])
+  DishAddOn        DishAddOn[]
+  OrderItemAddOn   OrderItemAddOn[]
+  Price            Price?
+  StockConsumption StockConsumption[]
+
+  @@index([categoryId])
+  @@index([storeId])
+}
+
+model Category {
+  id          String       @id
+  name        String
+  image       String?
+  description String?
+  createdAt   DateTime     @default(now())
+  sortOrder   Int          @default(0)
+  storeId     String
+  AddOn       AddOn[]
+  Store       Store        @relation(fields: [storeId], references: [id])
+  ComboOffer  ComboOffer[]
+  Dish        Dish[]
+  SubMenu     SubMenu[]
+
+  @@unique([name, storeId])
+  @@index([storeId])
+}
+
+model ComboItem {
+  id         String     @id
+  comboId    String
+  dishId     String
+  quantity   Int
+  unitPrice  Float
+  ComboOffer ComboOffer @relation(fields: [comboId], references: [id])
+  Dish       Dish       @relation(fields: [dishId], references: [id])
+
+  @@index([comboId])
+  @@index([dishId])
+}
+
+model ComboOffer {
+  id               String             @id
+  name             String
+  hscode           String?
+  preparationTime  Int
+  description      String?
+  categoryId       String
+  subMenuId        String?
+  kotType          KOTType
+  isAvailable      Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  image            String[]
+  sortOrder        Int                @default(0)
+  storeId          String
+  ComboItem        ComboItem[]
+  Category         Category           @relation(fields: [categoryId], references: [id])
+  Store            Store              @relation(fields: [storeId], references: [id])
+  SubMenu          SubMenu?           @relation(fields: [subMenuId], references: [id])
+  OrderItem        OrderItem[]
+  Price            Price?
+  StockConsumption StockConsumption[]
+
+  @@index([categoryId])
+  @@index([storeId])
+  @@index([subMenuId])
+}
+
+model Customer {
+  id              String           @id
+  fullName        String
+  phone           String?          @unique
+  email           String?
+  openingBalance  Float            @default(0)
+  creditLimit     Float?           @default(0)
+  creditTermDays  Int?             @default(0)
+  loyaltyPoints   Int              @default(0)
+  loyaltyDiscount Float            @default(0)
+  legalName       String?
+  taxNumber       String?
+  address         String?
+  notes           String?
+  createdAt       DateTime         @default(now())
+  dob             DateTime?
+  loyaltyId       String?          @unique
+  storeId         String?
+  Store           Store?           @relation(fields: [storeId], references: [id])
+  CustomerLedger  CustomerLedger[]
+  Order           Order[]
+  Reservation     Reservation[]
+  SalesReturn     SalesReturn[]
+}
+
+model CustomerLedger {
+  id             String     @id
+  customerId     String
+  txnNo          String     @unique
+  type           LedgerType
+  amount         Float
+  closingBalance Float
+  referenceId    String?
+  remarks        String?
+  createdAt      DateTime   @default(now())
+  storeId        String?
+  Customer       Customer   @relation(fields: [customerId], references: [id])
+  Store          Store?     @relation(fields: [storeId], references: [id])
+
+  @@index([customerId])
+  @@index([storeId])
+}
+
+model DailySession {
+  id                                 String        @id
+  openedAt                           DateTime      @default(now())
+  closedAt                           DateTime?
+  openedById                         String
+  closedById                         String?
+  openingBalance                     Float         @default(0)
+  expectedClosingBalance             Float?
+  actualClosingBalance               Float?
+  difference                         Float?
+  status                             SessionStatus @default(OPEN)
+  storeId                            String
+  notes                              String?
+  User_DailySession_closedByIdToUser User?         @relation("DailySession_closedByIdToUser", fields: [closedById], references: [id])
+  User_DailySession_openedByIdToUser User          @relation("DailySession_openedByIdToUser", fields: [openedById], references: [id])
+  Store                              Store         @relation(fields: [storeId], references: [id])
+  Order                              Order[]
+  Payment                            Payment[]
+
+  @@index([status])
+  @@index([storeId])
+}
+
+model Dish {
+  id               String             @id
+  name             String
+  hscode           String?
+  preparationTime  Int
+  description      String?
+  categoryId       String
+  subMenuId        String?
+  type             DishType
+  kotType          KOTType
+  isAvailable      Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  image            String[]
+  sortOrder        Int                @default(0)
+  storeId          String
+  ComboItem        ComboItem[]
+  Category         Category           @relation(fields: [categoryId], references: [id])
+  Store            Store              @relation(fields: [storeId], references: [id])
+  SubMenu          SubMenu?           @relation(fields: [subMenuId], references: [id])
+  DishAddOn        DishAddOn[]
+  OrderItem        OrderItem[]
+  Price            Price?
+  StockConsumption StockConsumption[]
+
+  @@index([categoryId])
+  @@index([storeId])
+  @@index([subMenuId])
+}
+
+model DishAddOn {
+  id      String @id
+  dishId  String
+  addOnId String
+  AddOn   AddOn  @relation(fields: [addOnId], references: [id])
+  Dish    Dish   @relation(fields: [dishId], references: [id])
+
+  @@index([addOnId])
+  @@index([dishId])
+}
+
+model Expense {
+  id          String   @id
+  title       String
+  amount      Float
+  category    String?
+  date        DateTime @default(now())
+  description String?
+  createdAt   DateTime @default(now())
+  storeId     String
+  Store       Store    @relation(fields: [storeId], references: [id])
+
+  @@index([storeId])
+}
+
+model MeasuringUnit {
+  id          String   @id
+  name        String
+  shortName   String
+  description String?
+  storeId     String
+  createdAt   DateTime @default(now())
+  Store       Store    @relation(fields: [storeId], references: [id])
+  Stock       Stock[]
+
+  @@unique([name, storeId])
+  @@unique([shortName, storeId])
+  @@index([storeId])
+}
+
+model Menu {
+  id        String   @id
+  name      String
+  storeId   String
+  createdAt DateTime @default(now())
+  Store     Store    @relation(fields: [storeId], references: [id])
+}
+
+model MenuSet {
+  id             String           @id
+  name           String
+  service        String
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  sortOrder      Int              @default(0)
+  storeId        String
+  Store          Store            @relation(fields: [storeId], references: [id])
+  MenuSetSubMenu MenuSetSubMenu[]
+
+  @@index([storeId])
+}
+
+model MenuSetSubMenu {
+  id        String  @id
+  menuSetId String
+  subMenuId String
+  MenuSet   MenuSet @relation(fields: [menuSetId], references: [id])
+  SubMenu   SubMenu @relation(fields: [subMenuId], references: [id])
+
+  @@index([menuSetId])
+  @@index([subMenuId])
+}
+
+model Order {
+  id             String        @id
+  tableId        String?
+  type           OrderType
+  total          Float
+  status         OrderStatus   @default(PENDING)
+  createdAt      DateTime      @default(now())
+  customerId     String?
+  isDeleted      Boolean       @default(false)
+  paymentId      String?
+  sessionId      String?
+  staffId        String?
+  storeId        String?
+  guests         Int?
+  kotRemarks     String?
+  dailySessionId String?
+  Customer       Customer?     @relation(fields: [customerId], references: [id])
+  DailySession   DailySession? @relation(fields: [dailySessionId], references: [id])
+  Payment        Payment?      @relation(fields: [paymentId], references: [id])
+  TableSession   TableSession? @relation(fields: [sessionId], references: [id])
+  Staff          Staff?        @relation(fields: [staffId], references: [id])
+  Store          Store?        @relation(fields: [storeId], references: [id])
+  Table          Table?        @relation(fields: [tableId], references: [id])
+  OrderItem      OrderItem[]
+
+  @@index([createdAt])
+  @@index([customerId])
+  @@index([dailySessionId])
+  @@index([paymentId])
+  @@index([sessionId])
+  @@index([status])
+  @@index([tableId])
+}
+
+model OrderItem {
+  id                    String           @id
+  orderId               String
+  dishId                String?
+  comboId               String?
+  quantity              Int
+  unitPrice             Float
+  totalPrice            Float
+  remarks               String?
+  status                OrderStatus      @default(PENDING)
+  complimentaryQuantity Int              @default(0)
+  ComboOffer            ComboOffer?      @relation(fields: [comboId], references: [id])
+  Dish                  Dish?            @relation(fields: [dishId], references: [id])
+  Order                 Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  OrderItemAddOn        OrderItemAddOn[]
+
+  @@index([comboId])
+  @@index([dishId])
+  @@index([orderId])
+}
+
+model OrderItemAddOn {
+  id          String    @id
+  orderItemId String
+  addOnId     String
+  quantity    Int       @default(1)
+  unitPrice   Float
+  AddOn       AddOn     @relation(fields: [addOnId], references: [id])
+  OrderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@index([addOnId])
+  @@index([orderItemId])
+}
+
+model Payment {
+  id              String        @id
+  method          PaymentMethod
+  amount          Float
+  status          PaymentStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  sessionId       String?
+  esewaRefId      String?
+  transactionUuid String?       @unique
+  isDeleted       Boolean       @default(false)
+  storeId         String
+  staffId         String?
+  dailySessionId  String?
+  Order           Order[]
+  DailySession    DailySession? @relation(fields: [dailySessionId], references: [id])
+  TableSession    TableSession? @relation(fields: [sessionId], references: [id])
+  Staff           Staff?        @relation(fields: [staffId], references: [id])
+  Store           Store         @relation(fields: [storeId], references: [id])
+
+  @@index([dailySessionId])
+  @@index([sessionId])
+  @@index([staffId])
+  @@index([storeId])
+}
+
+model Price {
+  id            String      @id
+  actualPrice   Float
+  discountPrice Float?      @default(0)
+  listedPrice   Float
+  cogs          Float
+  grossProfit   Float
+  dishId        String?     @unique
+  addOnId       String?     @unique
+  comboId       String?     @unique
+  AddOn         AddOn?      @relation(fields: [addOnId], references: [id])
+  ComboOffer    ComboOffer? @relation(fields: [comboId], references: [id])
+  Dish          Dish?       @relation(fields: [dishId], references: [id])
+
+  @@index([addOnId])
+  @@index([comboId])
+  @@index([dishId])
+}
+
+model Purchase {
+  id              String         @id
+  createdAt       DateTime       @default(now())
+  storeId         String
+  attachment      String?
+  discount        Float          @default(0)
+  isDeleted       Boolean        @default(false)
+  paymentMode     PaymentMethod?
+  paymentStatus   PaymentStatus  @default(PENDING)
+  referenceNumber String         @unique
+  remark          String?
+  roundOff        Float          @default(0)
+  supplierId      String
+  taxableAmount   Float
+  totalAmount     Float
+  txnDate         DateTime       @default(now())
+  staffId         String?
+  Staff           Staff?         @relation(fields: [staffId], references: [id])
+  Store           Store          @relation(fields: [storeId], references: [id])
+  Supplier        Supplier       @relation(fields: [supplierId], references: [id])
+  PurchaseItem    PurchaseItem[]
+
+  @@index([staffId])
+  @@index([storeId])
+  @@index([supplierId])
+}
+
+model PurchaseItem {
+  id         String   @id
+  purchaseId String
+  itemName   String
+  quantity   Float
+  rate       Float
+  amount     Float
+  stockId    String?
+  Purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  Stock      Stock?   @relation(fields: [stockId], references: [id])
+
+  @@index([purchaseId])
+  @@index([stockId])
+}
+
+model PurchaseReturn {
+  id                 String               @id
+  referenceNumber    String               @unique
+  supplierId         String
+  txnDate            DateTime             @default(now())
+  purchaseReference  String?
+  taxableAmount      Float
+  totalAmount        Float
+  discount           Float                @default(0)
+  roundOff           Float                @default(0)
+  paymentStatus      ReturnPaymentStatus  @default(UNPAID)
+  paymentMode        PaymentMethod?
+  remark             String?
+  attachment         String?
+  storeId            String
+  createdAt          DateTime             @default(now())
+  isDeleted          Boolean              @default(false)
+  staffId            String?
+  Staff              Staff?               @relation(fields: [staffId], references: [id])
+  Store              Store                @relation(fields: [storeId], references: [id])
+  Supplier           Supplier             @relation(fields: [supplierId], references: [id])
+  PurchaseReturnItem PurchaseReturnItem[]
+
+  @@index([staffId])
+  @@index([storeId])
+  @@index([supplierId])
+}
+
+model PurchaseReturnItem {
+  id               String         @id
+  purchaseReturnId String
+  itemName         String
+  quantity         Float
+  rate             Float
+  amount           Float
+  stockId          String?
+  PurchaseReturn   PurchaseReturn @relation(fields: [purchaseReturnId], references: [id], onDelete: Cascade)
+  Stock            Stock?         @relation(fields: [stockId], references: [id])
+
+  @@index([purchaseReturnId])
+  @@index([stockId])
+}
+
+model QRCode {
+  id        String   @id
+  tableId   String   @unique
+  value     String
+  assigned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  Table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+}
+
+model QrPayment {
+  id      String   @id
+  image   String[]
+  storeId String
+  Store   Store    @relation(fields: [storeId], references: [id])
+}
+
+model Reservation {
+  id              String            @id
+  name            String
+  phone           String
+  customerId      String?
+  images          String?
+  remark          String?
+  tableId         String
+  guests          Int
+  createdAt       DateTime          @default(now())
+  status          ReservationStatus @default(PENDING)
+  Customer        Customer?         @relation(fields: [customerId], references: [id])
+  Table           Table             @relation(fields: [tableId], references: [id])
+  ReservationTime ReservationTime[]
+
+  @@index([customerId])
+  @@index([tableId])
+}
+
+model ReservationTime {
+  id            String      @id
+  reservationId String
+  date          DateTime
+  startTime     DateTime
+  endTime       DateTime
+  Reservation   Reservation @relation(fields: [reservationId], references: [id])
+
+  @@index([reservationId])
+}
+
+model SalesReturn {
+  id              String              @id
+  referenceNumber String              @unique
+  customerId      String?
+  txnDate         DateTime            @default(now())
+  billReference   String
+  salesStaff      String?
+  taxableAmount   Float
+  totalAmount     Float
+  roundOff        Float               @default(0)
+  discount        Float               @default(0)
+  attachment      String?
+  remark          String?
+  paymentStatus   ReturnPaymentStatus @default(UNPAID)
+  paymentMode     PaymentMethod?
+  createdAt       DateTime            @default(now())
+  isDeleted       Boolean             @default(false)
+  staffId         String?
+  storeId         String
+  Customer        Customer?           @relation(fields: [customerId], references: [id])
+  Staff           Staff?              @relation(fields: [staffId], references: [id])
+  Store           Store               @relation(fields: [storeId], references: [id])
+  SalesReturnItem SalesReturnItem[]
+
+  @@index([customerId])
+  @@index([storeId])
+}
+
+model SalesReturnItem {
+  id            String      @id
+  salesReturnId String
+  dishName      String
+  quantity      Int
+  rate          Float
+  amount        Float
+  SalesReturn   SalesReturn @relation(fields: [salesReturnId], references: [id], onDelete: Cascade)
+
+  @@index([salesReturnId])
+}
+
+model Session {
+  id           String   @id
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Space {
+  id          String   @id
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  sortOrder   Int      @default(0)
+  storeId     String
+  Store       Store    @relation(fields: [storeId], references: [id])
+  Table       Table[]
+
+  @@index([storeId])
+}
+
+model Staff {
+  id             String           @id
+  name           String
+  role           String           @default("Staff")
+  phone          String?
+  email          String?
+  isActive       Boolean          @default(true)
+  image          String?
+  createdAt      DateTime         @default(now())
+  storeId        String
+  roleId         String?
+  joinDate       DateTime?        @default(now())
+  shift          Shift?           @default(DAY)
+  Order          Order[]
+  Payment        Payment[]
+  Purchase       Purchase[]
+  PurchaseReturn PurchaseReturn[]
+  SalesReturn    SalesReturn[]
+  StaffRole      StaffRole?       @relation(fields: [roleId], references: [id])
+  Store          Store            @relation(fields: [storeId], references: [id])
+
+  @@index([createdAt])
+  @@index([isActive])
+  @@index([roleId])
+  @@index([storeId])
+}
+
+model StaffRole {
+  id      String  @id
+  name    String
+  storeId String
+  Staff   Staff[]
+  Store   Store   @relation(fields: [storeId], references: [id])
+
+  @@unique([name, storeId])
+  @@index([storeId])
+}
+
+model Stock {
+  id                 String               @id
+  name               String
+  quantity           Float
+  amount             Float
+  storeId            String
+  groupId            String?
+  unitId             String?
+  PurchaseItem       PurchaseItem[]
+  PurchaseReturnItem PurchaseReturnItem[]
+  StockGroup         StockGroup?          @relation(fields: [groupId], references: [id])
+  Store              Store                @relation(fields: [storeId], references: [id])
+  MeasuringUnit      MeasuringUnit?       @relation(fields: [unitId], references: [id])
+  StockConsumption   StockConsumption[]
+
+  @@unique([name, storeId])
+  @@index([groupId])
+  @@index([storeId])
+  @@index([unitId])
+}
+
+model StockConsumption {
+  id         String      @id
+  stockId    String
+  quantity   Float
+  dishId     String?
+  addOnId    String?
+  comboId    String?
+  AddOn      AddOn?      @relation(fields: [addOnId], references: [id])
+  ComboOffer ComboOffer? @relation(fields: [comboId], references: [id])
+  Dish       Dish?       @relation(fields: [dishId], references: [id])
+  Stock      Stock       @relation(fields: [stockId], references: [id])
+
+  @@index([addOnId])
+  @@index([comboId])
+  @@index([dishId])
+  @@index([stockId])
+}
+
+model StockGroup {
+  id          String   @id
+  name        String
+  description String?
+  storeId     String
+  createdAt   DateTime @default(now())
+  Stock       Stock[]
+  Store       Store    @relation(fields: [storeId], references: [id])
+
+  @@unique([name, storeId])
+  @@index([storeId])
+}
+
+model Store {
+  id             String           @id
+  name           String
+  ownerId        String           @unique
+  AddOn          AddOn[]
+  Category       Category[]
+  ComboOffer     ComboOffer[]
+  Customer       Customer[]
+  CustomerLedger CustomerLedger[]
+  DailySession   DailySession[]
+  Dish           Dish[]
+  Expense        Expense[]
+  MeasuringUnit  MeasuringUnit[]
+  Menu           Menu[]
+  MenuSet        MenuSet[]
+  Order          Order[]
+  Payment        Payment[]
+  Purchase       Purchase[]
+  PurchaseReturn PurchaseReturn[]
+  QrPayment      QrPayment[]
+  SalesReturn    SalesReturn[]
+  Space          Space[]
+  Staff          Staff[]
+  StaffRole      StaffRole[]
+  Stock          Stock[]
+  StockGroup     StockGroup[]
+  SubMenu        SubMenu[]
+  Supplier       Supplier[]
+  SupplierLedger SupplierLedger[]
+  SystemSetting  SystemSetting[]
+  Table          Table[]
+  TableSession   TableSession[]
+  TableType      TableType[]
+  User           User[]
+}
+
+model SubMenu {
+  id             String           @id
+  name           String
+  image          String?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  categoryId     String?
+  sortOrder      Int              @default(0)
+  storeId        String
+  ComboOffer     ComboOffer[]
+  Dish           Dish[]
+  MenuSetSubMenu MenuSetSubMenu[]
+  Category       Category?        @relation(fields: [categoryId], references: [id])
+  Store          Store            @relation(fields: [storeId], references: [id])
+
+  @@unique([name, storeId])
+  @@index([categoryId])
+  @@index([storeId])
+}
+
+model Supplier {
+  id                 String           @id
+  fullName           String
+  phone              String?          @unique
+  email              String?
+  legalName          String?
+  taxNumber          String?
+  address            String?
+  openingBalance     Float            @default(0)
+  openingBalanceType BalanceType      @default(CREDIT)
+  storeId            String
+  createdAt          DateTime         @default(now())
+  Purchase           Purchase[]
+  PurchaseReturn     PurchaseReturn[]
+  Store              Store            @relation(fields: [storeId], references: [id])
+  SupplierLedger     SupplierLedger[]
+
+  @@index([storeId])
+}
+
+model SupplierLedger {
+  id             String             @id
+  supplierId     String
+  storeId        String
+  txnNo          String             @unique
+  type           SupplierLedgerType
+  amount         Float
+  closingBalance Float
+  referenceId    String?
+  remarks        String?
+  createdAt      DateTime           @default(now())
+  Store          Store              @relation(fields: [storeId], references: [id])
+  Supplier       Supplier           @relation(fields: [supplierId], references: [id])
+
+  @@index([storeId])
+  @@index([supplierId])
+}
+
+model SystemSetting {
+  id        String   @id
+  key       String
+  value     String
+  updatedAt DateTime
+  createdAt DateTime @default(now())
+  storeId   String
+  Store     Store    @relation(fields: [storeId], references: [id])
+
+  @@unique([key, storeId])
+}
+
+model Table {
+  id           String         @id
+  name         String
+  capacity     Int
+  status       TableStatus    @default(ACTIVE)
+  spaceId      String?
+  createdAt    DateTime       @default(now())
+  tableTypeId  String?
+  isDeleted    Boolean        @default(false)
+  sortOrder    Int            @default(0)
+  storeId      String
+  Order        Order[]
+  QRCode       QRCode?
+  Reservation  Reservation[]
+  Space        Space?         @relation(fields: [spaceId], references: [id])
+  Store        Store          @relation(fields: [storeId], references: [id])
+  TableType    TableType?     @relation(fields: [tableTypeId], references: [id])
+  TableSession TableSession[]
+
+  @@index([sortOrder])
+  @@index([spaceId])
+  @@index([status])
+  @@index([storeId])
+  @@index([tableTypeId])
+}
+
+model TableSession {
+  id            String    @id
+  tableId       String
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+  total         Float     @default(0)
+  serviceCharge Float     @default(0)
+  tax           Float     @default(0)
+  grandTotal    Float     @default(0)
+  isActive      Boolean   @default(true)
+  discount      Float     @default(0)
+  storeId       String?
+  Order         Order[]
+  Payment       Payment[]
+  Store         Store?    @relation(fields: [storeId], references: [id])
+  Table         Table     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([tableId])
+}
+
+model TableType {
+  id      String  @id
+  name    String
+  storeId String
+  Table   Table[]
+  Store   Store   @relation(fields: [storeId], references: [id])
+
+  @@unique([name, storeId])
+  @@index([storeId])
+}
+
+model User {
+  id                                         String         @id
+  name                                       String?
+  email                                      String         @unique
+  password                                   String
+  role                                       Role           @default(CASHIER)
+  storeId                                    String?
+  emailVerified                              DateTime?
+  isSetupComplete                            Boolean        @default(false)
+  trialEndsAt                                DateTime?
+  verificationCode                           String?
+  verificationCodeExpires                    DateTime?
+  permissions                                String[]       @default([])
+  DailySession_DailySession_closedByIdToUser DailySession[] @relation("DailySession_closedByIdToUser")
+  DailySession_DailySession_openedByIdToUser DailySession[] @relation("DailySession_openedByIdToUser")
+  Session                                    Session[]
+  Store                                      Store?         @relation(fields: [storeId], references: [id])
+}
+
+enum AddOnType {
+  EXTRA
+  ADDON
+}
+
+enum BalanceType {
+  DEBIT
+  CREDIT
+}
+
+enum DishType {
+  VEG
+  NON_VEG
+  SNACK
+  DRINK
+}
+
+enum KOTType {
+  KITCHEN
+  BAR
+}
+
+enum LedgerType {
+  SALE
+  PAYMENT_IN
+  PAYMENT_OUT
+  RETURN
+  ADJUSTMENT
+  OPENING_BALANCE
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READYTOPICK
+  SERVED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderType {
+  DINE_IN
+  PICKUP
+  DELIVERY
+  RESERVATION
+  QUICK_BILLING
+  TAKE_AWAY
+}
+
+enum PaymentMethod {
+  CASH
+  ESEWA
+  QR
+  BANK_TRANSFER
+  CREDIT
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CREDIT
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum ReturnPaymentStatus {
+  PAID
+  UNPAID
+  CREDIT
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  CASHIER
+}
+
+enum SessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum Shift {
+  MORNING
+  EVENING
+  DAY
+}
+
+enum SupplierLedgerType {
+  PURCHASE
+  PAYMENT
+  RETURN
+  ADJUSTMENT
+  OPENING_BALANCE
+}
+
+enum TableStatus {
+  ACTIVE
+  OCCUPIED
+  INACTIVE
+}

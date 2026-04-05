@@ -1,0 +1,20 @@
+[
+  {
+    "id": "2250be0e-5f07-4e53-a8ce-c9db6aa58121",
+    "purchaseId": "83929329-6b9f-43b9-9b7b-65d8cd9492a1",
+    "itemName": "Coffee",
+    "quantity": 4,
+    "rate": 250,
+    "amount": 1000,
+    "stockId": null
+  },
+  {
+    "id": "244828eb-4951-4446-92b8-fe0f82f7d6f4",
+    "purchaseId": "e95a91e7-f53c-438b-8fa6-9505f2817b5d",
+    "itemName": "Milk",
+    "quantity": 100,
+    "rate": 60,
+    "amount": 6000,
+    "stockId": null
+  }
+]

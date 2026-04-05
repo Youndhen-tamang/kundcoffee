@@ -1,0 +1,30 @@
+[
+  {
+    "id": "eb45547d-3e64-4781-a4e7-58c66a9d2833",
+    "openedAt": "2026-03-31T18:14:52.455Z",
+    "closedAt": null,
+    "openedById": "cmm7khlgy0000psrrkqq4fx2r",
+    "closedById": null,
+    "openingBalance": 10000,
+    "expectedClosingBalance": null,
+    "actualClosingBalance": null,
+    "difference": null,
+    "status": "OPEN",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "notes": ""
+  },
+  {
+    "id": "1d29351f-6c43-43b2-87b8-2a588f36373d",
+    "openedAt": "2026-04-05T06:05:35.582Z",
+    "closedAt": "2026-04-05T06:31:47.630Z",
+    "openedById": "cmnlcuorj0000lt8xuszlhaly",
+    "closedById": "cmnlcuorj0000lt8xuszlhaly",
+    "openingBalance": 1000,
+    "expectedClosingBalance": 12820,
+    "actualClosingBalance": 12820,
+    "difference": 0,
+    "status": "CLOSED",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z",
+    "notes": "System Calculation:\n- Cash Sales: 11820\n- Digital Sales: 10720\n- Notes:"
+  }
+]

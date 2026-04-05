@@ -1,0 +1,62 @@
+[
+  {
+    "id": "9a46cb07-c361-458c-991a-9b063df4540c",
+    "supplierId": "35e7c8a3-6ba7-429a-adb5-40dc7ad0128f",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "txnNo": "OPB-35E7C8A3",
+    "type": "OPENING_BALANCE",
+    "amount": 3000,
+    "closingBalance": -3000,
+    "referenceId": null,
+    "remarks": "Opening Balance",
+    "createdAt": "2026-03-01T10:06:26.355Z"
+  },
+  {
+    "id": "417a5b7e-50d4-4195-9dad-4d6f09e8b2f7",
+    "supplierId": "35e7c8a3-6ba7-429a-adb5-40dc7ad0128f",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "txnNo": "PUR-1772359646474-433",
+    "type": "PURCHASE",
+    "amount": 1000,
+    "closingBalance": 0,
+    "referenceId": "83929329-6b9f-43b9-9b7b-65d8cd9492a1",
+    "remarks": "Purchase Bill PUR-1772359646474-433",
+    "createdAt": "2026-03-01T10:07:26.622Z"
+  },
+  {
+    "id": "f108ae79-7ef8-44bd-b25a-f7fbceee6800",
+    "supplierId": "35e7c8a3-6ba7-429a-adb5-40dc7ad0128f",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "txnNo": "PRT-1772359785982-848",
+    "type": "RETURN",
+    "amount": 250,
+    "closingBalance": 0,
+    "referenceId": "7aad5422-3b9d-4bf0-949c-b1d7105ee34f",
+    "remarks": "Purchase Return PRT-1772359785982-848",
+    "createdAt": "2026-03-01T10:09:46.116Z"
+  },
+  {
+    "id": "4a9aecf4-e133-4f6e-9f66-ec5fb6b72c18",
+    "supplierId": "2e620443-8461-4726-94a6-dca45c316a55",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z",
+    "txnNo": "PUR-1775370457967-327",
+    "type": "PURCHASE",
+    "amount": 6000,
+    "closingBalance": 0,
+    "referenceId": "e95a91e7-f53c-438b-8fa6-9505f2817b5d",
+    "remarks": "Purchase Bill PUR-1775370457967-327",
+    "createdAt": "2026-04-05T06:27:41.610Z"
+  },
+  {
+    "id": "96412309-ba99-4746-8d60-26c479aab0b3",
+    "supplierId": "2e620443-8461-4726-94a6-dca45c316a55",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z",
+    "txnNo": "PAY-P-E95A91E7",
+    "type": "PAYMENT",
+    "amount": 6000,
+    "closingBalance": 0,
+    "referenceId": "e95a91e7-f53c-438b-8fa6-9505f2817b5d",
+    "remarks": "Immediate payment for bill PUR-1775370457967-327",
+    "createdAt": "2026-04-05T06:27:42.440Z"
+  }
+]

@@ -34,13 +34,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Normalize empty strings to null for unique fields
+    const normalizedPhone = phone?.trim() === "" ? null : phone;
+    const normalizedEmail = email?.trim() === "" ? null : email;
+
+    // Check for existing supplier with the same phone in the same store
+    if (normalizedPhone) {
+      const existingSupplier = await prisma.supplier.findFirst({
+        where: {
+          phone: normalizedPhone,
+          storeId,
+        },
+      });
+
+      if (existingSupplier) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "A supplier with this phone number already exists in your store.",
+          },
+          { status: 409 },
+        );
+      }
+    }
+
     const supplier = await prisma.$transaction(
       async (tx) => {
         const newSupplier = await tx.supplier.create({
           data: {
             fullName,
-            phone,
-            email,
+            phone: normalizedPhone,
+            email: normalizedEmail,
             legalName,
             taxNumber,
             address,

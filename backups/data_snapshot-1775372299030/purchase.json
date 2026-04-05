@@ -1,0 +1,38 @@
+[
+  {
+    "id": "83929329-6b9f-43b9-9b7b-65d8cd9492a1",
+    "createdAt": "2026-03-01T10:07:26.516Z",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "attachment": null,
+    "discount": 0,
+    "isDeleted": false,
+    "paymentMode": "CASH",
+    "paymentStatus": "PENDING",
+    "referenceNumber": "PUR-1772359646474-433",
+    "remark": "",
+    "roundOff": 0,
+    "supplierId": "35e7c8a3-6ba7-429a-adb5-40dc7ad0128f",
+    "taxableAmount": 1000,
+    "totalAmount": 1000,
+    "txnDate": "2026-03-01T00:00:00.000Z",
+    "staffId": null
+  },
+  {
+    "id": "e95a91e7-f53c-438b-8fa6-9505f2817b5d",
+    "createdAt": "2026-04-05T06:27:39.745Z",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z",
+    "attachment": "",
+    "discount": 0,
+    "isDeleted": false,
+    "paymentMode": "CASH",
+    "paymentStatus": "PAID",
+    "referenceNumber": "PUR-1775370457967-327",
+    "remark": "",
+    "roundOff": 0,
+    "supplierId": "2e620443-8461-4726-94a6-dca45c316a55",
+    "taxableAmount": 6000,
+    "totalAmount": 6000,
+    "txnDate": "2026-04-05T00:00:00.000Z",
+    "staffId": "0d011ad7-ac05-4a1f-9fbd-80742f4972aa"
+  }
+]

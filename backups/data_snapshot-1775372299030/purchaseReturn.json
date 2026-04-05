@@ -1,0 +1,21 @@
+[
+  {
+    "id": "7aad5422-3b9d-4bf0-949c-b1d7105ee34f",
+    "referenceNumber": "PRT-1772359785982-848",
+    "supplierId": "35e7c8a3-6ba7-429a-adb5-40dc7ad0128f",
+    "txnDate": "2026-03-01T00:00:00.000Z",
+    "purchaseReference": "001",
+    "taxableAmount": 250,
+    "totalAmount": 250,
+    "discount": 0,
+    "roundOff": 0,
+    "paymentStatus": "UNPAID",
+    "paymentMode": "CASH",
+    "remark": "",
+    "attachment": null,
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "createdAt": "2026-03-01T10:09:46.013Z",
+    "isDeleted": false,
+    "staffId": null
+  }
+]

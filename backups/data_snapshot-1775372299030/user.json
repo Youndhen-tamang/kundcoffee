@@ -1,0 +1,89 @@
+[
+  {
+    "id": "cmm7khlgy0000psrrkqq4fx2r",
+    "name": null,
+    "email": "kundcoffee@gmail.com",
+    "password": "$2b$10$zl3owHCPz/f9B/TWseJt0OrHz/E95.jEQT2.nDS8TsmRCakpkaQ5O",
+    "role": "ADMIN",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "emailVerified": "2026-03-01T09:48:54.046Z",
+    "isSetupComplete": true,
+    "trialEndsAt": "2026-03-08T09:48:54.046Z",
+    "verificationCode": null,
+    "verificationCodeExpires": null,
+    "permissions": []
+  },
+  {
+    "id": "cmmgbl6h50000y2h0dapf4uuz",
+    "name": null,
+    "email": "oregon@gmail.com",
+    "password": "$2b$10$VRG1Z7aqy7QS2QCOS5gRf.Vu6KQcV/7HgpcE1/Ao5TBbLfe/5Cgny",
+    "role": "ADMIN",
+    "storeId": "cmmgbodh000014lx7fomr3a5w",
+    "emailVerified": "2026-03-07T12:51:23.728Z",
+    "isSetupComplete": true,
+    "trialEndsAt": "2026-03-14T12:51:23.727Z",
+    "verificationCode": null,
+    "verificationCodeExpires": null,
+    "permissions": []
+  },
+  {
+    "id": "cmmt5n3yb00009kqd59qsf9e8",
+    "name": null,
+    "email": "test@gmail.com",
+    "password": "$2b$10$PXY6Y8ZNwDZuPDh5xlp0s.d9bKp238KVlc5xllILVmS4BcSKjdylG",
+    "role": "ADMIN",
+    "storeId": "cmmt5o3f800029kqdwwypongu",
+    "emailVerified": "2026-03-16T12:24:10.579Z",
+    "isSetupComplete": true,
+    "trialEndsAt": "2026-03-23T12:24:10.577Z",
+    "verificationCode": null,
+    "verificationCodeExpires": null,
+    "permissions": []
+  },
+  {
+    "id": "cmn06x1yw000131tt2rdz8soe",
+    "name": "ram",
+    "email": "info@kundcoffee.com",
+    "password": "$2b$10$dtFFCJMQ106MmnqcZ1oakeoOg2VSxPPqXmfWRBnHb2qsTdAxL0ztC",
+    "role": "CASHIER",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "emailVerified": "2026-03-21T10:33:43.734Z",
+    "isSetupComplete": true,
+    "trialEndsAt": null,
+    "verificationCode": null,
+    "verificationCodeExpires": null,
+    "permissions": [
+      "manage_menu",
+      "pos_access"
+    ]
+  },
+  {
+    "id": "cmnka52y30000e2cd8h56aut9",
+    "name": null,
+    "email": "rimjhimChautari@gmail.com",
+    "password": "$2b$10$koiMERKiN6kG0ZIxmxfbk./aAJktXWdSsHTy2G8Kz9L75yhMtVSzW",
+    "role": "ADMIN",
+    "storeId": "cmnka6xqp0001emd4z20d0lds",
+    "emailVerified": "2026-04-04T12:00:17.049Z",
+    "isSetupComplete": true,
+    "trialEndsAt": "2026-04-11T12:00:17.049Z",
+    "verificationCode": null,
+    "verificationCodeExpires": null,
+    "permissions": []
+  },
+  {
+    "id": "cmnlcuorj0000lt8xuszlhaly",
+    "name": null,
+    "email": "lamayoundhen929@gmail.com",
+    "password": "$2b$10$SuE8DrcNla.G3NRd.rxCbuoXlDKWb8k/6/Ro2OHdd005kJXrz/drm",
+    "role": "ADMIN",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z",
+    "emailVerified": "2026-04-05T06:03:28.173Z",
+    "isSetupComplete": true,
+    "trialEndsAt": "2026-04-12T06:03:28.171Z",
+    "verificationCode": null,
+    "verificationCodeExpires": null,
+    "permissions": []
+  }
+]

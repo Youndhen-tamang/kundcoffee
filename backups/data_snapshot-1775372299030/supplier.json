@@ -1,0 +1,41 @@
+[
+  {
+    "id": "35e7c8a3-6ba7-429a-adb5-40dc7ad0128f",
+    "fullName": "Ram Jee",
+    "phone": "123456789",
+    "email": "kundcoffee@gmail.com",
+    "legalName": "Abc Trade",
+    "taxNumber": "123456789",
+    "address": "Kathmandu",
+    "openingBalance": 3000,
+    "openingBalanceType": "DEBIT",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9",
+    "createdAt": "2026-03-01T10:06:26.321Z"
+  },
+  {
+    "id": "50011aff-1dac-4567-96da-2efd2b96a415",
+    "fullName": "Youndhen Ghacho Tamang",
+    "phone": "+9779843094860",
+    "email": "lamayoundhen929@gmail.com",
+    "legalName": "",
+    "taxNumber": "",
+    "address": "Boudha, Ramhiti",
+    "openingBalance": 0,
+    "openingBalanceType": "CREDIT",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0",
+    "createdAt": "2026-03-07T13:02:56.382Z"
+  },
+  {
+    "id": "2e620443-8461-4726-94a6-dca45c316a55",
+    "fullName": "Jhon",
+    "phone": "9841643429",
+    "email": "younsyt929@gmail.com",
+    "legalName": "ABC Test",
+    "taxNumber": "123456789",
+    "address": "Boudha, Ramhiti",
+    "openingBalance": 0,
+    "openingBalanceType": "CREDIT",
+    "storeId": "cmnlcvfo70002lt8xmmgez07z",
+    "createdAt": "2026-04-05T06:24:19.722Z"
+  }
+]

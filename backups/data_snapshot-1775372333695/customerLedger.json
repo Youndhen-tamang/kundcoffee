@@ -1,0 +1,86 @@
+[
+  {
+    "id": "be7fa900-baf4-4f3b-b448-d0cc62242e47",
+    "customerId": "abb995c6-f41c-42ec-9e84-bdaddd62f552",
+    "txnNo": "SALE-1772794711925-af1a",
+    "type": "SALE",
+    "amount": 720,
+    "closingBalance": 720,
+    "referenceId": "af1a38ce-9a64-49df-98a5-86161dd840a4",
+    "remarks": "Table Checkout - 9e26f846-ee14-42dc-b6d3-948acfe8f18f (CASH)",
+    "createdAt": "2026-03-06T10:58:31.926Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "2d7c2708-e815-4bcf-acef-13c0eb2a4337",
+    "customerId": "abb995c6-f41c-42ec-9e84-bdaddd62f552",
+    "txnNo": "PAY-1772794711958-7d42",
+    "type": "PAYMENT_IN",
+    "amount": 720,
+    "closingBalance": 0,
+    "referenceId": "7d4285a7-41a0-48b2-bb65-a2c24d075249",
+    "remarks": "Payment for Order - CASH",
+    "createdAt": "2026-03-06T10:58:31.959Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "6cb17ff9-84c3-4f8b-a73e-3869f4f1e693",
+    "customerId": "abb995c6-f41c-42ec-9e84-bdaddd62f552",
+    "txnNo": "SALE-1774281346406-7b97",
+    "type": "SALE",
+    "amount": 623,
+    "closingBalance": 623,
+    "referenceId": "7b97c586-8053-49de-8897-c068f8b0c552",
+    "remarks": "Table Checkout - b5a88dd0-b84c-4202-99bf-928a7fa5d6e3 (CREDIT)",
+    "createdAt": "2026-03-23T15:55:46.407Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "8ba77ecc-9882-4f3f-be72-a3ab0de494bf",
+    "customerId": "abb995c6-f41c-42ec-9e84-bdaddd62f552",
+    "txnNo": "SALE-1774282434322-TA",
+    "type": "SALE",
+    "amount": 623,
+    "closingBalance": 1246,
+    "referenceId": "661fad87-50e6-4ed8-b959-5a4dd1fbfa9f",
+    "remarks": "Take Away Checkout (CREDIT)",
+    "createdAt": "2026-03-23T16:13:54.324Z",
+    "storeId": "cmm7kb82i0002ku1gbbh63hr0"
+  },
+  {
+    "id": "edb06484-a716-4a7a-a085-117b43dd592a",
+    "customerId": "98294b2c-8db7-4060-81f3-f5de23c457e2",
+    "txnNo": "SALE-1774313131726-TA",
+    "type": "SALE",
+    "amount": 637.5,
+    "closingBalance": 637.5,
+    "referenceId": "cf37f288-de84-4dd4-8cc5-4d717b3e18c3",
+    "remarks": "Take Away Checkout (CREDIT)",
+    "createdAt": "2026-03-24T00:45:31.727Z",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "a6372ec4-fd04-4488-a469-baefb370f9be",
+    "customerId": "98294b2c-8db7-4060-81f3-f5de23c457e2",
+    "txnNo": "SALE-1774313675544-TA",
+    "type": "SALE",
+    "amount": 442.5,
+    "closingBalance": 1080,
+    "referenceId": "d57b077f-61a4-49d3-8c2c-891340ee437a",
+    "remarks": "Take Away Checkout (CREDIT)",
+    "createdAt": "2026-03-24T00:54:35.544Z",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  },
+  {
+    "id": "c604834f-d84c-478a-a91e-3c952902bfd7",
+    "customerId": "ff0cf30c-499d-4201-b64f-deaa68c6d327",
+    "txnNo": "SALE-1774613203153-fe2f",
+    "type": "SALE",
+    "amount": 150,
+    "closingBalance": 150,
+    "referenceId": "fe2f6f57-0d67-4273-9841-abb91c935548",
+    "remarks": "Table Checkout - 36b0ccc8-1ebc-4f38-8ddf-9aa49a9ca1f6 (CREDIT)",
+    "createdAt": "2026-03-27T12:06:43.154Z",
+    "storeId": "cmm7kijlt000111fe6p8fx3q9"
+  }
+]

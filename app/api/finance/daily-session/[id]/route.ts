@@ -56,17 +56,47 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     const body = await req.json();
     const { actualClosingBalance, notes } = body;
 
-    // Calculate expected closing balance (Opening Balance + Cash Sales)
-    const cashSales = dailySession.payments
-      .filter(p => p.method === "CASH" && p.status === "PAID")
-      .reduce((sum, p) => sum + p.amount, 0);
+    // Broaden payment statuses for comprehensive revenue reporting
+    const relevantPayments = dailySession.payments
+      .filter(p => ["PAID", "CREDIT"].includes(p.status))
+      .map(p => ({
+        ...p,
+        amount: parseFloat(p.amount.toString())
+      }));
 
-    const digitalSales = dailySession.payments
-      .filter(p => p.method !== "CASH" && p.status === "PAID")
-      .reduce((sum, p) => sum + p.amount, 0);
+    // Calculate breakdown by method
+    const salesByMethod: Record<string, number> = {
+      CASH: 0,
+      QR: 0,
+      ESEWA: 0,
+      CARD: 0,
+      BANK_TRANSFER: 0,
+      CREDIT: 0
+    };
+
+    relevantPayments.forEach(p => {
+      if (salesByMethod[p.method] !== undefined) {
+         salesByMethod[p.method] += p.amount;
+      } else {
+         salesByMethod[p.method] = p.amount;
+      }
+    });
+
+    const cashSales = salesByMethod.CASH || 0;
+    const digitalSales = Object.entries(salesByMethod)
+      .filter(([method]) => method !== "CASH" && method !== "CREDIT")
+      .reduce((sum, [_, amount]) => sum + amount, 0);
+    
+    const creditSales = salesByMethod.CREDIT || 0;
+    const totalRevenue = cashSales + digitalSales + creditSales;
 
     const expectedClosingBalance = dailySession.openingBalance + cashSales;
     const difference = (parseFloat(actualClosingBalance) || 0) - expectedClosingBalance;
+
+    const breakdownNote = Object.entries(salesByMethod)
+      .filter(([_, amount]) => amount > 0)
+      .map(([method, amount]) => `- ${method}: ${amount.toFixed(2)}`)
+      .join("\n");
 
     const updatedSession = await prisma.dailySession.update({
       where: { id: id },
@@ -77,7 +107,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         actualClosingBalance: parseFloat(actualClosingBalance) || 0,
         difference,
         status: "CLOSED",
-        notes: `${dailySession.notes || ""}\n\nSystem Calculation:\n- Cash Sales: ${cashSales}\n- Digital Sales: ${digitalSales}\n- Notes: ${notes || ""}`.trim()
+        notes: `${dailySession.notes || ""}\n\nSession Revenue Breakdown:\n${breakdownNote}\n- Total Revenue: ${totalRevenue.toFixed(2)}\n\nFinal Reconciliation:\n- Cash in Drawer: ${actualClosingBalance}\n- Expected Cash: ${expectedClosingBalance}\n- Difference: ${difference.toFixed(2)}\n- User Notes: ${notes || "None"}`.trim()
       }
     });
 
