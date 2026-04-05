@@ -14,7 +14,13 @@ import {
   TrendingUp,
   Banknote,
   QrCode,
-  Receipt
+  Receipt,
+  ShoppingBag,
+  DollarSign,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Hash,
+  CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -33,6 +39,10 @@ export function DailySessionManager() {
   const [actualClosingBalance, setActualClosingBalance] = useState("");
   const [notes, setNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<"summary" | "income" | "purchases">("summary");
 
   const fetchData = async () => {
     setLoading(true);
@@ -130,6 +140,28 @@ export function DailySessionManager() {
     setShowCloseModal(true);
   };
 
+  const handleViewDetails = async (session: any) => {
+    setIsDetailLoading(true);
+    setSelectedSession(session); // Set basic data first for the title
+    setShowDetailsModal(true);
+    setActiveTab("summary");
+    
+    try {
+      const res = await fetch(`/api/finance/daily-session/${session.id}`);
+      const data = await res.json();
+      if (data.success) {
+        setSelectedSession(data.data);
+      } else {
+        toast.error("Failed to load full session details");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error fetching details");
+    } finally {
+      setIsDetailLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -161,18 +193,22 @@ export function DailySessionManager() {
                   <span className="flex items-center gap-1.5"><Banknote size={14} /> Opening: {settings.currency} {activeSession.openingBalance.toFixed(2)}</span>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Cash Sales</p>
                     <p className="text-sm font-black text-white">{settings.currency} {activeSession.currentCashSales?.toFixed(2)}</p>
                   </div>
                   <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Digital (QR/Esewa)</p>
+                    <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1 font-black">Cash Purchases (-)</p>
+                    <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentCashOutflow?.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Digital (QR+)</p>
                     <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.currentDigitalSales?.toFixed(2)}</p>
                   </div>
                   <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Credit Sales</p>
-                    <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentCreditSales?.toFixed(2)}</p>
+                    <p className="text-sm font-black text-blue-400">{settings.currency} {activeSession.currentCreditSales?.toFixed(2)}</p>
                   </div>
                   <div className="bg-emerald-950/30 border border-emerald-900/50 p-3 rounded-xl">
                     <p className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest mb-1">Total Revenue</p>
@@ -243,6 +279,9 @@ export function DailySessionManager() {
                 <th className="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
                   Status
                 </th>
+                <th className="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-50">
@@ -291,6 +330,16 @@ export function DailySessionManager() {
                       <span className="text-[10px] font-black px-2 py-1 rounded-full bg-zinc-100 text-zinc-500 uppercase tracking-widest border border-zinc-200 inline-block">
                         {session.status}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                       <Button 
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleViewDetails(session)}
+                        className="text-[10px] font-black uppercase tracking-widest px-4 h-8"
+                       >
+                         Details
+                       </Button>
                     </td>
                   </tr>
                 ))
@@ -458,6 +507,179 @@ export function DailySessionManager() {
             >
               {actionLoading ? "Closing..." : "Close Session"}
             </Button>
+          </div>
+        </div>
+      </Modal>
+      {/* Session Detail Modal */}
+      <Modal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedSession(null);
+        }}
+        title={`Session Review #${selectedSession?.id?.substring(0, 8)}`}
+        size="lg"
+      >
+        <div className="flex flex-col h-full max-h-[85vh]">
+          {/* Tabs */}
+          <div className="flex border-b border-zinc-100 px-6">
+            <button 
+              onClick={() => setActiveTab("summary")}
+              className={`py-4 px-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === "summary" ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-400 hover:text-zinc-600"}`}
+            >
+              Overview
+            </button>
+            <button 
+              onClick={() => setActiveTab("income")}
+              className={`py-4 px-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === "income" ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-400 hover:text-zinc-600"}`}
+            >
+              Income ({selectedSession?.payments?.length || 0})
+            </button>
+            <button 
+              onClick={() => setActiveTab("purchases")}
+              className={`py-4 px-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === "purchases" ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-400 hover:text-zinc-600"}`}
+            >
+              Purchases ({selectedSession?.purchases?.length || 0})
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6">
+            {isDetailLoading ? (
+               <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900"></div>
+                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Hydrating Session Data...</p>
+               </div>
+            ) : (
+              <div className="space-y-6">
+                {activeTab === "summary" && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="bg-zinc-50 p-4 rounded-2xl border border-zinc-100">
+                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 flex items-center gap-1.5"><ArrowUpCircle size={10} /> Opening Cash</p>
+                        <p className="text-xl font-black text-zinc-900">{settings.currency} {selectedSession?.openingBalance?.toFixed(2)}</p>
+                      </div>
+                      <div className="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+                        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1.5"><DollarSign size={10} /> Final Closing</p>
+                        <p className="text-xl font-black text-white">{settings.currency} {selectedSession?.actualClosingBalance?.toFixed(2)}</p>
+                      </div>
+                      <div className={`p-4 rounded-2xl border ${selectedSession?.difference >= 0 ? "bg-emerald-50 border-emerald-100" : "bg-rose-50 border-rose-100"}`}>
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${selectedSession?.difference >= 0 ? "text-emerald-600" : "text-rose-600"}`}>Difference</p>
+                        <p className={`text-xl font-black ${selectedSession?.difference >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                          {selectedSession?.difference > 0 ? "+" : ""}{selectedSession?.difference?.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-zinc-50 rounded-2xl border border-zinc-100 overflow-hidden">
+                       <div className="px-5 py-3 bg-zinc-100/50 border-b border-zinc-100 flex items-center justify-between">
+                         <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Final Session Summary</span>
+                         <Clock size={12} className="text-zinc-400" />
+                       </div>
+                       <div className="p-5 whitespace-pre-wrap text-sm font-medium leading-relaxed text-zinc-700 font-mono italic bg-white/50">
+                         {selectedSession?.notes || "No consolidated notes for this session."}
+                       </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl">
+                       <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                             <User size={20} />
+                          </div>
+                          <div>
+                             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Accounted By</p>
+                             <p className="text-sm font-bold text-emerald-900">{selectedSession?.closedBy?.name || selectedSession?.openedBy?.name}</p>
+                          </div>
+                       </div>
+                       <div className="text-right">
+                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Date</p>
+                          <p className="text-sm font-bold text-zinc-900">{new Date(selectedSession?.openedAt).toLocaleDateString()}</p>
+                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "income" && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    {selectedSession?.payments?.length === 0 ? (
+                      <div className="text-center py-10 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
+                        <TrendingUp size={32} className="mx-auto text-zinc-300 mb-2" />
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">No Income Recorded</p>
+                      </div>
+                    ) : (
+                      <div className="border border-zinc-100 rounded-2xl overflow-hidden divide-y divide-zinc-100">
+                        {selectedSession?.payments?.map((payment: any) => (
+                          <div key={payment.id} className="p-4 flex items-center justify-between hover:bg-zinc-50 transition-colors">
+                            <div className="flex items-center gap-3">
+                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${payment.method === 'CASH' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                 {payment.method === 'CASH' ? <Banknote size={20} /> : <QrCode size={20} />}
+                               </div>
+                               <div>
+                                  <p className="text-xs font-black text-zinc-900 uppercase tracking-widest">{payment.method}</p>
+                                  <p className="text-[10px] text-zinc-500 font-medium">{new Date(payment.createdAt).toLocaleTimeString()}</p>
+                               </div>
+                            </div>
+                            <div className="text-right">
+                               <p className="text-sm font-black text-zinc-900">{settings.currency} {payment.amount.toFixed(2)}</p>
+                               <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${payment.status === 'PAID' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                                 {payment.status}
+                               </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "purchases" && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                     {selectedSession?.purchases?.length === 0 ? (
+                      <div className="text-center py-10 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
+                        <ShoppingBag size={32} className="mx-auto text-zinc-300 mb-2" />
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">No Purchases Made</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {selectedSession?.purchases?.map((purchase: any) => (
+                           <div key={purchase.id} className="bg-white border-2 border-zinc-100 rounded-2xl overflow-hidden shadow-sm">
+                              <div className="px-4 py-3 bg-zinc-50 border-b border-zinc-100 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Hash size={14} className="text-zinc-400" />
+                                  <span className="text-[10px] font-black text-zinc-900 uppercase tracking-widest">{purchase.referenceNumber}</span>
+                                </div>
+                                <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest">-{settings.currency} {purchase.totalAmount.toFixed(2)}</span>
+                              </div>
+                              <div className="p-4 space-y-3">
+                                 <div className="flex items-center justify-between">
+                                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight">Supplier: {purchase.supplier?.fullName}</p>
+                                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight">Cash Paid</p>
+                                 </div>
+                                 <div className="bg-zinc-50/50 rounded-xl p-3 border border-zinc-100 divide-y divide-zinc-100">
+                                    {purchase.items?.map((item: any, idx: number) => (
+                                      <div key={idx} className="py-2 flex items-center justify-between text-[10px]">
+                                         <span className="font-bold text-zinc-700">{item.itemName} x {item.quantity}</span>
+                                         <span className="font-black text-zinc-900">{settings.currency} {item.amount.toFixed(2)}</span>
+                                      </div>
+                                    ))}
+                                 </div>
+                              </div>
+                           </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="p-6 bg-zinc-50 border-t border-zinc-100">
+             <Button 
+                onClick={() => setShowDetailsModal(false)}
+                className="w-full h-14 bg-zinc-900 text-white hover:bg-zinc-800 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs shadow-xl shadow-zinc-200"
+              >
+                Close Review
+              </Button>
           </div>
         </div>
       </Modal>

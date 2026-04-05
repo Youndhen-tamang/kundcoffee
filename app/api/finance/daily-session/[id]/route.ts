@@ -18,7 +18,24 @@ export async function GET(req: NextRequest,context: { params: Params }) {
       include: {
         openedBy: { select: { name: true } },
         closedBy: { select: { name: true } },
-        payments: true,
+        payments: {
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            method: true,
+            amount: true,
+            status: true,
+            createdAt: true,
+            staff: { select: { name: true } }
+          }
+        },
+        purchases: {
+          where: { isDeleted: false },
+          include: {
+            items: true,
+            supplier: { select: { fullName: true } }
+          }
+        }
       }
     });
 
@@ -46,7 +63,12 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
 
     const dailySession = await prisma.dailySession.findFirst({
       where: { id: id, storeId },
-      include: { payments: true }
+      include: { 
+        payments: true,
+        purchases: {
+          where: { paymentMode: "CASH", isDeleted: false }
+        }
+      }
     });
 
     if (!dailySession || dailySession.status !== "OPEN") {
@@ -54,7 +76,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     }
 
     const body = await req.json();
-    const { actualClosingBalance, notes } = body;
+    const { actualClosingBalance, notes: userNotes } = body;
 
     // Broaden payment statuses for comprehensive revenue reporting
     const relevantPayments = dailySession.payments
@@ -90,13 +112,20 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     const creditSales = salesByMethod.CREDIT || 0;
     const totalRevenue = cashSales + digitalSales + creditSales;
 
-    const expectedClosingBalance = dailySession.openingBalance + cashSales;
+    // Cash outflows (Purchases)
+    const totalCashOutflow = dailySession.purchases.reduce((sum, p) => sum + p.totalAmount, 0);
+
+    const expectedClosingBalance = dailySession.openingBalance + cashSales - totalCashOutflow;
     const difference = (parseFloat(actualClosingBalance) || 0) - expectedClosingBalance;
 
     const breakdownNote = Object.entries(salesByMethod)
       .filter(([_, amount]) => amount > 0)
       .map(([method, amount]) => `- ${method}: ${amount.toFixed(2)}`)
       .join("\n");
+
+    const purchaseNote = dailySession.purchases.length > 0 
+      ? `\n\nCash Purchases (-):\n${dailySession.purchases.map(p => `- ${p.referenceNumber}: ${p.totalAmount.toFixed(2)}`).join("\n")}`
+      : "";
 
     const updatedSession = await prisma.dailySession.update({
       where: { id: id },
@@ -107,7 +136,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         actualClosingBalance: parseFloat(actualClosingBalance) || 0,
         difference,
         status: "CLOSED",
-        notes: `${dailySession.notes || ""}\n\nSession Revenue Breakdown:\n${breakdownNote}\n- Total Revenue: ${totalRevenue.toFixed(2)}\n\nFinal Reconciliation:\n- Cash in Drawer: ${actualClosingBalance}\n- Expected Cash: ${expectedClosingBalance}\n- Difference: ${difference.toFixed(2)}\n- User Notes: ${notes || "None"}`.trim()
+        notes: `${dailySession.notes || ""}\n\nSession Revenue Breakdown:\n${breakdownNote}\n- Total Revenue: ${totalRevenue.toFixed(2)}${purchaseNote}\n\nFinal Reconciliation:\n- Opening Cash: ${dailySession.openingBalance.toFixed(2)}\n- Cash Sales (+): ${cashSales.toFixed(2)}\n- Cash Purchases (-): ${totalCashOutflow.toFixed(2)}\n- Expected Cash: ${expectedClosingBalance.toFixed(2)}\n- Actual Cash in Drawer: ${actualClosingBalance}\n- Difference: ${difference.toFixed(2)}\n- User Notes: ${userNotes || "None"}`.trim()
       }
     });
 

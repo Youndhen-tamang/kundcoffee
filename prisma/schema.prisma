@@ -590,10 +590,13 @@ model Expense {
   date        DateTime @default(now())
   description String?
   createdAt   DateTime @default(now())
-  storeId     String
-  store       Store    @relation(fields: [storeId], references: [id])
+  storeId        String
+  store          Store         @relation(fields: [storeId], references: [id])
+  dailySessionId String?
+  dailySession   DailySession? @relation(fields: [dailySessionId], references: [id])
 
   @@index([storeId])
+  @@index([dailySessionId])
 }
 
 model Supplier {
@@ -654,11 +657,14 @@ model Purchase {
   staff           Staff?         @relation(fields: [staffId], references: [id])
   store           Store          @relation(fields: [storeId], references: [id])
   supplier        Supplier       @relation(fields: [supplierId], references: [id])
+  dailySessionId  String?
+  dailySession    DailySession?  @relation(fields: [dailySessionId], references: [id])
   items           PurchaseItem[]
 
   @@index([supplierId])
   @@index([storeId])
   @@index([staffId])
+  @@index([dailySessionId])
 }
 
 model PurchaseItem {
@@ -834,6 +840,8 @@ model DailySession {
   store                 Store     @relation(fields: [storeId], references: [id])
   payments              Payment[]
   orders                Order[]
+  purchases             Purchase[]
+  expenses              Expense[]
 
   @@index([storeId])
   @@index([status])

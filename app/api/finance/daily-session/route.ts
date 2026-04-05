@@ -28,6 +28,10 @@ export async function GET(req: NextRequest) {
           payments: {
             where: { status: { in: ["PAID", "CREDIT"] } },
             select: { amount: true, method: true }
+          },
+          purchases: {
+            where: { paymentMode: "CASH", isDeleted: false },
+            select: { totalAmount: true }
           }
         }
       });
@@ -65,7 +69,10 @@ export async function GET(req: NextRequest) {
         const creditSales = salesByMethod.CREDIT || 0;
         const totalRevenue = cashSales + totalDigitalSales + creditSales;
 
-        const currentExpectedBalance = activeSession.openingBalance + cashSales;
+        // Calculate cash outflows from purchases
+        const totalCashOutflow = activeSession.purchases.reduce((sum, p) => sum + p.totalAmount, 0);
+
+        const currentExpectedBalance = activeSession.openingBalance + cashSales - totalCashOutflow;
 
         return NextResponse.json({ 
           success: true, 
@@ -75,6 +82,8 @@ export async function GET(req: NextRequest) {
             currentCashSales: cashSales,
             currentDigitalSales: totalDigitalSales,
             currentCreditSales: creditSales,
+            currentCashOutflow: totalCashOutflow,
+            netCash: cashSales - totalCashOutflow,
             salesByMethod,
             totalRevenue
           } 

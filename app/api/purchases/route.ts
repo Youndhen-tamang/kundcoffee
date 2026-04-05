@@ -161,6 +161,12 @@ export async function POST(req: NextRequest) {
 
     const result = await prisma.$transaction(
       async (tx) => {
+        // 0. Find active daily session
+        const activeSession = await tx.dailySession.findFirst({
+          where: { storeId, status: "OPEN" },
+          select: { id: true }
+        });
+
         // 1. Create Purchase
         const purchase = await tx.purchase.create({
           data: {
@@ -177,6 +183,7 @@ export async function POST(req: NextRequest) {
             attachment,
             staffId,
             storeId,
+            dailySessionId: activeSession?.id || null,
             items: {
               create: items.map((item: any) => ({
                 itemName: item.itemName,
