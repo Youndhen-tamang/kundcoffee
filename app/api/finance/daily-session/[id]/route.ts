@@ -111,10 +111,9 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     
     const creditSales = salesByMethod.CREDIT || 0;
     const totalRevenue = cashSales + digitalSales + creditSales;
-
     // Cash outflows (Purchases)
     const totalCashOutflow = dailySession.purchases.reduce((sum, p) => sum + p.totalAmount, 0);
-
+    const cashOnDrawer = cashSales - totalCashOutflow;
     const expectedClosingBalance = dailySession.openingBalance + cashSales - totalCashOutflow;
     const difference = (parseFloat(actualClosingBalance) || 0) - expectedClosingBalance;
 
@@ -135,6 +134,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
         expectedClosingBalance,
         actualClosingBalance: parseFloat(actualClosingBalance) || 0,
         difference,
+        cashOnDrawer,
         status: "CLOSED",
         notes: `${dailySession.notes || ""}\n\nSession Revenue Breakdown:\n${breakdownNote}\n- Total Revenue: ${totalRevenue.toFixed(2)}${purchaseNote}\n\nFinal Reconciliation:\n- Opening Cash: ${dailySession.openingBalance.toFixed(2)}\n- Cash Sales (+): ${cashSales.toFixed(2)}\n- Cash Purchases (-): ${totalCashOutflow.toFixed(2)}\n- Expected Cash: ${expectedClosingBalance.toFixed(2)}\n- Actual Cash in Drawer: ${actualClosingBalance}\n- Difference: ${difference.toFixed(2)}\n- User Notes: ${userNotes || "None"}`.trim()
       }

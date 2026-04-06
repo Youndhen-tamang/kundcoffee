@@ -822,18 +822,19 @@ enum Shift {
 }
 
 model DailySession {
-  id                    String    @id @default(uuid())
-  openedAt              DateTime  @default(now())
-  closedAt              DateTime?
-  openedById            String
-  closedById            String?
-  openingBalance        Float     @default(0)
+  id                     String    @id @default(uuid())
+  openedAt               DateTime  @default(now())
+  closedAt               DateTime?
+  openedById             String
+  closedById             String?
+  openingBalance         Float     @default(0)
   expectedClosingBalance Float?
   actualClosingBalance   Float?
-  difference            Float?
-  status                SessionStatus @default(OPEN)
-  storeId               String
-  notes                 String?
+  cashOnDrawer           Float?
+  difference             Float?
+  status                 SessionStatus @default(OPEN)
+  storeId                String
+  notes                  String?
   
   openedBy              User      @relation("OpenedBy", fields: [openedById], references: [id])
   closedBy              User?     @relation("ClosedBy", fields: [closedById], references: [id])
