@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { DateRangeSelector } from "@/components/ui/DateRangeSelector";
 import { PaymentMethod, ReturnPaymentStatus, SalesReturn } from "@/lib/types";
 import { useSettings } from "@/components/providers/SettingsProvider";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 import { DailySessionManager } from "@/components/finance/DailySessionManager";
 
@@ -53,6 +54,10 @@ export default function FinancePage() {
   );
   const [selectedTxn, setSelectedTxn] = useState<any>(null);
   const [showReturnModal, setShowReturnModal] = useState(false);
+  const [deleteTxn, setDeleteTxn] = useState<{
+    id: string;
+    type: "SALES" | "RETURNS";
+  } | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -176,20 +181,26 @@ export default function FinancePage() {
     printWindow.document.close();
   };
 
-  const moveToTrash = async (id: string) => {
+  const moveToTrash = async (id: string, tab: "SALES" | "RETURNS") => {
     try {
       const endpoint =
-        activeTab === "SALES"
-          ? `/api/finance/sales/${id}`
-          : `/api/finance/returns/${id}`;
+        tab === "SALES" ? `/api/finance/sales/${id}` : `/api/finance/returns/${id}`;
       const res = await fetch(endpoint, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
-        toast.success("Moved to trash");
+        toast.success(
+          tab === "SALES"
+            ? "Sale deleted successfully"
+            : "Return deleted successfully",
+        );
         fetchData();
+      } else {
+        toast.error(data.message || "Failed to delete record");
       }
     } catch (error) {
-      toast.error("Failed to move to trash");
+      toast.error("Failed to delete record");
+    } finally {
+      setDeleteTxn(null);
     }
   };
 
@@ -363,7 +374,7 @@ export default function FinancePage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-visible">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-zinc-50 border-b border-zinc-100">
@@ -443,55 +454,41 @@ export default function FinancePage() {
                           <td className="px-6 py-4 text-xs text-zinc-500">
                             {txn.billedBy}
                           </td>
-                          <td className="px-6 py-4 text-right">
-                            <Popover
-                              trigger={
-                                <button
-                                  className="p-2 hover:bg-zinc-100 rounded-lg transition-colors border border-transparent hover:border-zinc-200"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MoreVertical
-                                    size={14}
-                                    className="text-zinc-400 group-hover:text-zinc-600"
-                                  />
-                                </button>
-                              }
-                              content={
-                                <div className="p-2 w-44 bg-white rounded-lg shadow-xl border border-zinc-100 z-50">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedTxn(txn);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:bg-zinc-50 rounded transition-colors"
-                                  >
-                                    <History size={12} />
-                                    View Details
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handlePrint(txn);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:bg-zinc-50 rounded transition-colors"
-                                  >
-                                    <Printer size={12} />
-                                    Print Bill
-                                  </button>
-                                  <div className="my-1 border-t border-zinc-50" />
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      moveToTrash(txn.id);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-600 hover:bg-red-50 rounded transition-colors"
-                                  >
-                                    <Trash2 size={12} />
-                                    Move to Trash
-                                  </button>
-                                </div>
-                              }
-                            />
+                          <td
+                            className="px-6 py-4 text-right"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="none"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-zinc-100 rounded-full transition-colors"
+                                onClick={() => setSelectedTxn(txn)}
+                              >
+                                <History className="h-4 w-4 text-zinc-500" />
+                              </Button>
+                              <Button
+                                variant="none"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-zinc-100 rounded-full transition-colors"
+                                onClick={() => handlePrint(txn)}
+                              >
+                                <Printer className="h-4 w-4 text-zinc-500" />
+                              </Button>
+                              <Button
+                                variant="none"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-rose-50 rounded-full transition-colors"
+                                onClick={() =>
+                                  setDeleteTxn({
+                                    id: txn.id,
+                                    type: activeTab === "SALES" ? "SALES" : "RETURNS",
+                                  })
+                                }
+                              >
+                                <Trash2 className="h-4 w-4 text-rose-500" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -722,6 +719,22 @@ export default function FinancePage() {
           />
         </div>
       </Modal>
+
+      <ConfirmationModal
+        isOpen={!!deleteTxn}
+        onClose={() => setDeleteTxn(null)}
+        onConfirm={() => {
+          if (!deleteTxn) return;
+          moveToTrash(deleteTxn.id, deleteTxn.type);
+        }}
+        title={deleteTxn?.type === "SALES" ? "Delete Sale Record" : "Delete Return Record"}
+        message={
+          deleteTxn?.type === "SALES"
+            ? "Are you sure you want to delete this sale record?"
+            : "Are you sure you want to delete this return record?"
+        }
+        confirmVariant="danger"
+      />
     </div>
   );
 }

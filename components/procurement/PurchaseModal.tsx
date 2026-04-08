@@ -36,8 +36,8 @@ export default function PurchaseModal({
     totalAmount: 0,
     discount: 0,
     roundOff: 0,
-    paymentStatus: "PENDING" as "PENDING" | "PAID",
-    paymentMode: "CASH" as any,
+    paymentStatus: "PAID" as "PENDING" | "PAID",
+    paymentMode: "CASH" as "CASH" | "QR" | "CREDIT",
     remark: "",
     staffId: "",
     attachment: "",
@@ -54,7 +54,7 @@ export default function PurchaseModal({
         totalAmount: 0,
         discount: 0,
         roundOff: 0,
-        paymentStatus: "PENDING",
+        paymentStatus: "PAID",
         paymentMode: "CASH",
         remark: "",
         staffId: "",
@@ -160,7 +160,11 @@ export default function PurchaseModal({
       const res = await fetch("/api/purchases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, attachment: attachmentUrl }),
+        body: JSON.stringify({
+          ...formData,
+          attachment: attachmentUrl,
+          paymentStatus: formData.paymentMode === "CREDIT" ? "PENDING" : "PAID",
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -419,44 +423,22 @@ export default function PurchaseModal({
               </div>
             </div>
 
-            <div className="pt-4 border-t border-zinc-200 space-y-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
-                  checked={formData.paymentStatus === "PAID"}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      paymentStatus: e.target.checked ? "PAID" : "PENDING",
-                    })
-                  }
-                />
-                <span className="text-xs font-medium text-zinc-700">
-                  Mark as Paid
-                </span>
-              </label>
-
-              {formData.paymentStatus === "PAID" && (
-                <div className="space-y-1">
-                  <label className="pos-label">Payment Mode</label>
-                  <select
-                    className="pos-input w-full h-8 text-xs"
-                    value={formData.paymentMode}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        paymentMode: e.target.value as any,
-                      })
-                    }
-                  >
-                    <option value="CASH">Cash</option>
-                    <option value="ESEWA">Digital - eSewa</option>
-                    <option value="BANK_TRANSFER">Bank Settlement</option>
-                    <option value="QR">Fonepay / QR Scan</option>
-                  </select>
-                </div>
-              )}
+            <div className="pt-4 border-t border-zinc-200 space-y-1">
+              <label className="pos-label">Payment Method</label>
+              <select
+                className="pos-input w-full h-8 text-xs"
+                value={formData.paymentMode}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    paymentMode: e.target.value as "CASH" | "QR" | "CREDIT",
+                  })
+                }
+              >
+                <option value="CASH">Cash</option>
+                <option value="QR">QR</option>
+                <option value="CREDIT">Credit</option>
+              </select>
             </div>
           </div>
         </div>

@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
         SUM(amount) AS total
       FROM "Payment"
       WHERE status = 'PAID'
+        AND "isDeleted" = false
         AND "createdAt" BETWEEN ${startDate} AND ${endDate}
       GROUP BY DATE("createdAt")
       ORDER BY date ASC

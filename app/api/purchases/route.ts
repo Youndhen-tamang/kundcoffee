@@ -150,6 +150,10 @@ export async function POST(req: NextRequest) {
       staffId,
     } = body;
 
+    const normalizedPaymentMode = paymentMode || null;
+    const normalizedPaymentStatus =
+      normalizedPaymentMode === "CREDIT" ? "PENDING" : "PAID";
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { success: false, message: "No items provided" },
@@ -177,8 +181,8 @@ export async function POST(req: NextRequest) {
             totalAmount,
             discount: parseFloat(discount) || 0,
             roundOff: parseFloat(roundOff) || 0,
-            paymentStatus: paymentStatus || "PENDING",
-            paymentMode: paymentMode || null,
+            paymentStatus: normalizedPaymentStatus,
+            paymentMode: normalizedPaymentMode,
             remark,
             attachment,
             staffId,
@@ -223,7 +227,7 @@ export async function POST(req: NextRequest) {
         });
 
         // 4. If PAID, create a PAYMENT entry immediately
-        if (paymentStatus === "PAID") {
+        if (normalizedPaymentStatus === "PAID") {
           await tx.supplierLedger.create({
             data: {
               supplierId,
