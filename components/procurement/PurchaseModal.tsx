@@ -1,13 +1,11 @@
 "use client";
 
-"use client";
-
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Supplier, Stock } from "@/lib/types";
 import { toast } from "sonner";
-import { Trash2, Plus, User } from "lucide-react";
+import { Trash2, Plus, User, Filter } from "lucide-react";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { Input } from "@/components/ui/Input";
 
@@ -25,6 +23,8 @@ export default function PurchaseModal({
   const [loading, setLoading] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [stocks, setStocks] = useState<Stock[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [staff, setStaff] = useState<any[]>([]);
   const [imageFile, setImageFile] = useState<File | string | null>(null);
 
@@ -61,23 +61,27 @@ export default function PurchaseModal({
         attachment: "",
       });
       setImageFile(null);
+      setSelectedGroupId("");
     }
   }, [isOpen]);
 
   const fetchData = async () => {
     try {
-      const [suppRes, stockRes, staffRes] = await Promise.all([
+      const [suppRes, stockRes, staffRes, groupRes] = await Promise.all([
         fetch("/api/suppliers"),
         fetch("/api/stocks"),
         fetch("/api/staff"),
+        fetch("/api/inventory/groups"),
       ]);
       const suppData = await suppRes.json();
       const stockData = await stockRes.json();
       const staffData = await staffRes.json();
+      const groupData = await groupRes.json();
 
       if (suppData.success) setSuppliers(suppData.data.suppliers);
       if (stockData.success) setStocks(stockData.data);
       if (staffData.success) setStaff(staffData.data);
+      if (groupData.success) setGroups(groupData.data);
     } catch (error) {
       toast.error("Failed to load data");
     }
@@ -111,6 +115,9 @@ export default function PurchaseModal({
       const selectedStock = stocks.find((s) => s.id === value);
       if (selectedStock) {
         newItems[index].itemName = selectedStock.name;
+        // Pre-fill rate from stock's costPrice
+        newItems[index].rate = selectedStock.costPrice || 0;
+        newItems[index].amount = newItems[index].quantity * (selectedStock.costPrice || 0);
       }
     }
 
@@ -181,6 +188,10 @@ export default function PurchaseModal({
     }
   };
 
+  const filteredStocks = selectedGroupId 
+    ? stocks.filter(s => s.groupId === selectedGroupId)
+    : stocks;
+
   return (
     <Modal
       isOpen={isOpen}
@@ -248,9 +259,24 @@ export default function PurchaseModal({
 
         <div className="space-y-3">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-2">
-            <h4 className="text-sm font-semibold text-zinc-900">
-              Purchase Items
-            </h4>
+            <div className="flex items-center gap-4">
+              <h4 className="text-sm font-semibold text-zinc-900">
+                Purchase Items
+              </h4>
+              <div className="flex items-center gap-2 bg-zinc-100 px-3 py-1 rounded-full">
+                <Filter size={12} className="text-zinc-500" />
+                <select 
+                  className="bg-transparent text-[10px] font-bold uppercase tracking-widest text-zinc-600 border-none p-0 focus:ring-0 cursor-pointer"
+                  value={selectedGroupId}
+                  onChange={(e) => setSelectedGroupId(e.target.value)}
+                >
+                  <option value="">All Groups</option>
+                  {groups.map(g => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <Button
               type="button"
               size="sm"
@@ -296,7 +322,7 @@ export default function PurchaseModal({
                           }
                         >
                           <option value="">Choose item...</option>
-                          {stocks.map((s) => (
+                          {filteredStocks.map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.name} ({s.unit?.shortName || "unit"})
                             </option>

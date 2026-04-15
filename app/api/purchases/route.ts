@@ -200,17 +200,43 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // 2. Increase Stock
+        // 2. Increase Stock & Update Cost Price
         for (const item of items) {
           if (item.stockId) {
+            const qtyToAdd = parseFloat(item.quantity);
+            const newRate = parseFloat(item.rate);
+            
             await tx.stock.update({
               where: { id: item.stockId },
               data: {
-                quantity: { increment: parseFloat(item.quantity) },
+                quantity: { increment: qtyToAdd },
+                // Update costPrice to the latest purchase rate
+                costPrice: newRate,
+                // Recalculate total amount (valuation) based on new quantity and rate
+                // Note: We fetch the existing stock to get current quantity after increment 
+                // but increment happens in the same transaction. 
+                // Better: update amount separately in next line or use a slightly more complex query.
+                // Simple approach: set amount based on new state.
               },
             });
+
+            // Re-fetch to get final quantity for accurate amount calculation
+            const updatedStock = await tx.stock.findUnique({
+              where: { id: item.stockId },
+              select: { quantity: true }
+            });
+
+            if (updatedStock) {
+              await tx.stock.update({
+                where: { id: item.stockId },
+                data: {
+                  amount: Number((updatedStock.quantity * newRate).toFixed(2))
+                }
+              });
+            }
           }
         }
+
 
         // 3. Update Supplier Ledger (PURCHASE - increases credit/payable)
         await tx.supplierLedger.create({

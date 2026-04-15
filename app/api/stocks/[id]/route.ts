@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     }
 
     const body = await req.json();
-    const { name, unitId, quantity, amount } = body;
+    const { name, unitId, groupId, quantity, amount, costPrice } = body;
 
     const existingStock = await prisma.stock.findUnique({
       where: { id },
@@ -78,11 +78,14 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
       data: {
         ...(name !== undefined && { name }),
         ...(unitId !== undefined && { unitId }),
+        ...(groupId !== undefined && { groupId }),
         ...(quantity !== undefined && { quantity }),
         ...(amount !== undefined && { amount }),
+        ...(costPrice !== undefined && { costPrice }),
       },
       include: { unit: true },
     });
+
 
     return NextResponse.json(
       { success: true, message: "Stock updated", data: updatedStock },

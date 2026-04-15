@@ -99,8 +99,10 @@ export type Stock = {
   id: string;
   name: string;
   unitId?: string | null;
+  groupId?: string | null;
   unit?: MeasuringUnit | null;
   quantity: number;
+  costPrice: number;
   amount: number;
 };
 

@@ -29,6 +29,7 @@ export default function StockModal({
     unitId: "",
     groupId: "",
     quantity: 0,
+    costPrice: 0,
     amount: 0,
   });
 
@@ -39,6 +40,7 @@ export default function StockModal({
         unitId: stock.unitId || "",
         groupId: stock.groupId || "",
         quantity: stock.quantity || 0,
+        costPrice: stock.costPrice || 0,
         amount: stock.amount || 0,
       });
     } else {
@@ -47,10 +49,27 @@ export default function StockModal({
         unitId: units.length > 0 ? units[0].id : "",
         groupId: "",
         quantity: 0,
+        costPrice: 0,
         amount: 0,
       });
     }
   }, [stock, isOpen, units]);
+
+  // Handle auto-calculation: Qty * Cost = Amount
+  const handleCalculation = (field: "quantity" | "costPrice" | "amount", value: number) => {
+    const updated = { ...formData, [field]: value };
+    
+    if (field === "quantity" || field === "costPrice") {
+      updated.amount = Number((updated.quantity * updated.costPrice).toFixed(2));
+    } else if (field === "amount") {
+      // If user enters total value manually, adjust cost price if quantity > 0
+      if (updated.quantity > 0) {
+        updated.costPrice = Number((updated.amount / updated.quantity).toFixed(2));
+      }
+    }
+    
+    setFormData(updated);
+  };
 
   const handleSubmit = async () => {
     if (!formData.unitId) {
@@ -101,10 +120,10 @@ export default function StockModal({
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className="pos-label">Measuring Unit *</label>
+            <label className="pos-label text-zinc-500 text-[10px] uppercase font-bold tracking-wider">Measuring Unit *</label>
             <select
               required
-              className="pos-input w-full"
+              className="pos-input w-full bg-zinc-50 border-zinc-200 rounded-xl text-sm h-11"
               value={formData.unitId}
               onChange={(e) =>
                 setFormData({ ...formData, unitId: e.target.value })
@@ -122,9 +141,9 @@ export default function StockModal({
           </div>
 
           <div className="space-y-1">
-            <label className="pos-label">Stock Group</label>
+            <label className="pos-label text-zinc-500 text-[10px] uppercase font-bold tracking-wider">Stock Group</label>
             <select
-              className="pos-input w-full"
+              className="pos-input w-full bg-zinc-50 border-zinc-200 rounded-xl text-sm h-11"
               value={formData.groupId}
               onChange={(e) =>
                 setFormData({ ...formData, groupId: e.target.value })
@@ -140,45 +159,69 @@ export default function StockModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 border-t border-zinc-100 pt-4 mt-4">
-          <Input
-            label="Current Quantity"
-            type="number"
-            step="0.01"
-            value={formData.quantity}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                quantity: parseFloat(e.target.value) || 0,
-              })
-            }
-          />
+        <div className="bg-zinc-50 p-6 rounded-3xl border border-zinc-100 space-y-6 mt-6">
+          <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-200 pb-2">
+            Valuation & Inventory
+          </h4>
+          
+          <div className="grid grid-cols-2 gap-6">
+            <Input
+              label="Opening Quantity"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={formData.quantity}
+              onChange={(e) =>
+                handleCalculation("quantity", parseFloat(e.target.value) || 0)
+              }
+            />
 
-          <Input
-            label="Total Value (Amt)"
-            type="number"
-            step="0.01"
-            value={formData.amount}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                amount: parseFloat(e.target.value) || 0,
-              })
-            }
-          />
+            <Input
+              label="Unit Cost (Rate)"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={formData.costPrice}
+              onChange={(e) =>
+                handleCalculation("costPrice", parseFloat(e.target.value) || 0)
+              }
+            />
+          </div>
+
+          <div className="pt-4 border-t border-dashed border-zinc-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Total Inventory Value</p>
+                <p className="text-2xl font-black text-zinc-900 tracking-tight">
+                  <span className="text-zinc-400 mr-1 opacity-50 font-medium">Rs.</span>
+                  {formData.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Status</p>
+                <div className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full mt-1 ${formData.quantity > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                  {formData.quantity > 0 ? 'In Stock' : 'Out of Stock'}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-zinc-200 flex items-center gap-2">
+      <div className="absolute bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-zinc-100 flex items-center gap-3">
         <Button
           onClick={onClose}
           variant="secondary"
-          className="flex-1"
+          className="flex-1 rounded-2xl h-12 bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-600 font-bold"
           disabled={loading}
         >
           Cancel
         </Button>
-        <Button onClick={handleSubmit} className="flex-1" disabled={loading}>
+        <Button 
+          onClick={handleSubmit} 
+          className="flex-1 rounded-2xl h-12 bg-zinc-900 border-none shadow-xl shadow-zinc-200 font-bold" 
+          disabled={loading}
+        >
           {loading ? "Saving..." : stock ? "Update Item" : "Create Item"}
         </Button>
       </div>

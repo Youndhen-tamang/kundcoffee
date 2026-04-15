@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, unitId, quantity, amount } = body;
+    const { name, unitId, groupId, quantity, amount, costPrice } = body;
 
     if (!name || quantity === undefined || amount === undefined) {
       return NextResponse.json(
@@ -67,11 +67,14 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         unitId,
+        groupId,
         quantity: Number(quantity),
         amount: Number(amount),
+        costPrice: Number(costPrice || 0),
         storeId,
       },
     });
+
 
     return NextResponse.json({ success: true, data: newStock });
   } catch (error: any) {

@@ -148,6 +148,7 @@ model Stock {
   id                  String               @id @default(uuid())
   name                String
   quantity            Float
+  costPrice           Float                @default(0)
   amount              Float
   storeId             String
   groupId             String?
@@ -158,6 +159,7 @@ model Stock {
   store               Store                @relation(fields: [storeId], references: [id])
   unit                MeasuringUnit?       @relation(fields: [unitId], references: [id])
   consumptions        StockConsumption[]
+  updatedAt           DateTime             @default(now()) @updatedAt
 
   @@unique([name, storeId])
   @@index([storeId])
