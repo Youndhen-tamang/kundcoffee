@@ -71,9 +71,11 @@ export async function GET(req: NextRequest) {
         orders: {
           include: {
             customer: true,
+            table: true,
             items: {
               include: {
                 dish: true,
+                combo: true,
               },
             },
           },
@@ -83,6 +85,7 @@ export async function GET(req: NextRequest) {
             table: true,
           },
         },
+        staff: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -175,25 +178,29 @@ export async function GET(req: NextRequest) {
           paymentOut: paymentOutTotal,
           returns: returnsTotal,
         },
-        transactions: payments.map((p) => {
+        transactions: payments.map((p: any) => {
           const order = p.orders?.[0];
+          const allItems = p.orders?.flatMap((o: any) => 
+            o.items.map((it: any) => ({
+              dishName: it.dish?.name || it.combo?.name || "Unknown Item",
+              quantity: it.quantity,
+              amount: it.totalPrice,
+            }))
+          ) || [];
+
           return {
             id: p.id,
             orderId: order?.id,
             sessionId: p.sessionId,
-            orderType: order?.type || "DINE_IN", // Fallback for sessions
+            orderType: order?.type || "DINE_IN", 
             amount: p.amount,
             mode: p.method,
             status: p.status,
             date: p.createdAt,
-            billedBy: "Admin", // Placeholder as User model is not present
+            billedBy: p.staff?.name || "Admin",
             customer: order?.customer?.fullName || "Guest",
-            items:
-              order?.items.map((it: any) => ({
-                dishName: it.dish?.name || "Unknown Item",
-                quantity: it.quantity,
-                amount: it.totalPrice,
-              })) || [],
+            table: order?.table?.name || p.session?.table?.name || "N/A",
+            items: allItems,
           };
         }),
       },

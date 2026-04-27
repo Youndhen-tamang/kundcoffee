@@ -62,10 +62,17 @@ export default function FinancePage() {
     id: string;
     type: "SALES" | "RETURNS";
   } | null>(null);
+  const [qrData, setQrData] = useState<any>(null);
 
   const fetchData = async () => {
     setLoading(true);
     try {
+      if (!qrData) {
+        const qrRes = await fetch("/api/qr-payment");
+        const qrJson = await qrRes.json();
+        if (qrJson.success) setQrData(qrJson.data);
+      }
+
       const queryParams = new URLSearchParams();
       if (selectedDate) {
         queryParams.append("date", selectedDate);
@@ -130,52 +137,100 @@ export default function FinancePage() {
     const itemsHtml = txn.items
       ?.map(
         (it: any) => `
-      <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px;">
-        <span>${it.dishName} x ${it.quantity}</span>
-        <span>${settings.currency} ${it.amount.toFixed(2)}</span>
-      </div>
+      <tr style="border-bottom: 0.5px solid #eee;">
+        <td style="padding: 8px 0; font-size: 11px;">${it.dishName}</td>
+        <td style="padding: 8px 0; font-size: 11px; text-align: center;">${it.quantity}</td>
+        <td style="padding: 8px 0; font-size: 11px; text-align: right;">${(it.amount).toFixed(2)}</td>
+      </tr>
     `,
       )
       .join("");
+
+    const amount = txn.amount !== undefined ? txn.amount : (txn.txnAmount || 0);
+    const date = txn.date || txn.txnDate;
+    const customer = txn.customer || txn.parties || "Walking Guest";
 
     printWindow.document.write(`
       <html>
         <head>
           <title>Receipt - ${txn.id}</title>
           <style>
-            body { font-family: 'Courier New', Courier, monospace; padding: 20px; color: #000; }
-            .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 15px; }
-            .meta { margin-bottom: 15px; font-size: 12px; }
-            .items { border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 15px; }
-            .totals { font-weight: bold; font-size: 14px; }
-            @media print {
-              body { padding: 0; }
-              @page { size: 80mm auto; margin: 0; }
+            @page { size: 80mm auto; margin: 0; }
+            body { 
+              font-family: 'Courier New', Courier, monospace; 
+              width: 80mm; 
+              margin: 0; 
+              padding: 5mm; 
+              font-size: 11px;
+              color: #000;
             }
+            .center { text-align: center; }
+            .right { text-align: right; }
+            .bold { font-weight: bold; }
+            .header { margin-bottom: 10px; }
+            .divider { border-top: 1px dashed #000; margin: 10px 0; }
+            table { width: 100%; border-collapse: collapse; }
+            .footer { margin-top: 20px; font-size: 9px; }
+            .qr-container { margin-top: 15px; display: flex; flex-direction: column; align-items: center; }
+            .logo { max-height: 40px; margin-bottom: 5px; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h2>BODHIBERRY</h2>
-            <p>TAX INVOICE</p>
+          <div class="header center">
+            ${settings.logo ? `<img src="${settings.logo}" class="logo" />` : ""}
+            <div class="bold" style="font-size: 14px;">${settings.name || "KUND COFFEE"}</div>
+            <div>${settings.address || ""}</div>
+            <div>Phone: ${settings.phone || ""}</div>
+            ${settings.panNumber ? `<div>PAN/VAT: ${settings.panNumber}</div>` : ""}
+            <div class="bold" style="margin-top: 5px;">${activeTab === "RETURNS" ? "CREDIT NOTE (RETURN)" : "TAX INVOICE"}</div>
           </div>
-          <div class="meta">
-            <p>ID: ${txn.id.toUpperCase()}</p>
-            <p>Date: ${new Date(txn.date || txn.txnDate).toLocaleString()}</p>
-            <p>Customer: ${txn.customer || "Walking Guest"}</p>
+          
+          <div class="divider"></div>
+          
+          <div style="display: flex; justify-content: space-between;">
+            <span>Inv: #${txn.id.slice(-6).toUpperCase()}</span>
+            <span>Date: ${new Date(date).toLocaleDateString()}</span>
           </div>
-          <div class="items">
-            ${itemsHtml}
+          <div style="display: flex; justify-content: space-between;">
+            <span>Table: ${txn.table || "N/A"}</span>
+            <span>Mode: ${txn.mode}</span>
           </div>
-          <div class="totals">
-            <div style="display: flex; justify-content: space-between;">
-              <span>GRAND TOTAL</span>
-              <span>${settings.currency} ${txn.amount.toFixed(2)}</span>
+          <div>Customer: ${customer}</div>
+          
+          <div class="divider"></div>
+          
+          <table>
+            <thead>
+              <tr style="border-bottom: 1px solid #000;">
+                <th style="text-align: left; padding-bottom: 5px;">ITEM</th>
+                <th style="text-align: center; padding-bottom: 5px;">QTY</th>
+                <th style="text-align: right; padding-bottom: 5px;">AMT</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+          
+          <div class="divider"></div>
+          
+          <div style="display: flex; justify-content: space-between; font-size: 13px;" class="bold">
+            <span>GRAND TOTAL</span>
+            <span>${settings.currency} ${amount.toFixed(2)}</span>
+          </div>
+          
+          ${qrData?.image?.[0] && activeTab !== "RETURNS" ? `
+            <div class="qr-container">
+              <img src="${qrData.image[0]}" style="width: 100px; height: 100px;" />
+              <div style="font-size: 8px; margin-top: 2px;">SCAN TO PAY</div>
             </div>
+          ` : ""}
+          
+          <div class="footer center">
+            <p class="bold">THANK YOU FOR YOUR VISIT!</p>
+            <p>POWERED BY ${settings.name || "KUND COFFEE"} ERP</p>
           </div>
-          <div style="text-align: center; margin-top: 30px; font-size: 10px;">
-            <p>Thank you for visiting!</p>
-          </div>
+          
           <script>
             window.onload = function() { window.print(); window.close(); }
           </script>
@@ -590,14 +645,14 @@ export default function FinancePage() {
             <div className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm space-y-6 relative overflow-hidden">
               {/* Receipt Header Style */}
               <div className="text-center space-y-2 pb-6 border-b border-dashed border-zinc-200">
-                <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center text-white mx-auto mb-4 shadow-xl">
-                  <Package size={28} />
-                </div>
+                {settings.logo && (
+                  <img src={settings.logo} alt="Logo" className="h-12 mx-auto mb-2 object-contain" />
+                )}
                 <h3 className="text-sm font-black text-zinc-900 uppercase tracking-[0.3em]">
-                  BODHIBERRY
+                  {settings.name || "KUND COFFEE"}
                 </h3>
                 <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">
-                  Quality & Comfort
+                  {settings.address || "Quality & Comfort"}
                 </p>
               </div>
 
@@ -632,6 +687,14 @@ export default function FinancePage() {
                     {selectedTxn.customer ||
                       selectedTxn.parties ||
                       "Walking Guest"}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block">
+                    Table / Area
+                  </span>
+                  <p className="text-[11px] font-bold text-zinc-900">
+                    {selectedTxn.table || "N/A"}
                   </p>
                 </div>
                 <div className="space-y-1 text-right">
@@ -675,7 +738,7 @@ export default function FinancePage() {
                 <div className="flex justify-between text-[11px] font-bold text-zinc-600">
                   <span className="uppercase tracking-widest">Subtotal</span>
                   <span>
-                    {settings.currency} {selectedTxn.amount.toFixed(2)}
+                    {settings.currency} {(selectedTxn.amount ?? selectedTxn.txnAmount ?? 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-[11px] font-bold text-zinc-400">
@@ -689,7 +752,7 @@ export default function FinancePage() {
                     Grand Total
                   </span>
                   <span className="text-2xl font-black text-zinc-900 tracking-tighter">
-                    {settings.currency} {selectedTxn.amount.toFixed(2)}
+                    {settings.currency} {(selectedTxn.amount ?? selectedTxn.txnAmount ?? 0).toFixed(2)}
                   </span>
                 </div>
               </div>
