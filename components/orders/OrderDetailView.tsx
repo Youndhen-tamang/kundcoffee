@@ -116,83 +116,120 @@ export function OrderDetailView({
         <head>
           <title>Bill - ${order.table?.name || "Direct"}</title>
           <style>
-            @page { size: 80mm auto; margin: 0; }
+            @page { 
+              size: 80mm auto; 
+              margin: 0; 
+            }
+            * {
+              box-sizing: border-box;
+              -webkit-print-color-adjust: exact;
+            }
+            html, body {
+              margin: 0;
+              padding: 0;
+              width: 80mm;
+              background: #fff;
+            }
             body { 
               font-family: 'Courier New', Courier, monospace; 
-              width: 80mm; 
-              margin: 0; 
               padding: 5mm; 
               font-size: 11px;
               color: #000;
-              background: #fff;
+              line-height: 1.4;
+            }
+            .receipt-container {
+              width: 100%;
+              overflow: hidden;
             }
             .center { text-align: center; }
+            .right { text-align: right; }
             .bold { font-weight: bold; }
-            .divider { border-top: 1px dashed #000; margin: 10px 0; }
-            table { width: 100%; border-collapse: collapse; }
-            .footer { margin-top: 20px; font-size: 9px; text-align: center; }
+            .header { margin-bottom: 10px; }
+            .divider { border-top: 1px dashed #000; margin: 8px 0; width: 100%; }
+            table { width: 100%; border-collapse: collapse; margin: 5px 0; }
+            .footer { margin-top: 15px; font-size: 10px; padding-bottom: 10mm; }
+            .logo { max-height: 50px; margin-bottom: 8px; filter: grayscale(1); }
+            
+            @media print {
+              body { margin: 0; }
+              .no-print { display: none; }
+            }
           </style>
         </head>
         <body>
-          <div class="center">
-            ${settings.logo ? `<img src="${settings.logo}" style="max-height: 40px; margin-bottom: 5px;" />` : ""}
-            <div class="bold" style="font-size: 14px;">${settings.name || "KUND COFFEE"}</div>
-            <div>${settings.address || "Kathmandu, Nepal"}</div>
-            <div>Phone: ${settings.phone || ""}</div>
-            <div class="bold" style="margin-top: 5px; text-transform: uppercase;">Provisional Bill</div>
-          </div>
-          
-          <div class="divider"></div>
-          
-          <div style="display: flex; justify-content: space-between;">
-            <span>Order: #${order.id.slice(-6).toUpperCase()}</span>
-            <span>Date: ${new Date(order.createdAt).toLocaleDateString()}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>Table: ${order.table?.name || "N/A"}</span>
-            <span>Type: ${order.type || "DINE_IN"}</span>
-          </div>
-          
-          <div class="divider"></div>
-          
-          <table>
-            <thead>
-              <tr style="border-bottom: 1px solid #000;">
-                <th style="text-align: left; padding-bottom: 5px;">ITEM</th>
-                <th style="text-align: right; padding-bottom: 5px;">AMT</th>
+          <div class="receipt-container">
+            <div class="header center">
+              ${settings.logo ? `<img src="${settings.logo}" class="logo" />` : ""}
+              <div class="bold" style="font-size: 15px;">${settings.name || "KUND COFFEE"}</div>
+              <div style="font-size: 10px;">${settings.address || ""}</div>
+              <div style="font-size: 10px;">Tel: ${settings.phone || ""}</div>
+              <div class="bold" style="margin-top: 10px; font-size: 12px; border: 1px solid #000; display: inline-block; padding: 2px 8px;">
+                PROVISIONAL BILL
+              </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <table style="font-size: 10px;">
+              <tr>
+                <td>ORDER: <span class="bold">#${order.id.slice(-6).toUpperCase()}</span></td>
+                <td class="right">DATE: ${new Date(order.createdAt).toLocaleDateString()}</td>
               </tr>
-            </thead>
-            <tbody>
-              ${itemsHtml}
-            </tbody>
-          </table>
-          
-          <div class="divider"></div>
-          
-          <div style="space-y: 2px;">
-            <div style="display: flex; justify-content: space-between;">
-              <span>Subtotal</span>
-              <span>${settings.currency} ${order.total.toFixed(2)}</span>
+              <tr>
+                <td>TABLE: <span class="bold">${order.table?.name || "N/A"}</span></td>
+                <td class="right">TYPE: ${order.type || "DINE_IN"}</td>
+              </tr>
+            </table>
+            
+            <div class="divider"></div>
+            
+            <table>
+              <thead>
+                <tr style="border-bottom: 1px solid #000;">
+                  <th style="text-align: left; padding: 4px 0;">ITEM</th>
+                  <th style="text-align: right; padding: 4px 0;">AMT</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+            
+            <div class="divider"></div>
+            
+            <table style="font-size: 11px;">
+              <tr>
+                <td>Subtotal</td>
+                <td class="right">${settings.currency} ${order.total.toFixed(2)}</td>
+              </tr>
+              ${includeTax ? `
+              <tr>
+                <td>VAT (13%)</td>
+                <td class="right">${settings.currency} ${taxAmount.toFixed(2)}</td>
+              </tr>
+              ` : ""}
+              <tr class="bold" style="font-size: 13px;">
+                <td style="padding-top: 5px;">GRAND TOTAL</td>
+                <td class="right" style="padding-top: 5px;">${settings.currency} ${grandTotal.toFixed(2)}</td>
+              </tr>
+            </table>
+            
+            <div class="divider"></div>
+            
+            <div class="footer center">
+              <div class="bold">THANK YOU!</div>
+              <div style="font-size: 9px; margin-top: 4px;">POWERED BY ${settings.name || "KUND COFFEE"} ERP</div>
+              <div style="font-size: 8px;">${new Date().toLocaleString()}</div>
             </div>
-            ${includeTax ? `
-            <div style="display: flex; justify-content: space-between;">
-              <span>VAT (13%)</span>
-              <span>${settings.currency} ${taxAmount.toFixed(2)}</span>
-            </div>
-            ` : ""}
-            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 5px;" class="bold">
-              <span>Grand Total</span>
-              <span>${settings.currency} ${grandTotal.toFixed(2)}</span>
-            </div>
-          </div>
-          
-          <div class="footer">
-            <p class="bold">THANK YOU!</p>
-            <p>POWERED BY ${settings.name || "BODHIBERRY"} ERP</p>
           </div>
           
           <script>
-            window.onload = function() { window.print(); window.close(); }
+            window.onload = function() { 
+              setTimeout(() => {
+                window.print(); 
+                window.close(); 
+              }, 300);
+            }
           </script>
         </body>
       </html>

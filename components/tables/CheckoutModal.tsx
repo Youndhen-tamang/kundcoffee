@@ -223,95 +223,133 @@ export function CheckoutModal({
         <head>
           <title>Receipt - Table ${table.name}</title>
           <style>
-            @page { size: 80mm auto; margin: 0; }
+            @page { 
+              size: 80mm auto; 
+              margin: 0; 
+            }
+            * {
+              box-sizing: border-box;
+              -webkit-print-color-adjust: exact;
+            }
+            html, body {
+              margin: 0;
+              padding: 0;
+              width: 80mm;
+              background: #fff;
+            }
             body { 
               font-family: 'Courier New', Courier, monospace; 
-              width: 80mm; 
-              margin: 0; 
               padding: 5mm; 
               font-size: 11px;
               color: #000;
-              background: #fff;
+              line-height: 1.4;
+            }
+            .receipt-container {
+              width: 100%;
+              overflow: hidden;
             }
             .center { text-align: center; }
+            .right { text-align: right; }
             .bold { font-weight: bold; }
-            .divider { border-top: 1px dashed #000; margin: 10px 0; }
-            table { width: 100%; border-collapse: collapse; }
-            .footer { margin-top: 20px; font-size: 9px; text-align: center; }
-            .qr-container { margin-top: 15px; display: flex; flex-direction: column; align-items: center; }
+            .header { margin-bottom: 10px; }
+            .divider { border-top: 1px dashed #000; margin: 8px 0; width: 100%; }
+            table { width: 100%; border-collapse: collapse; margin: 5px 0; }
+            .footer { margin-top: 15px; font-size: 10px; padding-bottom: 10mm; }
+            .qr-container { margin-top: 10px; display: flex; flex-direction: column; align-items: center; }
+            .logo { max-height: 50px; margin-bottom: 8px; filter: grayscale(1); }
+            
+            @media print {
+              body { margin: 0; }
+              .no-print { display: none; }
+            }
           </style>
         </head>
         <body>
-          <div class="center">
-            ${settings.logo ? `<img src="${settings.logo}" style="max-height: 40px; margin-bottom: 5px;" />` : ""}
-            <div class="bold" style="font-size: 14px;">${settings.name || "KUND COFFEE"}</div>
-            <div>${settings.address || "Kathmandu, Nepal"}</div>
-            <div>PAN/VAT: ${settings.panNumber || "123456789"}</div>
-            <div class="bold" style="margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;">Table Summary Receipt</div>
-            <div class="bold">Table: ${table.name}</div>
-          </div>
-          
-          <div class="divider"></div>
-          
-          <div style="display: flex; justify-content: space-between;">
-            <span>Date: ${new Date().toLocaleDateString()}</span>
-            <span>Time: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-          </div>
-          
-          <div class="divider"></div>
-          
-          <table>
-            <thead>
-              <tr style="border-bottom: 1px solid #000;">
-                <th style="text-align: left; padding-bottom: 5px;">ITEM</th>
-                <th style="text-align: right; padding-bottom: 5px;">AMOUNT</th>
+          <div class="receipt-container">
+            <div class="header center">
+              ${settings.logo ? `<img src="${settings.logo}" class="logo" />` : ""}
+              <div class="bold" style="font-size: 15px;">${settings.name || "KUND COFFEE"}</div>
+              <div style="font-size: 10px;">${settings.address || ""}</div>
+              <div style="font-size: 10px;">Tel: ${settings.phone || ""}</div>
+              ${settings.panNumber ? `<div style="font-size: 10px;">PAN/VAT: ${settings.panNumber}</div>` : ""}
+              <div class="bold" style="margin-top: 10px; font-size: 12px; border: 1px solid #000; display: inline-block; padding: 2px 8px;">
+                TAX INVOICE
+              </div>
+              <div class="bold" style="display: block; margin-top: 5px;">TABLE: ${table.name}</div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <table style="font-size: 10px;">
+              <tr>
+                <td>DATE: ${new Date().toLocaleDateString()}</td>
+                <td class="right">TIME: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
               </tr>
-            </thead>
-            <tbody>
-              ${itemsHtml}
-              ${extraItemsHtml}
-            </tbody>
-          </table>
-          
-          <div class="divider"></div>
-          
-          <div style="space-y: 2px;">
-            <div style="display: flex; justify-content: space-between;">
-              <span>Subtotal</span>
-              <span>${settings.currency} ${summary.subtotal.toFixed(2)}</span>
-            </div>
-            ${includeServiceCharge ? `
-            <div style="display: flex; justify-content: space-between;">
-              <span>Service Charge (10%)</span>
-              <span>${settings.currency} ${summary.serviceCharge.toFixed(2)}</span>
-            </div>
+            </table>
+            
+            <div class="divider"></div>
+            
+            <table>
+              <thead>
+                <tr style="border-bottom: 1px solid #000;">
+                  <th style="text-align: left; padding: 4px 0;">ITEM</th>
+                  <th style="text-align: right; padding: 4px 0;">AMOUNT</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+                ${extraItemsHtml}
+              </tbody>
+            </table>
+            
+            <div class="divider"></div>
+            
+            <table style="font-size: 11px;">
+              <tr>
+                <td>Subtotal</td>
+                <td class="right">${settings.currency} ${summary.subtotal.toFixed(2)}</td>
+              </tr>
+              ${includeServiceCharge ? `
+              <tr>
+                <td>Service Charge (10%)</td>
+                <td class="right">${settings.currency} ${summary.serviceCharge.toFixed(2)}</td>
+              </tr>
+              ` : ""}
+              ${includeTax ? `
+              <tr>
+                <td>VAT (13%)</td>
+                <td class="right">${settings.currency} ${(summary.subtotal * 0.13).toFixed(2)}</td>
+              </tr>
+              ` : ""}
+              <tr class="bold" style="font-size: 13px;">
+                <td style="padding-top: 5px;">GRAND TOTAL</td>
+                <td class="right" style="padding-top: 5px;">${settings.currency} ${summary.grandTotal.toFixed(2)}</td>
+              </tr>
+            </table>
+            
+            <div class="divider"></div>
+            
+            ${qrData?.image ? `
+              <div class="qr-container">
+                <img src="${qrData.image}" style="width: 100px; height: 100px; object-contain;" />
+                <div style="font-size: 9px; font-weight: bold; margin-top: 4px;">SCAN TO PAY</div>
+              </div>
             ` : ""}
-            ${includeTax ? `
-            <div style="display: flex; justify-content: space-between;">
-              <span>VAT (13%)</span>
-              <span>${settings.currency} ${(summary.subtotal * 0.13).toFixed(2)}</span>
+            
+            <div class="footer center">
+              <div class="bold">THANK YOU FOR YOUR VISIT!</div>
+              <div style="font-size: 9px; margin-top: 4px;">POWERED BY ${settings.name || "KUND COFFEE"} ERP</div>
+              <div style="font-size: 8px;">${new Date().toLocaleString()}</div>
             </div>
-            ` : ""}
-            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 5px;" class="bold">
-              <span>GRAND TOTAL</span>
-              <span>${settings.currency} ${summary.grandTotal.toFixed(2)}</span>
-            </div>
-          </div>
-          
-          ${qrData?.image ? `
-            <div class="qr-container">
-              <img src="${qrData.image}" style="width: 100px; height: 100px; object-contain;" />
-              <div style="font-size: 8px; font-weight: bold; margin-top: 2px;">SCAN TO PAY</div>
-            </div>
-          ` : ""}
-          
-          <div class="footer">
-            <p class="bold">THANK YOU FOR YOUR VISIT!</p>
-            <p>POWERED BY ${settings.name || "BODHIBERRY"} ERP</p>
           </div>
           
           <script>
-            window.onload = function() { window.print(); window.close(); }
+            window.onload = function() { 
+              setTimeout(() => {
+                window.print(); 
+                window.close(); 
+              }, 300);
+            }
           </script>
         </body>
       </html>

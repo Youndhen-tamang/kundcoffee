@@ -155,84 +155,131 @@ export default function FinancePage() {
         <head>
           <title>Receipt - ${txn.id}</title>
           <style>
-            @page { size: 80mm auto; margin: 0; }
+            @page { 
+              size: 80mm auto; 
+              margin: 0; 
+            }
+            * {
+              box-sizing: border-box;
+              -webkit-print-color-adjust: exact;
+            }
+            html, body {
+              margin: 0;
+              padding: 0;
+              width: 80mm;
+              background: #fff;
+            }
             body { 
               font-family: 'Courier New', Courier, monospace; 
-              width: 80mm; 
-              margin: 0; 
               padding: 5mm; 
               font-size: 11px;
               color: #000;
+              line-height: 1.4;
+            }
+            .receipt-container {
+              width: 100%;
+              overflow: hidden;
             }
             .center { text-align: center; }
             .right { text-align: right; }
             .bold { font-weight: bold; }
             .header { margin-bottom: 10px; }
-            .divider { border-top: 1px dashed #000; margin: 10px 0; }
-            table { width: 100%; border-collapse: collapse; }
-            .footer { margin-top: 20px; font-size: 9px; }
-            .qr-container { margin-top: 15px; display: flex; flex-direction: column; align-items: center; }
-            .logo { max-height: 40px; margin-bottom: 5px; }
+            .divider { border-top: 1px dashed #000; margin: 8px 0; width: 100%; }
+            table { width: 100%; border-collapse: collapse; margin: 5px 0; }
+            .footer { margin-top: 15px; font-size: 10px; padding-bottom: 10mm; }
+            .qr-container { margin-top: 10px; display: flex; flex-direction: column; align-items: center; }
+            .logo { max-height: 50px; margin-bottom: 8px; filter: grayscale(1); }
+            
+            /* Hide browser headers/footers */
+            @media print {
+              body { margin: 0; }
+              .no-print { display: none; }
+            }
           </style>
         </head>
         <body>
-          <div class="header center">
-            ${settings.logo ? `<img src="${settings.logo}" class="logo" />` : ""}
-            <div class="bold" style="font-size: 14px;">${settings.name || "KUND COFFEE"}</div>
-            <div>${settings.address || ""}</div>
-            <div>Phone: ${settings.phone || ""}</div>
-            ${settings.panNumber ? `<div>PAN/VAT: ${settings.panNumber}</div>` : ""}
-            <div class="bold" style="margin-top: 5px;">${activeTab === "RETURNS" ? "CREDIT NOTE (RETURN)" : "TAX INVOICE"}</div>
-          </div>
-          
-          <div class="divider"></div>
-          
-          <div style="display: flex; justify-content: space-between;">
-            <span>Inv: #${txn.id.slice(-6).toUpperCase()}</span>
-            <span>Date: ${new Date(date).toLocaleDateString()}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>Table: ${txn.table || "N/A"}</span>
-            <span>Mode: ${txn.modes?.map((m: any) => `${m.method}(${m.amount})`).join(", ") || txn.mode}</span>
-          </div>
-          <div>Customer: ${customer}</div>
-          
-          <div class="divider"></div>
-          
-          <table>
-            <thead>
-              <tr style="border-bottom: 1px solid #000;">
-                <th style="text-align: left; padding-bottom: 5px;">ITEM</th>
-                <th style="text-align: center; padding-bottom: 5px;">QTY</th>
-                <th style="text-align: right; padding-bottom: 5px;">AMT</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itemsHtml}
-            </tbody>
-          </table>
-          
-          <div class="divider"></div>
-          
-          <div style="display: flex; justify-content: space-between; font-size: 13px;" class="bold">
-            <span>GRAND TOTAL</span>
-            <span>${settings.currency} ${amount.toFixed(2)}</span>
-          </div>
-          
-          ${qrData?.image?.[0] && activeTab !== "RETURNS" ? `
-            <div class="qr-container">
-              <img src="${qrData.image[0]}" style="width: 100px; height: 100px;" />
-              <div style="font-size: 8px; margin-top: 2px;">SCAN TO PAY</div>
+          <div class="receipt-container">
+            <div class="header center">
+              ${settings.logo ? `<img src="${settings.logo}" class="logo" />` : ""}
+              <div class="bold" style="font-size: 15px;">${settings.name || "KUND COFFEE"}</div>
+              <div style="font-size: 10px;">${settings.address || ""}</div>
+              <div style="font-size: 10px;">Tel: ${settings.phone || ""}</div>
+              ${settings.panNumber ? `<div style="font-size: 10px;">PAN/VAT: ${settings.panNumber}</div>` : ""}
+              <div class="bold" style="margin-top: 10px; font-size: 12px; border: 1px solid #000; display: inline-block; padding: 2px 8px;">
+                ${activeTab === "RETURNS" ? "CREDIT NOTE" : "TAX INVOICE"}
+              </div>
             </div>
-          ` : ""}
-          
-          <div class="footer center">
-            <p class="bold">THANK YOU FOR YOUR VISIT!</p>
-            <p>POWERED BY ${settings.name || "KUND COFFEE"} ERP</p>
+            
+            <div class="divider"></div>
+            
+            <table style="font-size: 10px;">
+              <tr>
+                <td>INV: <span class="bold">#${txn.id.slice(-6).toUpperCase()}</span></td>
+                <td class="right">DATE: ${new Date(date).toLocaleDateString()}</td>
+              </tr>
+              <tr>
+                <td>TABLE: <span class="bold">${txn.table || "N/A"}</span></td>
+                <td class="right">TIME: ${new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+              </tr>
+              <tr>
+                <td colspan="2">CUST: ${customer}</td>
+              </tr>
+              <tr>
+                <td colspan="2">MODE: <span class="bold">${txn.modes?.map((m: any) => `${m.method}(${m.amount})`).join(", ") || txn.mode}</span></td>
+              </tr>
+            </table>
+            
+            <div class="divider"></div>
+            
+            <table>
+              <thead>
+                <tr style="border-bottom: 1px solid #000;">
+                  <th style="text-align: left; padding: 4px 0;">ITEM</th>
+                  <th style="text-align: center; padding: 4px 0;">QTY</th>
+                  <th style="text-align: right; padding: 4px 0;">AMT</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+            
+            <div class="divider"></div>
+            
+            <table style="font-size: 12px;">
+              <tr class="bold">
+                <td>GRAND TOTAL</td>
+                <td class="right">${settings.currency} ${amount.toFixed(2)}</td>
+              </tr>
+            </table>
+            
+            <div class="divider"></div>
+            
+            <div style="font-size: 9px; text-align: center; font-style: italic;">
+              * Prices are inclusive of all taxes *
+            </div>
+            
+            ${qrData?.image?.[0] && activeTab !== "RETURNS" ? `
+              <div class="qr-container">
+                <img src="${qrData.image[0]}" style="width: 100px; height: 100px;" />
+                <div style="font-size: 9px; margin-top: 4px; font-weight: bold;">SCAN TO PAY</div>
+              </div>
+            ` : ""}
+            
+            <div class="footer center">
+              <div class="bold">THANK YOU FOR YOUR VISIT!</div>
+              <div style="font-size: 9px; margin-top: 4px;">POWERED BY ${settings.name || "KUND COFFEE"} ERP</div>
+              <div style="font-size: 8px;">${new Date().toLocaleString()}</div>
+            </div>
           </div>
           
           <script>
-            window.onload = function() { window.print(); window.close(); }
+            window.onload = function() { 
+              setTimeout(() => {
+                window.print(); 
+                window.close(); 
+              }, 300);
+            }
           </script>
         </body>
       </html>
