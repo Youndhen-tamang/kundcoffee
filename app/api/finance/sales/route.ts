@@ -63,6 +63,9 @@ export async function GET(req: NextRequest) {
 
     if (status) {
       where.status = status;
+    } else {
+      // Exclude failed/cancelled/deleted by default if no status filter is provided
+      where.status = { notIn: ["FAILED", "CANCELLED"] };
     }
 
     const payments = await prisma.payment.findMany({
@@ -92,8 +95,15 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Metrics calculation
-    const totalSales = payments.reduce((acc, p) => acc + p.amount, 0);
+    // Metrics calculation - Standardized to match Dashboard (PAID only for main total)
+    const totalSales = payments
+      .filter((p) => p.status === "PAID")
+      .reduce((acc, p) => acc + p.amount, 0);
+    
+    const creditSalesTotal = payments
+      .filter((p) => p.method === "CREDIT")
+      .reduce((acc, p) => acc + p.amount, 0);
+
     const totalOrders = new Set(
       payments.map((p) => p.orders?.[0]?.id || p.sessionId).filter(Boolean),
     ).size;
@@ -218,10 +228,10 @@ export async function GET(req: NextRequest) {
     });
 
     const cashSales = payments
-      .filter((p) => p.method === "CASH")
+      .filter((p) => p.method === "CASH" && p.status === "PAID")
       .reduce((acc, p) => acc + p.amount, 0);
     const digitalSales = payments
-      .filter((p) => ["QR", "ESEWA", "CARD", "BANK_TRANSFER"].includes(p.method))
+      .filter((p) => ["QR", "ESEWA", "CARD", "BANK_TRANSFER"].includes(p.method) && p.status === "PAID")
       .reduce((acc, p) => acc + p.amount, 0);
 
     const response: ApiResponse = {
@@ -232,6 +242,7 @@ export async function GET(req: NextRequest) {
           totalSales: salesTotal,
           cashSales,
           digitalSales,
+          creditSales: creditSalesTotal,
           leadingPayment,
           purchases: purchasesTotal,
           income: salesTotal + paymentInTotal,

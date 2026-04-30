@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Customer } from "@/lib/types";
-import { getCustomerSummary, addCustomer } from "@/services/customer";
+import { getCustomerSummary, addCustomer, updateCustomer } from "@/services/customer";
 import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { useRouter } from "next/navigation";
 import { useSettings } from "@/components/providers/SettingsProvider";
+import { Edit2 } from "lucide-react";
 
 export default function CustomersPage() {
   const { settings } = useSettings();
@@ -21,9 +22,10 @@ export default function CustomersPage() {
   const [filteredCustomers, setFilteredCustomers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
 
-  // Form States
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     fullName: "",
     phone: "",
     email: "",
@@ -31,7 +33,16 @@ export default function CustomersPage() {
     loyaltyId: "",
     openingBalance: 0,
     loyaltyDiscount: 0,
-  });
+    address: "",
+    notes: "",
+    legalName: "",
+    taxNumber: "",
+    creditLimit: 0,
+    creditTermDays: 0,
+  };
+
+  // Form States
+  const [formData, setFormData] = useState(initialFormData);
 
   const fetchData = async () => {
     const res = await getCustomerSummary();
@@ -93,24 +104,47 @@ export default function CustomersPage() {
     document.body.removeChild(link);
   };
 
-  const handleCreateCustomer = async () => {
+  const handleSubmit = async () => {
     if (!formData.fullName) return;
-    const res = await addCustomer(formData);
+
+    let res;
+    if (isEditMode && editingCustomerId) {
+      res = await updateCustomer(editingCustomerId, formData);
+    } else {
+      res = await addCustomer(formData);
+    }
+
     if (res.success) {
       setIsAddModalOpen(false);
-      setFormData({
-        fullName: "",
-        phone: "",
-        email: "",
-        dob: "",
-        loyaltyId: "",
-        openingBalance: 0,
-        loyaltyDiscount: 0,
-      });
+      setIsEditMode(false);
+      setEditingCustomerId(null);
+      setFormData(initialFormData);
       fetchData();
     } else {
-      alert(res.message || "Failed to add customer");
+      alert(res.message || `Failed to ${isEditMode ? "update" : "add"} customer`);
     }
+  };
+
+  const handleEditClick = (e: React.MouseEvent, customer: any) => {
+    e.stopPropagation();
+    setIsEditMode(true);
+    setEditingCustomerId(customer.id);
+    setFormData({
+      fullName: customer.fullName || "",
+      phone: customer.phone || "",
+      email: customer.email || "",
+      dob: customer.dob ? new Date(customer.dob).toISOString().split("T")[0] : "",
+      loyaltyId: customer.loyaltyId || "",
+      openingBalance: customer.openingBalance || 0,
+      loyaltyDiscount: customer.loyaltyDiscount || 0,
+      address: customer.address || "",
+      notes: customer.notes || "",
+      legalName: customer.legalName || "",
+      taxNumber: customer.taxNumber || "",
+      creditLimit: customer.creditLimit || 0,
+      creditTermDays: customer.creditTermDays || 0,
+    });
+    setIsAddModalOpen(true);
   };
 
   return (
@@ -122,7 +156,11 @@ export default function CustomersPage() {
         onExport={handleExport}
         actionButton={
           <Button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => {
+              setIsEditMode(false);
+              setFormData(initialFormData);
+              setIsAddModalOpen(true);
+            }}
             className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200"
           >
             <span className="flex items-center gap-2">Add Customer</span>
@@ -178,6 +216,9 @@ export default function CustomersPage() {
               <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest text-right">
                 Due Balance
               </th>
+              <th className="px-6 py-4 font-black text-gray-500 uppercase text-[10px] tracking-widest text-right">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -226,6 +267,16 @@ export default function CustomersPage() {
                 >
                   {settings.currency} {customer.dueAmount.toLocaleString()}
                 </td>
+                <td className="px-6 py-4 text-right">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-full hover:bg-red-50 hover:text-red-600 border-zinc-200"
+                    onClick={(e) => handleEditClick(e, customer)}
+                  >
+                    <Edit2 size={12} />
+                  </Button>
+                </td>
               </tr>
             ))}
             {filteredCustomers.length === 0 && (
@@ -241,8 +292,12 @@ export default function CustomersPage() {
 
       <Modal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title="Add New Customer"
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setIsEditMode(false);
+          setEditingCustomerId(null);
+        }}
+        title={isEditMode ? "Edit Customer" : "Add New Customer"}
       >
         <div className="space-y-6 pb-4">
           {/* Profile Section */}
@@ -327,6 +382,65 @@ export default function CustomersPage() {
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                  Address
+                </label>
+                <textarea
+                  placeholder="e.g. 123 Main St, Kathmandu"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all min-h-[80px]"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                    Legal Name / Business Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Optional"
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all"
+                    value={formData.legalName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, legalName: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                    Tax Number (PAN/VAT)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Optional"
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all"
+                    value={formData.taxNumber}
+                    onChange={(e) =>
+                      setFormData({ ...formData, taxNumber: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                  Internal Notes
+                </label>
+                <textarea
+                  placeholder="Special instructions or customer preferences..."
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm focus:border-red-500 focus:bg-white focus:outline-none transition-all min-h-[60px]"
+                  value={formData.notes}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
+                />
+              </div>
             </div>
           </section>
 
@@ -340,29 +454,31 @@ export default function CustomersPage() {
             </div>
             <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
-                    Opening Balance
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">
-                      {settings.currency}
-                    </span>
-                    <input
-                      type="number"
-                      placeholder="0.00"
-                      className="w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-4 py-3 text-sm focus:border-red-500 focus:outline-none transition-all font-mono font-black"
-                      value={formData.openingBalance}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          openingBalance: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                    />
+                {!isEditMode && (
+                  <div>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                      Opening Balance
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">
+                        {settings.currency}
+                      </span>
+                      <input
+                        type="number"
+                        placeholder="0.00"
+                        className="w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-4 py-3 text-sm focus:border-red-500 focus:outline-none transition-all font-mono font-black"
+                        value={formData.openingBalance}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            openingBalance: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                      />
+                    </div>
                   </div>
-                </div>
-                <div>
+                )}
+                <div className={isEditMode ? "col-span-2" : ""}>
                   <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
                     Loyalty Discount (%)
                   </label>
@@ -385,14 +501,56 @@ export default function CustomersPage() {
                   </div>
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                    Credit Limit
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">
+                      {settings.currency}
+                    </span>
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      className="w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-4 py-3 text-sm focus:border-red-500 focus:outline-none transition-all font-mono font-black"
+                      value={formData.creditLimit}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          creditLimit: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5 block">
+                    Credit Term (Days)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm focus:border-red-500 focus:outline-none transition-all font-mono font-black"
+                    value={formData.creditTermDays}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        creditTermDays: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
+              </div>
             </div>
           </section>
 
           <Button
-            onClick={handleCreateCustomer}
+            onClick={handleSubmit}
             className="w-full h-12 bg-zinc-900 hover:bg-zinc-800 text-white font-black uppercase tracking-widest text-[10px]"
           >
-            Register Customer
+            {isEditMode ? "Update Customer Details" : "Register Customer"}
           </Button>
         </div>
       </Modal>

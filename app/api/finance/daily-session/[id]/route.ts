@@ -91,10 +91,14 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     };
 
     relevantPayments.forEach(p => {
-      if (salesByMethod[p.method] !== undefined) {
-         salesByMethod[p.method] += p.amount;
-      } else {
-         salesByMethod[p.method] = p.amount;
+      // For cash and digital, only count PAID status to match dashboard and drawer
+      if (["CASH", "QR", "ESEWA", "CARD", "BANK_TRANSFER"].includes(p.method)) {
+        if (p.status === "PAID") {
+          salesByMethod[p.method] = (salesByMethod[p.method] ?? 0) + p.amount;
+        }
+      } else if (p.method === "CREDIT") {
+        // Credit sales are tracked even if status is CREDIT
+        salesByMethod[p.method] = (salesByMethod[p.method] ?? 0) + p.amount;
       }
     });
 

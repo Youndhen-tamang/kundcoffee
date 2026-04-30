@@ -50,7 +50,15 @@ export async function GET(req: NextRequest) {
 
       for (const p of relevantPayments) {
         const amount = parseFloat(p.amount.toString());
-        salesByMethod[p.method] = (salesByMethod[p.method] ?? 0) + amount;
+        // For cash and digital, only count PAID status to match dashboard and drawer
+        if (["CASH", "QR", "ESEWA", "CARD", "BANK_TRANSFER"].includes(p.method)) {
+          if (p.status === "PAID") {
+            salesByMethod[p.method] = (salesByMethod[p.method] ?? 0) + amount;
+          }
+        } else if (p.method === "CREDIT") {
+          // Credit sales are tracked even if status is CREDIT
+          salesByMethod[p.method] = (salesByMethod[p.method] ?? 0) + amount;
+        }
       }
 
       const currentCashSales = salesByMethod.CASH;
