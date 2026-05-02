@@ -83,6 +83,10 @@ export default function FinancePage() {
         queryParams.append("filter", dateFilter);
       }
 
+      if (searchQuery) {
+        queryParams.append("search", searchQuery);
+      }
+
       if (activeTab === "SALES") {
         const res = await fetch(`/api/finance/sales?${queryParams.toString()}`);
         const data = await res.json();

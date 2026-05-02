@@ -34,25 +34,10 @@ import { KOTCard } from "@/components/kot/KOTCard";
 import { Button } from "@/components/ui/Button";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
 import { Modal } from "@/components/ui/Modal";
-import {
-  Search,
-  Plus,
-  Settings,
-  History,
-  FileText,
-  Slash,
-  WifiOff,
-  CalendarDays,
-  Users,
-  ChefHat,
-  Wine,
-  X,
-  Package,
-  CreditCard,
-  GripVertical,
-} from "lucide-react";
+import { History, Search, Plus, Settings, FileText, Slash, WifiOff, CalendarDays, Users, ChefHat, Wine, X, Package, CreditCard, GripVertical } from "lucide-react";
 import { Popover } from "@/components/ui/Popover";
 import { toast } from "sonner";
+import Link from "next/link";
 
 // DnD Kit Imports
 import {
@@ -570,6 +555,14 @@ export default function OrdersPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            <Link href="/dashboard/orders/history">
+              <Button
+                variant="secondary"
+                className="bg-white hover:bg-zinc-50 border-zinc-200 h-10 px-4 uppercase tracking-widest text-[10px]"
+              >
+                <History size={14} className="mr-2" /> History
+              </Button>
+            </Link>
             <Button
               onClick={() => setShowOrderTypeSelector(true)}
               className="bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-6 uppercase tracking-widest text-[10px]"

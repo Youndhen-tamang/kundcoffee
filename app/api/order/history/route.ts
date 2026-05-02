@@ -1,8 +1,20 @@
-import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const storeId = session?.user?.storeId;
+
+    if (!storeId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     
     const page = parseInt(searchParams.get("page") || "1");
@@ -12,12 +24,17 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status"); 
 
     const where: any = {
+      storeId,
       status: status ? status : { in: ["COMPLETED", "CANCELLED"] },
-      OR: [
+      isDeleted: false,
+    };
+
+    if (search) {
+      where.OR = [
         { id: { contains: search, mode: 'insensitive' } },
         { table: { name: { contains: search, mode: 'insensitive' } } }
-      ]
-    };
+      ];
+    }
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({

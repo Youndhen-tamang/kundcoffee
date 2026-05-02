@@ -22,10 +22,11 @@ export async function GET(req: NextRequest) {
     const date = searchParams.get("date");
     const month = searchParams.get("month");
     const year = searchParams.get("year");
+    const search = searchParams.get("search");
 
     const where: any = {
       isDeleted: false,
-      storeId, // Filter by storeId
+      storeId,
     };
 
     if (date) {
@@ -61,11 +62,28 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    if (search) {
+      where.OR = [
+        { id: { contains: search, mode: "insensitive" } },
+        {
+          orders: {
+            some: {
+              customer: { fullName: { contains: search, mode: "insensitive" } },
+            },
+          },
+        },
+        {
+          orders: {
+            some: { id: { contains: search, mode: "insensitive" } },
+          },
+        },
+      ];
+    }
+
     if (status) {
       where.status = status;
     } else {
-      // Exclude failed/cancelled/deleted by default if no status filter is provided
-      where.status = { notIn: ["FAILED", "CANCELLED"] };
+      where.status = { notIn: ["FAILED"] };
     }
 
     const payments = await prisma.payment.findMany({

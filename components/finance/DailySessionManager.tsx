@@ -198,35 +198,44 @@ export function DailySessionManager() {
                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Cash Sales (+)</p>
                     <p className="text-sm font-black text-white">{settings.currency} {activeSession.currentCashSales?.toFixed(2)}</p>
                   </div>
+
                   <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1 font-black">Cash Purchases (-)</p>
-                    <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentCashOutflow?.toFixed(2)}</p>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Digital Sales (QR+)</p>
+                    <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.currentDigitalSales?.toFixed(2)}</p>
                   </div>
-                  <div className="bg-emerald-950/30 border border-emerald-900/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest mb-1">Cash on Drawer</p>
-                    <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.currentExpectedBalance?.toFixed(2)}</p>
+
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Credit Sales</p>
+                    <p className="text-sm font-black text-blue-400">{settings.currency} {activeSession.currentCreditSales?.toFixed(2)}</p>
                   </div>
+
                   <div className="bg-emerald-950/30 border border-emerald-900/50 p-3 rounded-xl">
                     <p className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest mb-1">Total Revenue</p>
                     <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.totalRevenue?.toFixed(2)}</p>
                   </div>
 
                   <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Digital Sales (QR+)</p>
-                    <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.currentDigitalSales?.toFixed(2)}</p>
+                    <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1 font-black">Cash Purchases (-)</p>
+                    <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentCashOutflow?.toFixed(2)}</p>
                   </div>
+                 
+
+
                   <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
                     <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1">Digital Purchases (-)</p>
                     <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentDigitalOutflow?.toFixed(2)}</p>
                   </div>
-                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Credit Sales</p>
-                    <p className="text-sm font-black text-blue-400">{settings.currency} {activeSession.currentCreditSales?.toFixed(2)}</p>
-                  </div>
+
                   <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
                     <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1">Credit Purchases (-)</p>
                     <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentCreditOutflow?.toFixed(2)}</p>
                   </div>
+
+                  <div className="bg-emerald-950/30 border border-emerald-900/50 p-3 rounded-xl">
+                    <p className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest mb-1">Cash on Drawer</p>
+                    <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.currentExpectedBalance?.toFixed(2)}</p>
+                  </div>
+                  
                 </div>
               </div>
             )}
