@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
           openedBy: { select: { name: true } },
           closedBy: { select: { name: true } },
           payments: {
+            where: { isDeleted: false },
+            orderBy: { createdAt: "desc" },
             select: { method: true, amount: true, status: true }
           },
           purchases: {
@@ -77,6 +79,7 @@ export async function GET(req: NextRequest) {
       const currentCashOutflow = purchaseByMethod.CASH || 0;
       const currentDigitalOutflow = (purchaseByMethod.QR ?? 0) + (purchaseByMethod.ESEWA ?? 0) + (purchaseByMethod.CARD ?? 0) + (purchaseByMethod.BANK_TRANSFER ?? 0);
       const currentCreditOutflow = purchaseByMethod.CREDIT ?? 0;
+      const totalPurchases = currentCashOutflow + currentDigitalOutflow + currentCreditOutflow;
 
       const currentExpectedBalance =
         parseFloat(activeSession.openingBalance.toString()) + currentCashSales - currentCashOutflow;
@@ -96,7 +99,8 @@ export async function GET(req: NextRequest) {
           currentCreditSales,
           currentCreditOutflow,
           currentExpectedBalance,
-          totalRevenue
+          totalRevenue,
+          totalPurchases
         }
       });
     }

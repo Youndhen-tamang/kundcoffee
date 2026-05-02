@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
       const payments = await prisma.payment.findMany({
         where: {
           ...whereBase,
-          status: "PAID",
+          status: { in: ["PAID", "CREDIT"] },
           isDeleted: false,
         },
         select: {
@@ -172,7 +172,7 @@ export async function GET(req: NextRequest) {
           _sum: { amount: true },
           where: {
             ...whereBase,
-            status: "PAID",
+            status: { in: ["PAID", "CREDIT"] },
             isDeleted: false,
           },
         }),
@@ -180,6 +180,7 @@ export async function GET(req: NextRequest) {
           _sum: { totalAmount: true },
           where: {
             ...whereBase,
+            isDeleted: false,
             // Map whereBase date filter to txnDate if not using session
             ...(sessionId? {} : {
               createdAt: undefined,
@@ -235,6 +236,7 @@ export async function GET(req: NextRequest) {
           where: {
             ...whereBase,
             paymentMode: "CREDIT",
+            isDeleted: false,
             ...(sessionId? {} : {
               createdAt: undefined,
               txnDate: whereBase.createdAt

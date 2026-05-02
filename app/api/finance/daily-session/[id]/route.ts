@@ -20,6 +20,7 @@ export async function GET(req: NextRequest, context: { params: Params }) {
         openedBy: { select: { name: true } },
         closedBy: { select: { name: true } },
         payments: {
+          where: { isDeleted: false },
           orderBy: { createdAt: "desc" },
           select: {
             id: true,
@@ -44,7 +45,60 @@ export async function GET(req: NextRequest, context: { params: Params }) {
       return NextResponse.json({ success: false, message: "Session not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: dailySession });
+    // Compute metrics for the session
+    const relevantPayments = dailySession.payments.filter(
+      (p) => p.status === "PAID" || p.status === "CREDIT"
+    );
+
+    const salesByMethod: Record<string, number> = {
+      CASH: 0, QR: 0, ESEWA: 0, CARD: 0, BANK_TRANSFER: 0, CREDIT: 0
+    };
+
+    relevantPayments.forEach(p => {
+      const amount = parseFloat(p.amount.toString());
+      if (["CASH", "QR", "ESEWA", "CARD", "BANK_TRANSFER"].includes(p.method)) {
+        if (p.status === "PAID") {
+          salesByMethod[p.method] = (salesByMethod[p.method] ?? 0) + amount;
+        }
+      } else if (p.method === "CREDIT") {
+        salesByMethod[p.method] = (salesByMethod[p.method] ?? 0) + amount;
+      }
+    });
+
+    const currentCashSales = salesByMethod.CASH;
+    const currentDigitalSales = (salesByMethod.QR ?? 0) + (salesByMethod.ESEWA ?? 0) + (salesByMethod.CARD ?? 0) + (salesByMethod.BANK_TRANSFER ?? 0);
+    const currentCreditSales = salesByMethod.CREDIT ?? 0;
+    const totalRevenue = Object.values(salesByMethod).reduce((s, a) => s + a, 0);
+
+    const purchaseByMethod: Record<string, number> = {
+      CASH: 0, QR: 0, ESEWA: 0, CARD: 0, BANK_TRANSFER: 0, CREDIT: 0
+    };
+
+    dailySession.purchases.forEach(p => {
+      const amount = parseFloat(p.totalAmount.toString());
+      const mode = p.paymentMode || "CASH";
+      purchaseByMethod[mode] = (purchaseByMethod[mode] ?? 0) + amount;
+    });
+
+    const currentCashOutflow = purchaseByMethod.CASH || 0;
+    const currentDigitalOutflow = (purchaseByMethod.QR ?? 0) + (purchaseByMethod.ESEWA ?? 0) + (purchaseByMethod.CARD ?? 0) + (purchaseByMethod.BANK_TRANSFER ?? 0);
+    const currentCreditOutflow = purchaseByMethod.CREDIT ?? 0;
+    const totalPurchases = currentCashOutflow + currentDigitalOutflow + currentCreditOutflow;
+
+    return NextResponse.json({ 
+      success: true, 
+      data: {
+        ...dailySession,
+        currentCashSales,
+        currentDigitalSales,
+        currentCreditSales,
+        totalRevenue,
+        currentCashOutflow,
+        currentDigitalOutflow,
+        currentCreditOutflow,
+        totalPurchases
+      } 
+    });
   } catch (error) {
     console.error("Daily Session Detail GET Error:", error);
     return NextResponse.json({ success: false, message: "Server Error" }, { status: 500 });
@@ -65,7 +119,9 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
     const dailySession = await prisma.dailySession.findFirst({
       where: { id: id, storeId },
       include: { 
-        payments: true,
+        payments: {
+          where: { isDeleted: false }
+        },
         purchases: {
           where: { isDeleted: false }
         }

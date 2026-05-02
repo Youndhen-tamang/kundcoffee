@@ -193,49 +193,48 @@ export function DailySessionManager() {
                   <span className="flex items-center gap-1.5"><Banknote size={14} /> Opening: {settings.currency} {activeSession.openingBalance.toFixed(2)}</span>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Row 1: Key Summaries */}
+                  <div className="bg-emerald-950/30 border border-emerald-900/50 p-4 rounded-2xl">
+                    <p className="text-[10px] font-black text-emerald-500/70 uppercase tracking-widest mb-1">Total Revenue</p>
+                    <p className="text-xl font-black text-emerald-400">{settings.currency} {activeSession.totalRevenue?.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-rose-950/30 border border-rose-900/50 p-4 rounded-2xl">
+                    <p className="text-[10px] font-black text-rose-500/70 uppercase tracking-widest mb-1">Total Purchase</p>
+                    <p className="text-xl font-black text-rose-400">{settings.currency} {activeSession.totalPurchases?.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-emerald-950/30 border border-emerald-900/50 p-4 rounded-2xl">
+                    <p className="text-[10px] font-black text-emerald-500/70 uppercase tracking-widest mb-1">Cash on Drawer</p>
+                    <p className="text-xl font-black text-emerald-400">{settings.currency} {activeSession.currentExpectedBalance?.toFixed(2)}</p>
+                  </div>
+
+                  {/* Row 2: Sales Breakdown */}
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-4 rounded-2xl">
                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Cash Sales (+)</p>
-                    <p className="text-sm font-black text-white">{settings.currency} {activeSession.currentCashSales?.toFixed(2)}</p>
+                    <p className="text-lg font-black text-white">{settings.currency} {activeSession.currentCashSales?.toFixed(2)}</p>
                   </div>
-
-                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Digital Sales (QR+)</p>
-                    <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.currentDigitalSales?.toFixed(2)}</p>
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-4 rounded-2xl">
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Digital Sales (+)</p>
+                    <p className="text-lg font-black text-emerald-400">{settings.currency} {activeSession.currentDigitalSales?.toFixed(2)}</p>
                   </div>
-
-                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-4 rounded-2xl">
                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Credit Sales</p>
-                    <p className="text-sm font-black text-blue-400">{settings.currency} {activeSession.currentCreditSales?.toFixed(2)}</p>
+                    <p className="text-lg font-black text-blue-400">{settings.currency} {activeSession.currentCreditSales?.toFixed(2)}</p>
                   </div>
 
-                  <div className="bg-emerald-950/30 border border-emerald-900/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest mb-1">Total Revenue</p>
-                    <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.totalRevenue?.toFixed(2)}</p>
+                  {/* Row 3: Purchase Breakdown */}
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-4 rounded-2xl">
+                    <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1">Cash Purchases (-)</p>
+                    <p className="text-lg font-black text-rose-400">{settings.currency} {activeSession.currentCashOutflow?.toFixed(2)}</p>
                   </div>
-
-                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1 font-black">Cash Purchases (-)</p>
-                    <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentCashOutflow?.toFixed(2)}</p>
-                  </div>
-                 
-
-
-                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-4 rounded-2xl">
                     <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1">Digital Purchases (-)</p>
-                    <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentDigitalOutflow?.toFixed(2)}</p>
+                    <p className="text-lg font-black text-rose-400">{settings.currency} {activeSession.currentDigitalOutflow?.toFixed(2)}</p>
                   </div>
-
-                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-3 rounded-xl">
+                  <div className="bg-zinc-800/50 border border-zinc-700/50 p-4 rounded-2xl">
                     <p className="text-[10px] font-bold text-rose-500/70 uppercase tracking-widest mb-1">Credit Purchases (-)</p>
-                    <p className="text-sm font-black text-rose-400">{settings.currency} {activeSession.currentCreditOutflow?.toFixed(2)}</p>
+                    <p className="text-lg font-black text-rose-400">{settings.currency} {activeSession.currentCreditOutflow?.toFixed(2)}</p>
                   </div>
-
-                  <div className="bg-emerald-950/30 border border-emerald-900/50 p-3 rounded-xl">
-                    <p className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest mb-1">Cash on Drawer</p>
-                    <p className="text-sm font-black text-emerald-400">{settings.currency} {activeSession.currentExpectedBalance?.toFixed(2)}</p>
-                  </div>
-                  
                 </div>
               </div>
             )}
@@ -491,6 +490,11 @@ export function DailySessionManager() {
                    </div>
                    <div className="h-px bg-zinc-100 my-1" />
                    <div className="flex justify-between text-[10px]">
+                     <span className="font-black text-rose-600 uppercase tracking-widest">Total Net Purchase</span>
+                     <span className="font-black text-rose-600">-{settings.currency} {activeSession?.totalPurchases?.toFixed(2)}</span>
+                   </div>
+                   <div className="h-px bg-zinc-100 my-1" />
+                   <div className="flex justify-between text-[10px]">
                      <span className="font-black text-emerald-600 uppercase tracking-widest">Total Net Revenue</span>
                      <span className="font-black text-emerald-600">{settings.currency} {activeSession?.totalRevenue?.toFixed(2)}</span>
                    </div>
@@ -606,6 +610,10 @@ export function DailySessionManager() {
                         <p className={`text-xl font-black ${selectedSession?.difference >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
                           {selectedSession?.difference > 0 ? "+" : ""}{selectedSession?.difference?.toFixed(2)}
                         </p>
+                      </div>
+                      <div className="bg-rose-50 p-4 rounded-2xl border border-rose-100">
+                        <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest mb-1">Total Purchase</p>
+                        <p className="text-xl font-black text-rose-700">{settings.currency} {selectedSession?.totalPurchases?.toFixed(2)}</p>
                       </div>
                     </div>
 
