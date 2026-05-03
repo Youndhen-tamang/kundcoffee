@@ -20,6 +20,12 @@ export default function PurchasesPage() {
     totalAmount: 0,
     leadingSupplier: "N/A",
   });
+  const [todayMetrics, setTodayMetrics] = useState({
+    total: 0,
+    cash: 0,
+    digital: 0,
+    credit: 0,
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -32,6 +38,7 @@ export default function PurchasesPage() {
         setPurchases(data.data.purchases);
         setFilteredPurchases(data.data.purchases);
         setMetrics(data.data.metrics);
+        setTodayMetrics(data.data.todayMetrics);
       }
     } catch (error) {
       console.error("Failed to fetch purchases", error);
@@ -118,15 +125,59 @@ export default function PurchasesPage() {
         }
       />
 
+      {/* Premium Today's Summary Card */}
+      <div className="bg-zinc-900 text-white p-8 rounded-3xl shadow-2xl border border-white/5 relative overflow-hidden group">
+        {/* Subtle Background Pattern */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
+        
+        <div className="relative z-10 space-y-6">
+          <div className="space-y-1">
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Today purchase</p>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight">
+              <span className="text-zinc-500 text-2xl mr-2">Rs.</span>
+              {todayMetrics.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </h2>
+          </div>
+
+          <div className="h-px bg-white/10 w-full" />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">CASH Purchase</p>
+              <p className="text-xl font-black">
+                <span className="text-xs text-zinc-600 mr-1">Rs.</span>
+                {todayMetrics.cash.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">DIGITAL Purchase</p>
+              <p className="text-xl font-black text-emerald-400">
+                <span className="text-xs text-emerald-900 mr-1">Rs.</span>
+                {todayMetrics.digital.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Credit Purchase</p>
+              <p className="text-xl font-black text-emerald-400">
+                <span className="text-xs text-emerald-900 mr-1">Rs.</span>
+                {todayMetrics.credit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <MetricCard
-          title="Total Purchases"
+          title="Overall Purchases"
           value={metrics.totalPurchaseCount}
           icon={Package}
           trend="Total Bills"
         />
         <MetricCard
-          title="Total Spending"
+          title="Overall Spending"
           value={`Rs. ${metrics.totalAmount.toLocaleString()}`}
           icon={TrendingUp}
           trend="Total Value"

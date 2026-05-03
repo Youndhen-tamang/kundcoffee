@@ -91,16 +91,49 @@ export async function GET(req: NextRequest) {
       take: 100, // Safety limit
     });
 
+    // Today's Metrics (Regardless of main filter)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const todayPurchases = await prisma.purchase.findMany({
+      where: {
+        storeId,
+        isDeleted: false,
+        txnDate: { gte: todayStart, lte: todayEnd },
+      },
+      select: {
+        totalAmount: true,
+        paymentMode: true,
+      },
+    });
+
+    const todayMetrics = {
+      total: 0,
+      cash: 0,
+      digital: 0,
+      credit: 0,
+    };
+
+    todayPurchases.forEach((p) => {
+      todayMetrics.total += p.totalAmount;
+      if (p.paymentMode === "CASH") todayMetrics.cash += p.totalAmount;
+      else if (p.paymentMode === "CREDIT") todayMetrics.credit += p.totalAmount;
+      else todayMetrics.digital += p.totalAmount; // QR, ESEWA, etc.
+    });
+
     return NextResponse.json({
       success: true,
       data: {
         metrics: {
           totalPurchaseCount,
           totalAmount,
-          totalQuantityPurchased: 0, // Placeholder if we skip quantity loop
+          totalQuantityPurchased: 0,
           mostPurchasedItem: "N/A",
           leadingSupplier: "N/A",
         },
+        todayMetrics,
         purchases: purchasesList.map((p: any) => ({
           sn: p.id.slice(0, 8),
           id: p.id,
