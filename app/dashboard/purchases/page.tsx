@@ -6,10 +6,12 @@ import { PageHeaderAction } from "@/components/ui/PageHeaderAction";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { CustomTable } from "@/components/ui/CustomTable";
 import { Purchase } from "@/lib/types";
-import { Package, TrendingUp, UserCheck, Trash2, Printer } from "lucide-react";
+import { Package, TrendingUp, UserCheck, Trash2, Printer, Search } from "lucide-react";
 import PurchaseModal from "@/components/procurement/PurchaseModal";
 import { toast } from "sonner";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { CustomDropdown } from "@/components/ui/CustomDropdown";
+import { DateRangeSelector } from "@/components/ui/DateRangeSelector";
 
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useState<any[]>([]);
@@ -29,9 +31,26 @@ export default function PurchasesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  const [dateFilter, setDateFilter] = useState("this_month");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedYear, setSelectedYear] = useState(
+    new Date().getFullYear().toString(),
+  );
+
   const fetchPurchases = async () => {
     try {
-      const res = await fetch("/api/purchases", { cache: "no-store" });
+      const queryParams = new URLSearchParams();
+      if (selectedDate) {
+        queryParams.append("date", selectedDate);
+      } else if (selectedMonth && selectedYear) {
+        queryParams.append("month", selectedMonth);
+        queryParams.append("year", selectedYear);
+      } else if (dateFilter) {
+        queryParams.append("filter", dateFilter);
+      }
+
+      const res = await fetch(`/api/purchases?${queryParams.toString()}`, { cache: "no-store" });
       const data = await res.json();
 
       if (data.success) {
@@ -47,7 +66,7 @@ export default function PurchasesPage() {
 
   useEffect(() => {
     fetchPurchases();
-  }, []);
+  }, [dateFilter, selectedDate, selectedMonth, selectedYear]);
 
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
@@ -118,7 +137,6 @@ export default function PurchasesPage() {
       <PageHeaderAction
         title="Purchases"
         description="Track incoming stock and vendor bills"
-        onSearch={setSearchQuery}
         onExport={handleExport}
         actionButton={
           <Button onClick={() => setIsModalOpen(true)}>New Purchase</Button>
@@ -194,6 +212,62 @@ export default function PurchasesPage() {
           icon={UserCheck}
           trend="Top Vendor"
         />
+      </div>
+
+      <div className="flex flex-col gap-6 bg-white p-6 rounded-2xl border border-zinc-100 shadow-sm">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative group w-80">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-900 transition-colors"
+                size={14}
+              />
+              <input
+                type="text"
+                placeholder="Search invoices or suppliers..."
+                className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-100 rounded-lg text-xs font-medium focus:border-zinc-900 transition-all outline-none h-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="w-44">
+              <CustomDropdown
+                options={[
+                  { id: "today", name: "Today" },
+                  { id: "yesterday", name: "Yesterday" },
+                  { id: "this_month", name: "This Month" },
+                  { id: "this_year", name: "This Year" },
+                ]}
+                value={dateFilter}
+                onChange={(val) => {
+                  setDateFilter(val);
+                  setSelectedDate("");
+                  setSelectedMonth("");
+                }}
+                placeholder="Quick Filters"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-zinc-50 pt-6">
+          <DateRangeSelector
+            onDateChange={(val) => {
+              setSelectedDate(val);
+              setDateFilter("");
+              setSelectedMonth("");
+            }}
+            onMonthChange={(val) => {
+              setSelectedMonth(val);
+              setDateFilter("");
+              setSelectedDate("");
+            }}
+            onYearChange={setSelectedYear}
+            currentDate={selectedDate}
+            currentMonth={selectedMonth}
+            currentYear={selectedYear}
+          />
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
