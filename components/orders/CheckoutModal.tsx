@@ -22,6 +22,8 @@ import { CustomDropdown } from "../ui/CustomDropdown";
 import { addCustomer, getCustomerSummary } from "@/services/customer";
 import { useSettings } from "@/components/providers/SettingsProvider";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+import { hasPermission, PERMISSIONS } from "@/lib/rbac";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -37,7 +39,9 @@ export function CheckoutModal({
   onCheckoutComplete,
 }: CheckoutModalProps) {
   const { settings } = useSettings();
+  const { data: session } = useSession();
   const [step, setStep] = useState<"PREPARE" | "SUCCESS">("PREPARE");
+  const [itemPrices, setItemPrices] = useState<Record<string, number>>({});
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     order.customer || null,
   );
@@ -109,9 +113,10 @@ export function CheckoutModal({
     return activeItems.reduce((sum, item) => {
       const compQty = complimentaryItems[item.id] || 0;
       const paidQty = Math.max(0, item.quantity - compQty);
-      return sum + paidQty * item.unitPrice;
+      const unitPrice = itemPrices[item.id] ?? item.unitPrice;
+      return sum + paidQty * unitPrice;
     }, 0);
-  }, [activeItems, complimentaryItems]);
+  }, [activeItems, complimentaryItems, itemPrices]);
 
   const manualDiscountAmount = useMemo(() => {
     if (discountType === "PERCENT") {
@@ -239,7 +244,7 @@ export function CheckoutModal({
               <div style="font-size: 10px;">Tel: ${settings.phone || ""}</div>
               ${settings.panNumber ? `<div style="font-size: 10px;">PAN/VAT: ${settings.panNumber}</div>` : ""}
               <div class="bold" style="margin-top: 10px; font-size: 12px; border: 1px solid #000; display: inline-block; padding: 2px 8px;">
-                TAX INVOICE
+                ESTIMATE INVOICE
               </div>
             </div>
             
@@ -345,6 +350,28 @@ export function CheckoutModal({
     if (!canSettle) return;
     setIsProcessing(true);
     try {
+      // Save updated prices if any
+      if (Object.keys(itemPrices).length > 0) {
+        const updateItems = Object.entries(itemPrices).map(([id, price]) => ({
+          id,
+          unitPrice: price,
+          action: "update",
+        }));
+
+        const updateRes = await fetch(`/api/order/${order.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: updateItems }),
+        });
+
+        const updateData = await updateRes.json();
+        if (!updateData.success) {
+          toast.error(updateData.message || "Failed to update item prices");
+          setIsProcessing(false);
+          return;
+        }
+      }
+
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -940,15 +967,18 @@ export function CheckoutModal({
             </div>
         
         {/* --- RIGHT COLUMN: ORDER ITEMS & COMPLIMENTARY --- */}
-        {/* <div className="bg-white border border-black p-6 flex flex-col h-[760px]">
+        <div className="bg-white border border-black p-6 flex flex-col h-[760px]">
           <h3 className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-3 mb-6 shrink-0">
             Line Items
           </h3>
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             <table className="w-full">
               <tbody className="divide-y divide-zinc-200">
-                {order.items.map((item) => {
+                {activeItems.map((item) => {
                   const compQty = complimentaryItems[item.id] || 0;
+                  const unitPrice = itemPrices[item.id] ?? item.unitPrice;
+                  const canOverride = hasPermission(session, PERMISSIONS.OVERRIDE_PRICE);
+
                   return (
                     <tr key={item.id}>
                       <td className="py-4 pr-2">
@@ -980,13 +1010,33 @@ export function CheckoutModal({
                               className="w-8 bg-transparent text-center text-[10px] font-black outline-none"
                             />
                           </div>
+                          
+                          {/* Price Override Input */}
+                          <div className="flex items-center border border-black px-2 py-0.5">
+                            <span className="text-[8px] font-black uppercase mr-2 text-zinc-500">
+                              Price
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={unitPrice}
+                              disabled={!canOverride}
+                              onChange={(e) =>
+                                setItemPrices({
+                                  ...itemPrices,
+                                  [item.id]: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="w-16 bg-transparent text-center text-[10px] font-black outline-none disabled:opacity-50"
+                            />
+                          </div>
                         </div>
                       </td>
                       <td className="py-4 text-right align-top">
                         <p
                           className={`text-[11px] font-black ${compQty >= item.quantity ? "line-through text-zinc-300" : ""}`}
                         >
-                          {(item.quantity * item.unitPrice).toFixed(2)}
+                          {(Math.max(0, item.quantity - compQty) * unitPrice).toFixed(2)}
                         </p>
                       </td>
                     </tr>
@@ -995,7 +1045,7 @@ export function CheckoutModal({
               </tbody>
             </table>
           </div>
-        </div> */}
+        </div>
       </div>
 
       <Modal

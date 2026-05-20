@@ -11,6 +11,7 @@ import {
   Clock,
   User,
   Edit2,
+  Trash2,
   Plus,
   Package,
   CreditCard,
@@ -399,9 +400,9 @@ export function OrderDetailView({
                       </span>
                       <button
                         onClick={() => setEditingItem(item)}
-                        className="h-[30px] px-3.5 border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 text-zinc-800 font-black text-[9px] uppercase tracking-widest rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                        className="h-[30px] px-3.5 border border-rose-100 bg-white hover:bg-rose-50 hover:border-rose-200 text-rose-600 font-black text-[9px] uppercase tracking-widest rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
                       >
-                        <Edit2 size={10} strokeWidth={2.5} /> Modify
+                        <Trash2 size={10} strokeWidth={2.5} /> Delete
                       </button>
                     </div>
                   )}

@@ -139,7 +139,7 @@ export function OrderCard({
       {/* 1. TOP HEADER: Table Name and Meta */}
       <div className="p-5 border-b border-zinc-100 bg-white flex flex-col gap-1">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium text-zinc-900 text-lg tracking-tight uppercase truncate">
+          <h3 className="font-medium text-zinc-900 text-sm tracking-tight uppercase truncate">
             {order.table?.name || "Direct Order"}
           </h3>
           <div

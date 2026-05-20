@@ -10,6 +10,7 @@ export const PERMISSIONS = {
   VIEW_FINANCE: "view_finance",
   MANAGE_SETTINGS: "manage_settings",
   EDIT_ORDERS: "edit_orders",
+  OVERRIDE_PRICE: "override_price",
 } as const;
 
 /**

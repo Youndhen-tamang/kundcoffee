@@ -3,6 +3,7 @@ import { Params } from "@/lib/types";
 import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { hasPermission, PERMISSIONS } from "@/lib/rbac";
 
 export async function PATCH(req: NextRequest, context: { params: Params }) {
   try {
@@ -70,6 +71,13 @@ export async function PATCH(req: NextRequest, context: { params: Params }) {
                 where: { id: item.id },
               });
               const unitPrice = item.unitPrice !== undefined ? item.unitPrice : (existingOrderItem?.unitPrice || 0);
+
+              // Check if price is being overridden
+              if (item.unitPrice !== undefined && item.unitPrice !== existingOrderItem?.unitPrice) {
+                if (!hasPermission(sessionUser, PERMISSIONS.OVERRIDE_PRICE)) {
+                  throw new Error("You do not have permission to override item prices.");
+                }
+              }
 
               const addOnsTotal = (item.selectedAddOns || []).reduce(
                 (sum: number, a: any) =>

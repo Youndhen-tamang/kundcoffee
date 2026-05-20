@@ -273,7 +273,7 @@ export function CheckoutModal({
               <div style="font-size: 10px;">Tel: ${settings.phone || ""}</div>
               ${settings.panNumber ? `<div style="font-size: 10px;">PAN/VAT: ${settings.panNumber}</div>` : ""}
               <div class="bold" style="margin-top: 10px; font-size: 12px; border: 1px solid #000; display: inline-block; padding: 2px 8px;">
-                TAX INVOICE
+                ESTIMATE INVOICE
               </div>
               <div class="bold" style="display: block; margin-top: 5px;">TABLE: ${table.name}</div>
             </div>

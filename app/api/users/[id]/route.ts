@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import bcrypt from "bcrypt";
 
 export async function PUT(
   req: NextRequest,
@@ -21,7 +22,7 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, role, permissions } = body;
+    const { name, role, permissions, password } = body;
 
     const existingUser = await prisma.user.findUnique({
       where: { id, storeId },
@@ -34,14 +35,21 @@ export async function PUT(
       );
     }
 
+    const updateData: any = {
+      name: name !== undefined ? name : existingUser.name,
+      role: role !== undefined ? role : existingUser.role,
+      permissions:
+        permissions !== undefined ? permissions : existingUser.permissions,
+    };
+
+    if (password && password.trim() !== "") {
+      const saltRounds = 10;
+      updateData.password = await bcrypt.hash(password, saltRounds);
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: {
-        name: name !== undefined ? name : existingUser.name,
-        role: role !== undefined ? role : existingUser.role,
-        permissions:
-          permissions !== undefined ? permissions : existingUser.permissions,
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
